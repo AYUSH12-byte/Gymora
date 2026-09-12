@@ -3,6 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 
 const authRoutes = require("./routes/authRoutes");
+const memberRoutes = require("./routes/memberRoutes");
+
 
 const app = express();
 
@@ -13,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/members", memberRoutes);
 
 // Test route
 app.get("/", (req, res) => {
