@@ -4,7 +4,7 @@ const helmet = require("helmet");
 
 const authRoutes = require("./routes/authRoutes");
 const memberRoutes = require("./routes/memberRoutes");
-
+const packageRoutes = require("./routes/packageRoutes");
 
 const app = express();
 
@@ -16,6 +16,11 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/members", memberRoutes);
+app.use("/api/packages", packageRoutes);
+
+
+
+
 
 // Test route
 app.get("/", (req, res) => {
