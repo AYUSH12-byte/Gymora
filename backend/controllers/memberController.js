@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const Member = require("../models/Member");
+const crypto = require("crypto");
+const QRCode = require("qrcode");
 
 // Create member
 const createMember = async (req, res) => {
@@ -40,6 +42,7 @@ const createMember = async (req, res) => {
     });
 
     // Create member profile
+    const qrToken = crypto.randomBytes(16).toString("hex");
     const member = await Member.create({
       user: user._id,
       phone,
@@ -47,6 +50,7 @@ const createMember = async (req, res) => {
       gender,
       dateOfBirth,
       emergencyContact,
+      qrToken,
     });
 
     res.status(201).json({
@@ -109,8 +113,52 @@ const getMemberById = async (req, res) => {
   }
 };
 
+const getMemberQRCode = async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id)
+      .populate("user", "name email");
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found",
+      });
+    }
+
+    if (!member.qrToken) {
+      member.qrToken = crypto.randomBytes(16).toString("hex");
+      await member.save();
+    }
+
+    const qrData = JSON.stringify({
+      type: "GYM_MEMBER",
+      memberId: member._id,
+      token: member.qrToken,
+    });
+
+    const qrCode = await QRCode.toDataURL(qrData);
+
+    res.status(200).json({
+      success: true,
+      member: {
+        id: member._id,
+        name: member.user.name,
+        email: member.user.email,
+      },
+      qrToken: member.qrToken,
+      qrCode,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createMember,
   getMembers,
   getMemberById,
+  getMemberQRCode,
 };

@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   checkIn,
+  checkInByQR,
   checkOut,
   getAttendance,
   getTodayAttendance,
@@ -16,6 +17,14 @@ const router = express.Router();
 
 // Check in
 router.post("/check-in", protect, authorizeRoles("admin", "trainer"), checkIn);
+
+// Check in by QR code
+router.post(
+  "/qr-check-in",
+  protect,
+  authorizeRoles("admin", "trainer"),
+  checkInByQR,
+);
 
 // Check out
 router.post(

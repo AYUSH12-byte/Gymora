@@ -4,6 +4,7 @@ const {
   createMember,
   getMembers,
   getMemberById,
+  getMemberQRCode,
 } = require("../controllers/memberController");
 
 const protect = require("../middleware/authMiddleware");
@@ -18,6 +19,10 @@ router.post("/", protect, authorizeRoles("admin"), createMember);
 router.get("/", protect, authorizeRoles("admin", "trainer"), getMembers);
 
 // Admin and trainer
+router.get("/:id/qr", protect, authorizeRoles("admin", "trainer"), getMemberQRCode);
+
+// Admin and trainer
 router.get("/:id", protect, authorizeRoles("admin", "trainer"), getMemberById);
+
 
 module.exports = router;

@@ -260,8 +260,95 @@ const getAttendanceById = async (req, res) => {
   }
 };
 
+const checkInByQR = async (req, res) => {
+  try {
+    const { memberId, token } = req.body;
+
+    if (!memberId || !token) {
+      return res.status(400).json({
+        success: false,
+        message: "Member ID and QR token are required",
+      });
+    }
+
+    const member = await Member.findById(memberId);
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found",
+      });
+    }
+
+    if (member.status !== "active") {
+      return res.status(400).json({
+        success: false,
+        message: "Member account is inactive",
+      });
+    }
+
+    if (member.qrToken !== token) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid QR code",
+      });
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingAttendance = await Attendance.findOne({
+      member: member._id,
+      checkIn: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      checkOut: null,
+    });
+
+    if (existingAttendance) {
+      return res.status(400).json({
+        success: false,
+        message: "Member is already checked in",
+        attendance: existingAttendance,
+      });
+    }
+
+    const attendance = await Attendance.create({
+      member: member._id,
+      method: "qr",
+      notes: "Checked in using QR code",
+    });
+
+    const populatedAttendance =
+      await Attendance.findById(attendance._id)
+        .populate({
+          path: "member",
+          populate: {
+            path: "user",
+            select: "name email",
+          },
+        });
+
+    res.status(201).json({
+      success: true,
+      message: "QR check-in successful",
+      attendance: populatedAttendance,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   checkIn,
+  checkInByQR,
   checkOut,
   getAttendance,
   getTodayAttendance,

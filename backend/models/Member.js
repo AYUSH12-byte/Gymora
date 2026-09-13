@@ -56,6 +56,12 @@ const memberSchema = new mongoose.Schema(
       default: "",
     },
 
+    qrToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    
     status: {
       type: String,
       enum: ["active", "inactive"],
