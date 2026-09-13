@@ -12,6 +12,7 @@ const workoutPlanRoutes = require("./routes/workoutPlanRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const progressRoutes = require("./routes/progressRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 
 const app = express();
@@ -32,7 +33,7 @@ app.use("/api/workout-plans", workoutPlanRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/progress", progressRoutes);
-
+app.use("/api/notifications", notificationRoutes);
 
 
 // Test route
