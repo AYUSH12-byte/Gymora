@@ -11,7 +11,7 @@ const trainerRoutes = require("./routes/trainerRoutes");
 const workoutPlanRoutes = require("./routes/workoutPlanRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-
+const progressRoutes = require("./routes/progressRoutes");
 
 
 const app = express();
@@ -31,7 +31,7 @@ app.use("/api/trainers", trainerRoutes);
 app.use("/api/workout-plans", workoutPlanRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-
+app.use("/api/progress", progressRoutes);
 
 
 
