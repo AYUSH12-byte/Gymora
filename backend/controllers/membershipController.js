@@ -144,7 +144,7 @@ const createMembership = async (req, res) => {
 const getMemberships = async (req, res) => {
   try {
     await updateExpiredMemberships();
-    
+
     const memberships = await Membership.find()
       .populate({
         path: "member",
@@ -366,6 +366,47 @@ const renewMembership = async (req, res) => {
   }
 };
 
+const getExpiringMemberships = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const next7Days = new Date();
+    next7Days.setDate(next7Days.getDate() + 7);
+    next7Days.setHours(23, 59, 59, 999);
+
+    const memberships = await Membership.find({
+      status: "active",
+      endDate: {
+        $gte: now,
+        $lte: next7Days,
+      },
+    })
+      .populate({
+        path: "member",
+        populate: {
+          path: "user",
+          select: "name email",
+        },
+      })
+      .populate("package")
+      .sort({
+        endDate: 1,
+      });
+
+    res.status(200).json({
+      success: true,
+      count: memberships.length,
+      message: "Memberships expiring within 7 days",
+      memberships,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createMembership,
   getMemberships,
@@ -373,4 +414,5 @@ module.exports = {
   getMembershipById,
   updateExpiredMemberships,
   renewMembership,
+  getExpiringMemberships,
 };
