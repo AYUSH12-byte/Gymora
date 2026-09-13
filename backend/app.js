@@ -9,7 +9,7 @@ const membershipRoutes = require("./routes/membershipRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const trainerRoutes = require("./routes/trainerRoutes");
 const workoutPlanRoutes = require("./routes/workoutPlanRoutes");
-
+const attendanceRoutes = require("./routes/attendanceRoutes");
 
 const app = express();
 
@@ -26,7 +26,7 @@ app.use("/api/memberships", membershipRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/trainers", trainerRoutes);
 app.use("/api/workout-plans", workoutPlanRoutes);
-
+app.use("/api/attendance", attendanceRoutes);
 
 
 // Test route
