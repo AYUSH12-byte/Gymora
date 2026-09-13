@@ -6,7 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const memberRoutes = require("./routes/memberRoutes");
 const packageRoutes = require("./routes/packageRoutes");
 const membershipRoutes = require("./routes/membershipRoutes");
-
+const paymentRoutes = require("./routes/paymentRoutes");
 
 
 
@@ -23,7 +23,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/members", memberRoutes);
 app.use("/api/packages", packageRoutes);
 app.use("/api/memberships", membershipRoutes);
-
+app.use("/api/payments", paymentRoutes);
 
 
 
