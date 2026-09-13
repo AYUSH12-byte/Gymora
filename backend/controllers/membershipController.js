@@ -143,6 +143,8 @@ const createMembership = async (req, res) => {
 // Get all memberships
 const getMemberships = async (req, res) => {
   try {
+    await updateExpiredMemberships();
+    
     const memberships = await Membership.find()
       .populate({
         path: "member",
@@ -221,9 +223,154 @@ const getMembershipById = async (req, res) => {
   }
 };
 
+const updateExpiredMemberships = async () => {
+  try {
+    const now = new Date();
+
+    await Membership.updateMany(
+      {
+        status: "active",
+        endDate: {
+          $lte: now,
+        },
+      },
+      {
+        $set: {
+          status: "expired",
+        },
+      },
+    );
+  } catch (error) {
+    console.error("Membership expiry update error:", error.message);
+  }
+};
+
+const renewMembership = async (req, res) => {
+  try {
+    const { membershipId, startDate } = req.body;
+
+    if (!membershipId) {
+      return res.status(400).json({
+        success: false,
+        message: "Membership ID is required",
+      });
+    }
+
+    const oldMembership =
+      await Membership.findById(membershipId).populate("package");
+
+    if (!oldMembership) {
+      return res.status(404).json({
+        success: false,
+        message: "Membership not found",
+      });
+    }
+
+    if (oldMembership.status === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Cancelled membership cannot be renewed",
+      });
+    }
+
+    // Check whether member already has an active membership
+    const activeMembership = await Membership.findOne({
+      member: oldMembership.member,
+      status: "active",
+      _id: {
+        $ne: oldMembership._id,
+      },
+    });
+
+    if (activeMembership) {
+      return res.status(400).json({
+        success: false,
+        message: "Member already has an active membership",
+      });
+    }
+
+    const membershipPackage = oldMembership.package;
+
+    const start = startDate ? new Date(startDate) : new Date();
+
+    const endDate = new Date(start);
+
+    if (membershipPackage.durationUnit === "days") {
+      endDate.setDate(endDate.getDate() + membershipPackage.duration);
+    }
+
+    if (membershipPackage.durationUnit === "months") {
+      endDate.setMonth(endDate.getMonth() + membershipPackage.duration);
+    }
+
+    if (membershipPackage.durationUnit === "years") {
+      endDate.setFullYear(endDate.getFullYear() + membershipPackage.duration);
+    }
+
+    const originalAmount = membershipPackage.price;
+
+    const discountPercentage = membershipPackage.discount || 0;
+
+    const discountAmount = (originalAmount * discountPercentage) / 100;
+
+    const finalAmount = originalAmount - discountAmount;
+
+    const today = new Date();
+
+    let status = "upcoming";
+
+    if (start <= today && endDate > today) {
+      status = "active";
+    }
+
+    if (endDate <= today) {
+      status = "expired";
+    }
+
+    const renewedMembership = await Membership.create({
+      member: oldMembership.member,
+      package: membershipPackage._id,
+
+      startDate: start,
+      endDate,
+
+      originalAmount,
+      discountPercentage,
+      discountAmount,
+      finalAmount,
+
+      status,
+      paymentStatus: "pending",
+    });
+
+    const populatedMembership = await Membership.findById(renewedMembership._id)
+      .populate({
+        path: "member",
+        populate: {
+          path: "user",
+          select: "name email",
+        },
+      })
+      .populate("package");
+
+    res.status(201).json({
+      success: true,
+      message: "Membership renewed successfully",
+      membership: populatedMembership,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createMembership,
   getMemberships,
   getMemberMemberships,
   getMembershipById,
+  updateExpiredMemberships,
+  renewMembership,
 };

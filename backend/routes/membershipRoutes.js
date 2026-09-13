@@ -5,6 +5,7 @@ const {
   getMemberships,
   getMemberMemberships,
   getMembershipById,
+  renewMembership,
 } = require("../controllers/membershipController");
 
 const protect = require("../middleware/authMiddleware");
@@ -33,5 +34,7 @@ router.get(
   authorizeRoles("admin", "trainer", "member"),
   getMembershipById,
 );
+
+router.post("/renew", protect, authorizeRoles("admin"), renewMembership);
 
 module.exports = router;
