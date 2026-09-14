@@ -2,11 +2,26 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 
 import AppNavigator from "./src/navigation/AppNavigator";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
+
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  return (
+    <NavigationContainer>
+      <AppNavigator user={user} />
+    </NavigationContainer>
+  );
+};
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

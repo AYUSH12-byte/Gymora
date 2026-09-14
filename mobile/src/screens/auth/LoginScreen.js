@@ -9,37 +9,37 @@ import {
 } from "react-native";
 
 import authService from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter email and password");
-      return;
-    }
+  if (!email || !password) {
+    Alert.alert("Error", "Please enter email and password");
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const data = await authService.login(email, password);
+    const data = await login(email, password);
 
-      console.log("Login successful:", data);
+    console.log("Logged in user:", data.user);
+  } catch (error) {
+    console.log(error.response?.data || error.message);
 
-      Alert.alert("Success", "Login successful");
-    } catch (error) {
-      console.log(error.response?.data || error.message);
-
-      Alert.alert(
-        "Login Failed",
-        error.response?.data?.message || "Something went wrong"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    Alert.alert(
+      "Login Failed",
+      error.response?.data?.message || "Something went wrong"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -74,12 +74,8 @@ const LoginScreen = ({ navigation }) => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate("Register")}
-      >
-        <Text style={styles.registerText}>
-          Don't have an account? Register
-        </Text>
+      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+        <Text style={styles.registerText}>Don't have an account? Register</Text>
       </TouchableOpacity>
     </View>
   );
