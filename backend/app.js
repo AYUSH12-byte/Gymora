@@ -17,9 +17,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const memberPortalRoutes = require("./routes/memberPortalRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-
-
-
+const memberPurchaseRoutes = require("./routes/memberPurchaseRoutes");
 
 const app = express();
 
@@ -44,9 +42,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/member-portal", memberPortalRoutes);
 app.use("/api/admin", adminRoutes);
-
-
-
+app.use("/api/member-purchase", memberPurchaseRoutes);
 
 // Test route
 app.get("/", (req, res) => {
