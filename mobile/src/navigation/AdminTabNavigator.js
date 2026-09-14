@@ -6,6 +6,7 @@ import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 import MembersScreen from "../screens/admin/MembersScreen";
 import MemberDetailsScreen from "../screens/admin/MemberDetailsScreen";
 import AddMemberScreen from "../screens/admin/AddMemberScreen";
+import PackagesScreen from "../screens/admin/PackagesScreen";
 
 const Tab = createBottomTabNavigator();
 const MemberStack = createNativeStackNavigator();
@@ -43,15 +44,9 @@ const AdminTabNavigator = () => {
         tabBarInactiveTintColor: "#888",
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={AdminDashboardScreen}
-      />
-
-      <Tab.Screen
-        name="Members"
-        component={MembersStack}
-      />
+      <Tab.Screen name="Dashboard" component={AdminDashboardScreen} />
+      <Tab.Screen name="Packages" component={PackagesScreen} />
+      <Tab.Screen name="Members" component={MembersStack} />
     </Tab.Navigator>
   );
 };
