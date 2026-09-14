@@ -14,6 +14,8 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const progressRoutes = require("./routes/progressRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/profile", profileRoutes);
+
 
 // Test route
 app.get("/", (req, res) => {

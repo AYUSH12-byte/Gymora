@@ -11,6 +11,7 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const checkMemberOwnership = require("../middleware/memberOwnership");
 
 const router = express.Router();
 
@@ -36,6 +37,7 @@ router.get(
   "/member/:memberId",
   protect,
   authorizeRoles("admin", "trainer"),
+  checkMemberOwnership,
   getMemberMemberships,
 );
 
