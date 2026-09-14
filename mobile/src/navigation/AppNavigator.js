@@ -4,7 +4,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
-import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
+import AdminTabNavigator from "./AdminTabNavigator";
+
 import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
 import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
 
@@ -29,8 +30,8 @@ const AppNavigator = ({ user }) => {
         </>
       ) : user.role === "admin" ? (
         <Stack.Screen
-          name="AdminDashboard"
-          component={AdminDashboardScreen}
+          name="AdminTabs"
+          component={AdminTabNavigator}
           options={{ headerShown: false }}
         />
       ) : user.role === "trainer" ? (
