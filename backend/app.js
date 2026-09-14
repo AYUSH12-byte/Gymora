@@ -13,7 +13,7 @@ const attendanceRoutes = require("./routes/attendanceRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const progressRoutes = require("./routes/progressRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-
+const reportRoutes = require("./routes/reportRoutes");
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api/reports", reportRoutes);
 
 // Test route
 app.get("/", (req, res) => {
