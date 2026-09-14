@@ -18,6 +18,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const memberPortalRoutes = require("./routes/memberPortalRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const memberPurchaseRoutes = require("./routes/memberPurchaseRoutes");
+const memberPaymentRoutes = require("./routes/memberPaymentRoutes");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/member-portal", memberPortalRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/member-purchase", memberPurchaseRoutes);
+app.use("/api/member-payments", memberPaymentRoutes);
 
 // Test route
 app.get("/", (req, res) => {
