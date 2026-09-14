@@ -4,6 +4,7 @@ const {
   checkIn,
   checkInByQR,
   checkOut,
+  checkOutByQR,
   getAttendance,
   getTodayAttendance,
   getMemberAttendance,
@@ -25,6 +26,14 @@ router.post(
   protect,
   authorizeRoles("admin", "trainer"),
   checkInByQR,
+);
+
+// Check out by QR code
+router.post(
+  "/qr-check-out",
+  protect,
+  authorizeRoles("admin", "trainer"),
+  checkOutByQR,
 );
 
 // Check out
