@@ -12,13 +12,10 @@ const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// Record payment
 router.post("/", protect, authorizeRoles("admin"), createPayment);
 
-// All payments
 router.get("/", protect, authorizeRoles("admin", "trainer"), getPayments);
 
-// Payments of a membership
 router.get(
   "/membership/:membershipId",
   protect,
@@ -26,7 +23,6 @@ router.get(
   getMembershipPayments,
 );
 
-// Single payment
 router.get(
   "/:id",
   protect,

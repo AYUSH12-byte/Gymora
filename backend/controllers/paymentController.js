@@ -1,6 +1,5 @@
 const Payment = require("../models/Payment");
 const Membership = require("../models/Membership");
-const Member = require("../models/Member");
 
 // Generate receipt number
 const generateReceiptNumber = async () => {
@@ -23,17 +22,38 @@ const createPayment = async (req, res) => {
     const { membershipId, amount, paymentMethod, transactionId, notes } =
       req.body;
 
-    if (!membershipId || !amount || !paymentMethod) {
+    // Basic validation
+    if (!membershipId || amount === undefined || !paymentMethod) {
       return res.status(400).json({
         success: false,
         message: "Membership, amount and payment method are required",
       });
     }
 
-    if (amount <= 0) {
+    // Convert amount to number
+    const paymentAmount = Number(amount);
+
+    if (Number.isNaN(paymentAmount)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment amount must be a valid number",
+      });
+    }
+
+    if (paymentAmount <= 0) {
       return res.status(400).json({
         success: false,
         message: "Payment amount must be greater than 0",
+      });
+    }
+
+    // Validate payment method
+    const allowedPaymentMethods = ["cash", "card", "online", "bank_transfer"];
+
+    if (!allowedPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment method",
       });
     }
 
@@ -47,10 +67,22 @@ const createPayment = async (req, res) => {
       });
     }
 
+    // Cancelled membership cannot receive payment
     if (membership.status === "cancelled") {
       return res.status(400).json({
         success: false,
         message: "Cannot make payment for cancelled membership",
+      });
+    }
+
+    // Check membership amount
+    if (
+      membership.finalAmount === undefined ||
+      membership.finalAmount === null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Membership final amount is not available",
       });
     }
 
@@ -74,12 +106,27 @@ const createPayment = async (req, res) => {
     const totalPaid =
       paymentSummary.length > 0 ? paymentSummary[0].totalPaid : 0;
 
+    // Calculate remaining amount
     const remainingAmount = membership.finalAmount - totalPaid;
 
-    if (amount > remainingAmount) {
+    // Already fully paid
+    if (remainingAmount <= 0) {
       return res.status(400).json({
         success: false,
-        message: `Payment exceeds remaining amount. Remaining amount is ${remainingAmount}`,
+        message: "This membership has already been fully paid",
+      });
+    }
+
+    // Prevent overpayment
+    if (paymentAmount > remainingAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment exceeds remaining amount. Maximum payment allowed is ${remainingAmount}`,
+        paymentSummary: {
+          membershipAmount: membership.finalAmount,
+          totalPaid,
+          remainingAmount,
+        },
       });
     }
 
@@ -90,23 +137,29 @@ const createPayment = async (req, res) => {
     const payment = await Payment.create({
       membership: membership._id,
       member: membership.member,
-      amount,
+      amount: paymentAmount,
       paymentMethod,
-      transactionId,
+      transactionId: transactionId || "",
       receiptNumber,
-      notes,
+      notes: notes || "",
     });
 
-    // Calculate new total
-    const newTotalPaid = totalPaid + amount;
+    // Calculate new total paid
+    const newTotalPaid = totalPaid + paymentAmount;
 
-    // Update membership payment status
-    let paymentStatus = "partial";
+    // Calculate remaining balance
+    const newRemainingAmount = membership.finalAmount - newTotalPaid;
+
+    // Determine payment status
+    let paymentStatus = "pending";
 
     if (newTotalPaid >= membership.finalAmount) {
       paymentStatus = "paid";
+    } else if (newTotalPaid > 0) {
+      paymentStatus = "partial";
     }
 
+    // Update membership
     membership.paymentStatus = paymentStatus;
 
     await membership.save();
@@ -124,22 +177,27 @@ const createPayment = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
+          select: "name duration durationUnit price discount description",
         },
       });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Payment recorded successfully",
+
       payment: populatedPayment,
+
       paymentSummary: {
         membershipAmount: membership.finalAmount,
         totalPaid: newTotalPaid,
-        remainingAmount: membership.finalAmount - newTotalPaid,
+        remainingAmount: newRemainingAmount,
         paymentStatus,
       },
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Create Payment Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -161,17 +219,27 @@ const getPayments = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
+          select: "name duration durationUnit price discount description",
         },
       })
       .sort({ paidAt: -1 });
 
-    res.status(200).json({
+    // Calculate total revenue
+    const totalRevenue = payments.reduce(
+      (total, payment) => total + payment.amount,
+      0,
+    );
+
+    return res.status(200).json({
       success: true,
       count: payments.length,
+      totalRevenue,
       payments,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get Payments Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -181,7 +249,9 @@ const getPayments = async (req, res) => {
 // Get payments for a membership
 const getMembershipPayments = async (req, res) => {
   try {
-    const membership = await Membership.findById(req.params.membershipId);
+    const membership = await Membership.findById(
+      req.params.membershipId,
+    ).populate("package", "name duration durationUnit price discount");
 
     if (!membership) {
       return res.status(404).json({
@@ -202,24 +272,57 @@ const getMembershipPayments = async (req, res) => {
       })
       .sort({ paidAt: -1 });
 
+    // Calculate total paid
     const totalPaid = payments.reduce(
       (total, payment) => total + payment.amount,
       0,
     );
 
-    res.status(200).json({
+    // Calculate remaining amount
+    const remainingAmount = Math.max(membership.finalAmount - totalPaid, 0);
+
+    // Calculate correct status
+    let paymentStatus = "pending";
+
+    if (totalPaid >= membership.finalAmount) {
+      paymentStatus = "paid";
+    } else if (totalPaid > 0) {
+      paymentStatus = "partial";
+    }
+
+    // Sync membership status if required
+    if (membership.paymentStatus !== paymentStatus) {
+      membership.paymentStatus = paymentStatus;
+      await membership.save();
+    }
+
+    return res.status(200).json({
       success: true,
       count: payments.length,
+
+      membership: {
+        id: membership._id,
+        finalAmount: membership.finalAmount,
+        status: membership.status,
+        paymentStatus,
+        startDate: membership.startDate,
+        endDate: membership.endDate,
+        package: membership.package,
+      },
+
       payments,
+
       summary: {
         membershipAmount: membership.finalAmount,
         totalPaid,
-        remainingAmount: membership.finalAmount - totalPaid,
-        paymentStatus: membership.paymentStatus,
+        remainingAmount,
+        paymentStatus,
       },
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get Membership Payments Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -241,6 +344,7 @@ const getPaymentById = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
+          select: "name duration durationUnit price discount description",
         },
       });
 
@@ -251,12 +355,14 @@ const getPaymentById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       payment,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get Payment Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
