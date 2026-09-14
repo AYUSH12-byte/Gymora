@@ -26,65 +26,26 @@ const MembersScreen = ({ navigation }) => {
   // =========================
   const loadMembers = async () => {
     try {
+      setLoading(true);
       setError("");
 
       const response = await api.get("/members");
 
-      if (response.data?.success) {
-        const data = response.data?.data || [];
+      console.log("MEMBERS API RESPONSE:", response.data);
 
-        setMembers(data);
+      const data = response.data.members || response.data.data || [];
 
-        // Apply current search after refresh
-        const keyword = search.toLowerCase().trim();
-
-        if (!keyword) {
-          setFilteredMembers(data);
-        } else {
-          const filtered = data.filter((member) => {
-            const name =
-              member.user?.name?.toLowerCase() || "";
-
-            const email =
-              member.user?.email?.toLowerCase() || "";
-
-            const phone =
-              member.phone?.toLowerCase() || "";
-
-            return (
-              name.includes(keyword) ||
-              email.includes(keyword) ||
-              phone.includes(keyword)
-            );
-          });
-
-          setFilteredMembers(filtered);
-        }
-      } else {
-        setMembers([]);
-        setFilteredMembers([]);
-
-        setError(
-          response.data?.message ||
-            "Failed to load members"
-        );
-      }
+      setMembers(Array.isArray(data) ? data : []);
+      setFilteredMembers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(
-        "Members error:",
-        error.response?.data || error.message
-      );
+      console.log("MEMBERS ERROR:", error.response?.data || error.message);
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to load members"
-      );
+      setError(error.response?.data?.message || "Failed to load members");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
   // =========================
   // INITIAL LOAD
   // =========================
@@ -106,14 +67,11 @@ const MembersScreen = ({ navigation }) => {
     }
 
     const filtered = members.filter((member) => {
-      const name =
-        member.user?.name?.toLowerCase() || "";
+      const name = member.user?.name?.toLowerCase() || "";
 
-      const email =
-        member.user?.email?.toLowerCase() || "";
+      const email = member.user?.email?.toLowerCase() || "";
 
-      const phone =
-        member.phone?.toLowerCase() || "";
+      const phone = member.phone?.toLowerCase() || "";
 
       return (
         name.includes(keyword) ||
@@ -137,20 +95,15 @@ const MembersScreen = ({ navigation }) => {
   // MEMBER CARD
   // =========================
   const renderMember = ({ item }) => {
-    const memberName =
-      item.user?.name || "Unknown Member";
+    const memberName = item.user?.name || "Unknown Member";
 
-    const firstLetter =
-      memberName.charAt(0).toUpperCase() || "M";
+    const firstLetter = memberName.charAt(0).toUpperCase() || "M";
 
-    const email =
-      item.user?.email || "No email";
+    const email = item.user?.email || "No email";
 
-    const phone =
-      item.phone || "No phone";
+    const phone = item.phone || "No phone";
 
-    const status =
-      item.status || "inactive";
+    const status = item.status || "inactive";
 
     const isActive = status.toLowerCase() === "active";
 
@@ -166,31 +119,20 @@ const MembersScreen = ({ navigation }) => {
       >
         {/* Avatar */}
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {firstLetter}
-          </Text>
+          <Text style={styles.avatarText}>{firstLetter}</Text>
         </View>
 
         {/* Member Information */}
         <View style={styles.memberInfo}>
-          <Text
-            style={styles.memberName}
-            numberOfLines={1}
-          >
+          <Text style={styles.memberName} numberOfLines={1}>
             {memberName}
           </Text>
 
-          <Text
-            style={styles.email}
-            numberOfLines={1}
-          >
+          <Text style={styles.email} numberOfLines={1}>
             {email}
           </Text>
 
-          <Text
-            style={styles.phone}
-            numberOfLines={1}
-          >
+          <Text style={styles.phone} numberOfLines={1}>
             {phone}
           </Text>
         </View>
@@ -199,14 +141,10 @@ const MembersScreen = ({ navigation }) => {
         <View
           style={[
             styles.statusBadge,
-            isActive
-              ? styles.activeBadge
-              : styles.inactiveBadge,
+            isActive ? styles.activeBadge : styles.inactiveBadge,
           ]}
         >
-          <Text style={styles.statusText}>
-            {status}
-          </Text>
+          <Text style={styles.statusText}>{status}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -218,14 +156,9 @@ const MembersScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator
-          size="large"
-          color="#111"
-        />
+        <ActivityIndicator size="large" color="#111" />
 
-        <Text style={styles.loadingText}>
-          Loading members...
-        </Text>
+        <Text style={styles.loadingText}>Loading members...</Text>
       </View>
     );
   }
@@ -236,9 +169,7 @@ const MembersScreen = ({ navigation }) => {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>
-          {error}
-        </Text>
+        <Text style={styles.error}>{error}</Text>
 
         <TouchableOpacity
           style={styles.retryButton}
@@ -248,9 +179,7 @@ const MembersScreen = ({ navigation }) => {
             loadMembers();
           }}
         >
-          <Text style={styles.retryText}>
-            Retry
-          </Text>
+          <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -264,15 +193,10 @@ const MembersScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.title}>
-            Members
-          </Text>
+          <Text style={styles.title}>Members</Text>
 
           <Text style={styles.count}>
-            {members.length}{" "}
-            {members.length === 1
-              ? "member"
-              : "members"}
+            {members.length} {members.length === 1 ? "member" : "members"}
           </Text>
         </View>
 
@@ -280,13 +204,9 @@ const MembersScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.addButton}
           activeOpacity={0.8}
-          onPress={() =>
-            navigation.navigate("AddMember")
-          }
+          onPress={() => navigation.navigate("AddMember")}
         >
-          <Text style={styles.addButtonText}>
-            + Add
-          </Text>
+          <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
       </View>
 
@@ -309,9 +229,7 @@ const MembersScreen = ({ navigation }) => {
             style={styles.clearButton}
             onPress={() => handleSearch("")}
           >
-            <Text style={styles.clearText}>
-              ×
-            </Text>
+            <Text style={styles.clearText}>×</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -321,10 +239,7 @@ const MembersScreen = ({ navigation }) => {
         <View style={styles.resultContainer}>
           <Text style={styles.resultText}>
             {filteredMembers.length}{" "}
-            {filteredMembers.length === 1
-              ? "result"
-              : "results"}{" "}
-            found
+            {filteredMembers.length === 1 ? "result" : "results"} found
           </Text>
         </View>
       )}
@@ -332,28 +247,19 @@ const MembersScreen = ({ navigation }) => {
       {/* Members List */}
       <FlatList
         data={filteredMembers}
-        keyExtractor={(item, index) =>
-          item._id || index.toString()
-        }
+        keyExtractor={(item, index) => item._id || index.toString()}
         renderItem={renderMember}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>
-              👤
-            </Text>
+            <Text style={styles.emptyIcon}>👤</Text>
 
-            <Text style={styles.emptyTitle}>
-              No members found
-            </Text>
+            <Text style={styles.emptyTitle}>No members found</Text>
 
             <Text style={styles.emptyText}>
               {search
@@ -365,13 +271,9 @@ const MembersScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles.emptyButton}
                 activeOpacity={0.8}
-                onPress={() =>
-                  navigation.navigate("AddMember")
-                }
+                onPress={() => navigation.navigate("AddMember")}
               >
-                <Text style={styles.emptyButtonText}>
-                  + Add Member
-                </Text>
+                <Text style={styles.emptyButtonText}>+ Add Member</Text>
               </TouchableOpacity>
             )}
           </View>
