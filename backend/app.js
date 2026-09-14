@@ -15,7 +15,7 @@ const progressRoutes = require("./routes/progressRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const profileRoutes = require("./routes/profileRoutes");
-
+const memberPortalRoutes = require("./routes/memberPortalRoutes");
 
 const app = express();
 
@@ -38,7 +38,7 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/profile", profileRoutes);
-
+app.use("/api/member-portal", memberPortalRoutes);
 
 // Test route
 app.get("/", (req, res) => {
