@@ -25,18 +25,21 @@ const AdminDashboardScreen = () => {
 
       const response = await api.get("/admin/dashboard");
 
+      console.log("ADMIN DASHBOARD RESPONSE:", response.data);
+
       if (response.data.success) {
-        setDashboard(response.data.data);
+        setDashboard(response.data.dashboard);
+      } else {
+        setError(response.data.message || "Failed to load dashboard");
       }
     } catch (error) {
       console.log(
-        "Dashboard error:",
+        "Admin dashboard error:",
         error.response?.data || error.message
       );
 
       setError(
-        error.response?.data?.message ||
-          "Failed to load dashboard"
+        error.response?.data?.message || "Failed to load dashboard"
       );
     } finally {
       setLoading(false);
@@ -57,6 +60,7 @@ const AdminDashboardScreen = () => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
+
         <Text style={styles.loadingText}>
           Loading dashboard...
         </Text>
@@ -83,56 +87,73 @@ const AdminDashboardScreen = () => {
         />
       }
     >
+      {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Admin Dashboard</Text>
+        <Text style={styles.title}>Admin Dashboard</Text>
 
-          <Text style={styles.subtitle}>
-            Welcome, {user?.name || "Admin"}
-          </Text>
-        </View>
+        <Text style={styles.subtitle}>
+          Welcome, {user?.name || "Admin"}
+        </Text>
       </View>
 
+      {/* Statistics */}
       <View style={styles.grid}>
         <StatCard
           title="Total Members"
-          value={dashboard?.totalMembers ?? 0}
+          value={dashboard?.members?.total ?? 0}
         />
 
         <StatCard
           title="Active Members"
-          value={dashboard?.activeMembers ?? 0}
+          value={dashboard?.members?.active ?? 0}
         />
 
         <StatCard
           title="Trainers"
-          value={dashboard?.totalTrainers ?? 0}
+          value={dashboard?.trainers?.total ?? 0}
+        />
+
+        <StatCard
+          title="Active Trainers"
+          value={dashboard?.trainers?.active ?? 0}
         />
 
         <StatCard
           title="Active Memberships"
-          value={dashboard?.activeMemberships ?? 0}
+          value={dashboard?.memberships?.active ?? 0}
+        />
+
+        <StatCard
+          title="Expired Memberships"
+          value={dashboard?.memberships?.expired ?? 0}
+        />
+
+        <StatCard
+          title="Upcoming Memberships"
+          value={dashboard?.memberships?.upcoming ?? 0}
         />
 
         <StatCard
           title="Today's Attendance"
-          value={dashboard?.todayAttendance ?? 0}
-        />
-
-        <StatCard
-          title="Expiring Soon"
-          value={dashboard?.expiringMemberships ?? 0}
+          value={dashboard?.attendance?.today ?? 0}
         />
       </View>
 
+      {/* Revenue */}
       <View style={styles.revenueCard}>
-        <Text style={styles.cardTitle}>Total Revenue</Text>
+        <Text style={styles.revenueLabel}>
+          Total Revenue
+        </Text>
 
         <Text style={styles.revenue}>
-          Rs. {Number(dashboard?.totalRevenue || 0).toLocaleString()}
+          Rs.{" "}
+          {Number(
+            dashboard?.revenue?.total || 0
+          ).toLocaleString()}
         </Text>
       </View>
 
+      {/* Recent Payments */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Recent Payments
@@ -144,7 +165,7 @@ const AdminDashboardScreen = () => {
               key={payment._id}
               style={styles.listItem}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.itemTitle}>
                   {payment.member?.user?.name ||
                     "Unknown Member"}
@@ -156,7 +177,10 @@ const AdminDashboardScreen = () => {
               </View>
 
               <Text style={styles.amount}>
-                Rs. {Number(payment.amount).toLocaleString()}
+                Rs.{" "}
+                {Number(
+                  payment.amount || 0
+                ).toLocaleString()}
               </Text>
             </View>
           ))
@@ -167,6 +191,7 @@ const AdminDashboardScreen = () => {
         )}
       </View>
 
+      {/* Recent Members */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Recent Members
@@ -178,13 +203,15 @@ const AdminDashboardScreen = () => {
               key={member._id}
               style={styles.listItem}
             >
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.itemTitle}>
-                  {member.user?.name || "Unknown Member"}
+                  {member.user?.name ||
+                    "Unknown Member"}
                 </Text>
 
                 <Text style={styles.itemSubtitle}>
-                  {member.phone || "No phone"}
+                  {member.user?.email ||
+                    "No email"}
                 </Text>
               </View>
 
@@ -206,9 +233,13 @@ const AdminDashboardScreen = () => {
 const StatCard = ({ title, value }) => {
   return (
     <View style={styles.statCard}>
-      <Text style={styles.statTitle}>{title}</Text>
+      <Text style={styles.statTitle}>
+        {title}
+      </Text>
 
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statValue}>
+        {value}
+      </Text>
     </View>
   );
 };
@@ -293,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
 
-  cardTitle: {
+  revenueLabel: {
     color: "#ccc",
     fontSize: 14,
   },
