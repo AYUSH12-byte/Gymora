@@ -1,7 +1,12 @@
 import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItemList,
+  DrawerItem,
+} from "@react-navigation/drawer";
 
+import { View, Text, StyleSheet } from "react-native";
 // Dashboard
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 
@@ -31,18 +36,15 @@ import WorkoutPlansScreen from "../screens/admin/workout/WorkoutPlansScreen";
 import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen";
 import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
 import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScreen";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const MemberStack = createNativeStackNavigator();
 const PackageStack = createNativeStackNavigator();
 const MembershipStack = createNativeStackNavigator();
 const TrainerStack = createNativeStackNavigator();
 const WorkoutPlanStack = createNativeStackNavigator();
-
-/* =========================
-   MEMBERS STACK
-========================= */
 
 const MembersStack = () => {
   return (
@@ -68,10 +70,6 @@ const MembersStack = () => {
   );
 };
 
-/* =========================
-   PACKAGES STACK
-========================= */
-
 const PackagesStack = () => {
   return (
     <PackageStack.Navigator>
@@ -96,10 +94,6 @@ const PackagesStack = () => {
   );
 };
 
-/* =========================
-   MEMBERSHIPS STACK
-========================= */
-
 const MembershipsStack = () => {
   return (
     <MembershipStack.Navigator>
@@ -123,10 +117,6 @@ const MembershipsStack = () => {
     </MembershipStack.Navigator>
   );
 };
-
-/* =========================
-   TRAINERS STACK
-========================= */
 
 const TrainersStack = () => {
   return (
@@ -158,10 +148,6 @@ const TrainersStack = () => {
   );
 };
 
-/* =========================
-   WORKOUT PLAN STACK
-========================= */
-
 const WorkoutPlansStack = () => {
   return (
     <WorkoutPlanStack.Navigator>
@@ -192,50 +178,195 @@ const WorkoutPlansStack = () => {
   );
 };
 
-/* =========================
-   ADMIN TABS
-========================= */
+const CustomDrawerContent = (props) => {
+  return (
+    <DrawerContentScrollView
+      {...props}
+      contentContainerStyle={styles.drawerContainer}
+    >
+      <View style={styles.header}>
+        <View style={styles.logo}>
+          <Text style={styles.logoText}>G</Text>
+        </View>
+
+        <Text style={styles.appName}>GYM MANAGEMENT</Text>
+        <Text style={styles.adminText}>Admin Panel</Text>
+      </View>
+
+      <View style={styles.menuContainer}>
+        <DrawerItemList {...props} />
+      </View>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Gym Management System
+        </Text>
+        <Text style={styles.versionText}>
+          Version 1.0.0
+        </Text>
+      </View>
+    </DrawerContentScrollView>
+  );
+};
 
 const AdminTabNavigator = () => {
   return (
-    <Tab.Navigator
+    <Drawer.Navigator
+      initialRouteName="Dashboard"
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#111",
-        tabBarInactiveTintColor: "#888",
+        headerShown: true,
+
+        drawerType: "slide",
+
+        drawerStyle: {
+          width: 280,
+        },
+
+        drawerActiveTintColor: "#111",
+        drawerInactiveTintColor: "#666",
+
+        drawerActiveBackgroundColor: "#f0f0f0",
+
+        drawerLabelStyle: {
+          marginLeft: -10,
+          fontSize: 15,
+          fontWeight: "600",
+        },
+
+        headerStyle: {
+          backgroundColor: "#111",
+        },
+
+        headerTintColor: "#fff",
+
+        headerTitleStyle: {
+          fontWeight: "700",
+        },
       }}
     >
-      <Tab.Screen
+      <Drawer.Screen
         name="Dashboard"
         component={AdminDashboardScreen}
+        options={{
+          title: "Dashboard",
+          drawerLabel: "Dashboard",
+        }}
       />
 
-      <Tab.Screen
+      <Drawer.Screen
         name="Members"
         component={MembersStack}
+        options={{
+          title: "Members",
+          drawerLabel: "Members",
+        }}
       />
 
-      <Tab.Screen
+      <Drawer.Screen
         name="Packages"
         component={PackagesStack}
+        options={{
+          title: "Packages",
+          drawerLabel: "Membership Packages",
+        }}
       />
 
-      <Tab.Screen
+      <Drawer.Screen
         name="Memberships"
         component={MembershipsStack}
+        options={{
+          title: "Memberships",
+          drawerLabel: "Memberships",
+        }}
       />
 
-      <Tab.Screen
+      <Drawer.Screen
         name="Trainers"
         component={TrainersStack}
+        options={{
+          title: "Trainers",
+          drawerLabel: "Trainers",
+        }}
       />
 
-      <Tab.Screen
-        name="Workout Plans"
+      <Drawer.Screen
+        name="WorkoutPlans"
         component={WorkoutPlansStack}
+        options={{
+          title: "Workout Plans",
+          drawerLabel: "Workout Plans",
+        }}
       />
-    </Tab.Navigator>
+    </Drawer.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  drawerContainer: {
+    flex: 1,
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 35,
+    paddingBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  logo: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#111",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+
+  logoText: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+
+  appName: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#111",
+  },
+
+  adminText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#777",
+  },
+
+  menuContainer: {
+    paddingTop: 10,
+  },
+
+  footer: {
+    marginTop: "auto",
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+
+  footerText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#555",
+  },
+
+  versionText: {
+    fontSize: 11,
+    color: "#999",
+    marginTop: 4,
+  },
+});
 
 export default AdminTabNavigator;
