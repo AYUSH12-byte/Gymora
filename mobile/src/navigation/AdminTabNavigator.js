@@ -17,6 +17,7 @@ import EditPackageScreen from "../screens/admin/EditPackageScreen";
 
 // Memberships
 import MembershipsScreen from "../screens/admin/MembershipsScreen";
+import RenewMembershipScreen from "../screens/admin/RenewMembershipScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -24,9 +25,7 @@ const MemberStack = createNativeStackNavigator();
 const PackageStack = createNativeStackNavigator();
 const MembershipStack = createNativeStackNavigator();
 
-/* =========================================================
-   MEMBERS STACK
-========================================================= */
+/*MEMBERS STACK*/
 
 const MembersStack = () => {
   return (
@@ -58,9 +57,7 @@ const MembersStack = () => {
   );
 };
 
-/* =========================================================
-   PACKAGES STACK
-========================================================= */
+/* PACKAGES STACK*/
 
 const PackagesStack = () => {
   return (
@@ -92,9 +89,7 @@ const PackagesStack = () => {
   );
 };
 
-/* =========================================================
-   MEMBERSHIP STACK
-========================================================= */
+/* MEMBERSHIP STACK*/
 
 const MembershipsStack = () => {
   return (
@@ -106,13 +101,19 @@ const MembershipsStack = () => {
           title: "Memberships",
         }}
       />
+
+      <MembershipStack.Screen
+        name="RenewMembership"
+        component={RenewMembershipScreen}
+        options={{
+          title: "Renew Membership",
+        }}
+      />
     </MembershipStack.Navigator>
   );
 };
 
-/* =========================================================
-   ADMIN TAB NAVIGATOR
-========================================================= */
+/*  ADMIN TAB NAVIGATOR= */
 
 const AdminTabNavigator = () => {
   return (
