@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -8,54 +8,68 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import api from "../../services/api";
 
 const MembersScreen = ({ navigation }) => {
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
-
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  // =========================
-  // LOAD MEMBERS
-  // =========================
-  const loadMembers = async () => {
+  const loadMembers = async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      }
+
       setError("");
 
       const response = await api.get("/members");
 
       console.log("MEMBERS API RESPONSE:", response.data);
 
-      const data = response.data.members || response.data.data || [];
+      const data =
+        response.data.members ||
+        response.data.data ||
+        [];
 
-      setMembers(Array.isArray(data) ? data : []);
-      setFilteredMembers(Array.isArray(data) ? data : []);
+      const memberList = Array.isArray(data) ? data : [];
+
+      setMembers(memberList);
+      setFilteredMembers(memberList);
     } catch (error) {
-      console.log("MEMBERS ERROR:", error.response?.data || error.message);
+      console.log(
+        "MEMBERS API ERROR:",
+        error.response?.data || error.message
+      );
 
-      setError(error.response?.data?.message || "Failed to load members");
+      setError(
+        error.response?.data?.message ||
+          "Failed to load members"
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-  // =========================
-  // INITIAL LOAD
-  // =========================
-  useEffect(() => {
-    loadMembers();
-  }, []);
 
-  // =========================
-  // SEARCH MEMBERS
-  // =========================
+  useFocusEffect(
+    useCallback(() => {
+      loadMembers();
+    }, [])
+  );
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadMembers(false);
+  };
+
   const handleSearch = (text) => {
     setSearch(text);
 
@@ -66,216 +80,202 @@ const MembersScreen = ({ navigation }) => {
       return;
     }
 
-    const filtered = members.filter((member) => {
-      const name = member.user?.name?.toLowerCase() || "";
+    const filtered = members.filter((item) => {
+      const name =
+        item.user?.name ||
+        item.name ||
+        "";
 
-      const email = member.user?.email?.toLowerCase() || "";
+      const email =
+        item.user?.email ||
+        item.email ||
+        "";
 
-      const phone = member.phone?.toLowerCase() || "";
+      const phone =
+        item.phone ||
+        "";
 
       return (
-        name.includes(keyword) ||
-        email.includes(keyword) ||
-        phone.includes(keyword)
+        name.toLowerCase().includes(keyword) ||
+        email.toLowerCase().includes(keyword) ||
+        phone.toLowerCase().includes(keyword)
       );
     });
 
     setFilteredMembers(filtered);
   };
 
-  // =========================
-  // REFRESH
-  // =========================
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadMembers();
+  const getMemberName = (item) => {
+    return (
+      item.user?.name ||
+      item.name ||
+      "Unknown Member"
+    );
   };
 
-  // =========================
-  // MEMBER CARD
-  // =========================
+  const getMemberEmail = (item) => {
+    return (
+      item.user?.email ||
+      item.email ||
+      "No email"
+    );
+  };
+
   const renderMember = ({ item }) => {
-    const memberName = item.user?.name || "Unknown Member";
-
-    const firstLetter = memberName.charAt(0).toUpperCase() || "M";
-
-    const email = item.user?.email || "No email";
-
-    const phone = item.phone || "No phone";
-
-    const status = item.status || "inactive";
-
-    const isActive = status.toLowerCase() === "active";
+    const memberName = getMemberName(item);
+    const memberEmail = getMemberEmail(item);
 
     return (
       <TouchableOpacity
-        style={styles.memberCard}
-        activeOpacity={0.7}
-        onPress={() =>
+        activeOpacity={0.8}
+        style={styles.card}
+        onPress={() => {
+          console.log(
+            "Opening member details:",
+            item._id
+          );
+
           navigation.navigate("MemberDetails", {
             memberId: item._id,
-          })
-        }
+          });
+        }}
       >
-        {/* Avatar */}
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{firstLetter}</Text>
+          <Text style={styles.avatarText}>
+            {memberName.charAt(0).toUpperCase()}
+          </Text>
         </View>
 
-        {/* Member Information */}
-        <View style={styles.memberInfo}>
-          <Text style={styles.memberName} numberOfLines={1}>
+        <View style={styles.info}>
+          <Text style={styles.name}>
             {memberName}
           </Text>
 
-          <Text style={styles.email} numberOfLines={1}>
-            {email}
+          <Text style={styles.email}>
+            {memberEmail}
           </Text>
 
-          <Text style={styles.phone} numberOfLines={1}>
-            {phone}
+          <Text style={styles.phone}>
+            {item.phone || "No phone"}
           </Text>
         </View>
 
-        {/* Status */}
         <View
           style={[
-            styles.statusBadge,
-            isActive ? styles.activeBadge : styles.inactiveBadge,
+            styles.status,
+            item.status === "active"
+              ? styles.activeStatus
+              : styles.inactiveStatus,
           ]}
         >
-          <Text style={styles.statusText}>{status}</Text>
+          <Text
+            style={[
+              styles.statusText,
+              item.status === "active"
+                ? styles.activeText
+                : styles.inactiveText,
+            ]}
+          >
+            {item.status || "inactive"}
+          </Text>
         </View>
       </TouchableOpacity>
     );
   };
 
-  // =========================
-  // LOADING SCREEN
-  // =========================
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#111" />
-
-        <Text style={styles.loadingText}>Loading members...</Text>
-      </View>
-    );
-  }
-
-  // =========================
-  // ERROR SCREEN
-  // =========================
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.error}>{error}</Text>
-
-        <TouchableOpacity
-          style={styles.retryButton}
-          activeOpacity={0.8}
-          onPress={() => {
-            setLoading(true);
-            loadMembers();
-          }}
-        >
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // =========================
-  // MAIN SCREEN
-  // =========================
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.title}>Members</Text>
-
-          <Text style={styles.count}>
-            {members.length} {members.length === 1 ? "member" : "members"}
-          </Text>
-        </View>
-
-        {/* Add Member */}
-        <TouchableOpacity
-          style={styles.addButton}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate("AddMember")}
-        >
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          value={search}
-          onChangeText={handleSearch}
-          placeholder="Search name, email or phone..."
-          placeholderTextColor="#999"
-          style={styles.searchInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
+        <ActivityIndicator
+          size="large"
+          color="#111"
         />
 
-        {/* Clear Search */}
-        {search.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => handleSearch("")}
-          >
-            <Text style={styles.clearText}>×</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.loadingText}>
+          Loading members...
+        </Text>
       </View>
+    );
+  }
 
-      {/* Result Count */}
-      {search.length > 0 && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultText}>
-            {filteredMembers.length}{" "}
-            {filteredMembers.length === 1 ? "result" : "results"} found
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>
+            Members
+          </Text>
+
+          <Text style={styles.subtitle}>
+            {members.length} member
+            {members.length !== 1 ? "s" : ""}
           </Text>
         </View>
-      )}
 
-      {/* Members List */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() =>
+            navigation.navigate("AddMember")
+          }
+        >
+          <Text style={styles.addButtonText}>
+            + Add
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search member..."
+        placeholderTextColor="#999"
+        value={search}
+        onChangeText={handleSearch}
+      />
+
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadMembers()}
+          >
+            <Text style={styles.retryText}>
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       <FlatList
         data={filteredMembers}
-        keyExtractor={(item, index) => item._id || index.toString()}
+        keyExtractor={(item) => item._id}
         renderItem={renderMember}
-        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={
+          filteredMembers.length === 0
+            ? styles.emptyContainer
+            : styles.list
+        }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>👤</Text>
-
-            <Text style={styles.emptyTitle}>No members found</Text>
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>
+              No Members Found
+            </Text>
 
             <Text style={styles.emptyText}>
               {search
-                ? "Try another search."
-                : "Add your first member to get started."}
+                ? "No members match your search."
+                : "No members available."}
             </Text>
-
-            {!search && (
-              <TouchableOpacity
-                style={styles.emptyButton}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate("AddMember")}
-              >
-                <Text style={styles.emptyButtonText}>+ Add Member</Text>
-              </TouchableOpacity>
-            )}
           </View>
         }
       />
@@ -283,169 +283,82 @@ const MembersScreen = ({ navigation }) => {
   );
 };
 
-export default MembersScreen;
-
-// =========================
-// STYLES
-// =========================
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6f8",
+    backgroundColor: "#f5f5f5",
+    padding: 16,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#f5f6f8",
+    backgroundColor: "#f5f5f5",
   },
 
   loadingText: {
     marginTop: 10,
     color: "#666",
-    fontSize: 14,
   },
 
-  error: {
-    color: "#d00",
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: 15,
-  },
-
-  retryButton: {
-    backgroundColor: "#111",
-    paddingHorizontal: 24,
-    paddingVertical: 11,
-    borderRadius: 10,
-  },
-
-  retryText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-
-  // Header
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  headerLeft: {
-    flex: 1,
+    marginBottom: 15,
   },
 
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 27,
+    fontWeight: "700",
     color: "#111",
   },
 
-  count: {
-    marginTop: 5,
+  subtitle: {
+    marginTop: 3,
     color: "#777",
-    fontSize: 14,
   },
 
-  // Add Button
   addButton: {
     backgroundColor: "#111",
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 10,
-    borderRadius: 10,
-    marginLeft: 10,
+    borderRadius: 9,
   },
 
   addButtonText: {
     color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-
-  // Search
-  searchContainer: {
-    marginHorizontal: 20,
-    marginVertical: 12,
-    position: "relative",
+    fontWeight: "700",
   },
 
   searchInput: {
     backgroundColor: "#fff",
-    height: 50,
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#ddd",
+    borderRadius: 10,
     paddingHorizontal: 15,
-    paddingRight: 45,
-    fontSize: 14,
+    paddingVertical: 13,
+    fontSize: 15,
     color: "#111",
+    marginBottom: 15,
   },
 
-  clearButton: {
-    position: "absolute",
-    right: 10,
-    top: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  clearText: {
-    fontSize: 25,
-    color: "#777",
-    lineHeight: 28,
-  },
-
-  // Search Result
-  resultContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 5,
-  },
-
-  resultText: {
-    color: "#777",
-    fontSize: 13,
-  },
-
-  // List
   list: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 30,
-    flexGrow: 1,
+    paddingBottom: 20,
   },
 
-  // Member Card
-  memberCard: {
+  card: {
     backgroundColor: "#fff",
-    borderRadius: 14,
+    borderRadius: 13,
     padding: 15,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
-
-    elevation: 2,
-
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
   },
 
-  // Avatar
   avatar: {
     width: 48,
     height: 48,
@@ -459,95 +372,105 @@ const styles = StyleSheet.create({
   avatarText: {
     color: "#fff",
     fontSize: 19,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 
-  // Member Info
-  memberInfo: {
+  info: {
     flex: 1,
-    minWidth: 0,
   },
 
-  memberName: {
-    fontSize: 16,
-    fontWeight: "bold",
+  name: {
+    fontSize: 17,
+    fontWeight: "700",
     color: "#111",
   },
 
   email: {
+    marginTop: 3,
     fontSize: 13,
     color: "#666",
-    marginTop: 3,
   },
 
   phone: {
+    marginTop: 3,
     fontSize: 13,
     color: "#888",
-    marginTop: 3,
   },
 
-  // Status
-  statusBadge: {
+  status: {
     paddingHorizontal: 9,
     paddingVertical: 5,
-    borderRadius: 8,
-    marginLeft: 8,
+    borderRadius: 20,
   },
 
-  activeBadge: {
-    backgroundColor: "#dff5e3",
+  activeStatus: {
+    backgroundColor: "#dcfce7",
   },
 
-  inactiveBadge: {
-    backgroundColor: "#eee",
+  inactiveStatus: {
+    backgroundColor: "#fee2e2",
   },
 
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "700",
     textTransform: "capitalize",
-    fontWeight: "600",
-    color: "#333",
   },
 
-  // Empty
-  empty: {
-    flex: 1,
-    alignItems: "center",
+  activeText: {
+    color: "#15803d",
+  },
+
+  inactiveText: {
+    color: "#dc2626",
+  },
+
+  errorBox: {
+    backgroundColor: "#fee2e2",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+
+  errorText: {
+    color: "#b91c1c",
+    marginBottom: 8,
+  },
+
+  retryButton: {
+    backgroundColor: "#111",
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 7,
+  },
+
+  retryText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  emptyContainer: {
+    flexGrow: 1,
     justifyContent: "center",
-    paddingTop: 80,
+  },
+
+  emptyBox: {
+    alignItems: "center",
     paddingHorizontal: 30,
   },
 
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 19,
+    fontWeight: "700",
     color: "#222",
   },
 
   emptyText: {
-    marginTop: 8,
+    marginTop: 7,
     color: "#777",
     textAlign: "center",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-
-  emptyButton: {
-    backgroundColor: "#111",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 18,
-  },
-
-  emptyButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
   },
 });
+
+export default MembersScreen;

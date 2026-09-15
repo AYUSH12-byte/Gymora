@@ -89,7 +89,18 @@ const getMembers = async (req, res) => {
 // Get single member
 const getMemberById = async (req, res) => {
   try {
-    const member = await Member.findById(req.params.id).populate(
+    const { id } = req.params;
+
+    console.log("Getting member by ID:", id);
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Member ID is required",
+      });
+    }
+
+    const member = await Member.findById(id).populate(
       "user",
       "name email role isActive",
     );
@@ -106,6 +117,8 @@ const getMemberById = async (req, res) => {
       member,
     });
   } catch (error) {
+    console.error("Get member by ID error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -115,8 +128,10 @@ const getMemberById = async (req, res) => {
 
 const getMemberQRCode = async (req, res) => {
   try {
-    const member = await Member.findById(req.params.id)
-      .populate("user", "name email");
+    const member = await Member.findById(req.params.id).populate(
+      "user",
+      "name email",
+    );
 
     if (!member) {
       return res.status(404).json({

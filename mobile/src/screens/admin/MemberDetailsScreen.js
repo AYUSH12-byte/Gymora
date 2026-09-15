@@ -1,62 +1,104 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 import api from "../../services/api";
 
 const MemberDetailsScreen = ({ route }) => {
-  const { memberId } = route.params;
+  const { memberId } = route.params || {};
 
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadMember = async () => {
+  const loadMember = async (showLoader = true) => {
     try {
-      const response = await api.get(`/members/${memberId}`);
-
-      if (response.data.success) {
-        setMember(response.data.data);
+      if (!memberId) {
+        setError("Member ID is missing.");
+        setLoading(false);
+        return;
       }
+
+      if (showLoader) {
+        setLoading(true);
+      }
+
+      setError("");
+
+      console.log(
+        "Loading member details:",
+        memberId
+      );
+
+      const response = await api.get(
+        `/members/${memberId}`
+      );
+
+      console.log(
+        "MEMBER DETAILS RESPONSE:",
+        response.data
+      );
+
+      const data =
+        response.data.member ||
+        response.data.data;
+
+      if (!data) {
+        setMember(null);
+        setError("Member not found.");
+        return;
+      }
+
+      setMember(data);
     } catch (error) {
       console.log(
-        "Member details error:",
+        "MEMBER DETAILS ERROR:",
         error.response?.data || error.message
       );
 
+      setMember(null);
+
       setError(
         error.response?.data?.message ||
-          "Failed to load member details"
+          "Member not found."
       );
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadMember();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadMember();
+    }, [memberId])
+  );
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadMember(false);
+  };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>
-          Loading member...
-        </Text>
-      </View>
-    );
-  }
+        <ActivityIndicator
+          size="large"
+          color="#111"
+        />
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.error}>{error}</Text>
+        <Text style={styles.loadingText}>
+          Loading member details...
+        </Text>
       </View>
     );
   }
@@ -64,38 +106,74 @@ const MemberDetailsScreen = ({ route }) => {
   if (!member) {
     return (
       <View style={styles.center}>
-        <Text>Member not found</Text>
+        <Text style={styles.errorTitle}>
+          Member Not Found
+        </Text>
+
+        <Text style={styles.errorText}>
+          {error || "Unable to load member details."}
+        </Text>
+
+        <Text style={styles.idText}>
+          Member ID: {memberId || "Missing"}
+        </Text>
       </View>
     );
   }
 
+  const memberName =
+    member.user?.name ||
+    member.name ||
+    "Unknown Member";
+
+  const memberEmail =
+    member.user?.email ||
+    member.email ||
+    "No email";
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      }
+    >
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {member.user?.name?.charAt(0)?.toUpperCase() || "M"}
+            {memberName.charAt(0).toUpperCase()}
           </Text>
         </View>
 
         <Text style={styles.name}>
-          {member.user?.name || "Unknown Member"}
+          {memberName}
         </Text>
 
         <Text style={styles.email}>
-          {member.user?.email || "No email"}
+          {memberEmail}
         </Text>
 
         <View
           style={[
-            styles.status,
+            styles.statusBadge,
             member.status === "active"
-              ? styles.active
-              : styles.inactive,
+              ? styles.activeBadge
+              : styles.inactiveBadge,
           ]}
         >
-          <Text style={styles.statusText}>
-            {member.status}
+          <Text
+            style={[
+              styles.statusText,
+              member.status === "active"
+                ? styles.activeText
+                : styles.inactiveText,
+            ]}
+          >
+            {member.status || "inactive"}
           </Text>
         </View>
       </View>
@@ -107,34 +185,38 @@ const MemberDetailsScreen = ({ route }) => {
 
         <InfoRow
           label="Phone"
-          value={member.phone || "Not provided"}
+          value={member.phone || "N/A"}
+        />
+
+        <InfoRow
+          label="Address"
+          value={member.address || "N/A"}
         />
 
         <InfoRow
           label="Gender"
-          value={member.gender || "Not provided"}
+          value={member.gender || "N/A"}
         />
 
         <InfoRow
           label="Date of Birth"
           value={
             member.dateOfBirth
-              ? new Date(member.dateOfBirth).toLocaleDateString()
-              : "Not provided"
+              ? new Date(
+                  member.dateOfBirth
+                ).toLocaleDateString()
+              : "N/A"
           }
-        />
-
-        <InfoRow
-          label="Address"
-          value={member.address || "Not provided"}
         />
 
         <InfoRow
           label="Join Date"
           value={
             member.joinDate
-              ? new Date(member.joinDate).toLocaleDateString()
-              : "Not available"
+              ? new Date(
+                  member.joinDate
+                ).toLocaleDateString()
+              : "N/A"
           }
         />
       </View>
@@ -147,14 +229,16 @@ const MemberDetailsScreen = ({ route }) => {
         <InfoRow
           label="Name"
           value={
-            member.emergencyContact?.name || "Not provided"
+            member.emergencyContact?.name ||
+            "N/A"
           }
         />
 
         <InfoRow
           label="Phone"
           value={
-            member.emergencyContact?.phone || "Not provided"
+            member.emergencyContact?.phone ||
+            "N/A"
           }
         />
 
@@ -162,7 +246,7 @@ const MemberDetailsScreen = ({ route }) => {
           label="Relationship"
           value={
             member.emergencyContact?.relationship ||
-            "Not provided"
+            "N/A"
           }
         />
       </View>
@@ -173,26 +257,34 @@ const MemberDetailsScreen = ({ route }) => {
 const InfoRow = ({ label, value }) => {
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.label}>
+        {label}
+      </Text>
+
+      <Text style={styles.value}>
+        {value}
+      </Text>
     </View>
   );
 };
 
-export default MemberDetailsScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6f8",
-    padding: 20,
+    backgroundColor: "#f5f5f5",
+  },
+
+  content: {
+    padding: 16,
+    paddingBottom: 30,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    backgroundColor: "#f5f5f5",
+    padding: 30,
   },
 
   loadingText: {
@@ -200,18 +292,31 @@ const styles = StyleSheet.create({
     color: "#666",
   },
 
-  error: {
-    color: "#d00",
-    fontSize: 16,
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  errorText: {
+    marginTop: 10,
+    color: "#dc2626",
+    textAlign: "center",
+  },
+
+  idText: {
+    marginTop: 10,
+    color: "#777",
+    fontSize: 12,
     textAlign: "center",
   },
 
   profileCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 15,
     padding: 25,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
 
   avatar: {
@@ -227,67 +332,82 @@ const styles = StyleSheet.create({
   avatarText: {
     color: "#fff",
     fontSize: 30,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 
   name: {
     fontSize: 23,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#111",
   },
 
   email: {
-    color: "#777",
     marginTop: 5,
+    color: "#777",
   },
 
-  status: {
+  statusBadge: {
     marginTop: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 20,
   },
 
-  active: {
-    backgroundColor: "#dff5e3",
+  activeBadge: {
+    backgroundColor: "#dcfce7",
   },
 
-  inactive: {
-    backgroundColor: "#eee",
+  inactiveBadge: {
+    backgroundColor: "#fee2e2",
   },
 
   statusText: {
+    fontWeight: "700",
     textTransform: "capitalize",
-    fontWeight: "600",
+  },
+
+  activeText: {
+    color: "#15803d",
+  },
+
+  inactiveText: {
+    color: "#dc2626",
   },
 
   section: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 15,
   },
 
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "#111",
     marginBottom: 15,
   },
 
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    paddingVertical: 11,
   },
 
   label: {
     color: "#777",
+    fontSize: 14,
   },
 
   value: {
+    color: "#222",
+    fontSize: 14,
     fontWeight: "600",
     maxWidth: "60%",
     textAlign: "right",
   },
 });
+
+export default MemberDetailsScreen;
