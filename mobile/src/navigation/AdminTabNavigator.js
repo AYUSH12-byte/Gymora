@@ -30,6 +30,7 @@ import EditTrainerScreen from "../screens/admin/trainer/EditTrainerScreen";
 import WorkoutPlansScreen from "../screens/admin/workout/WorkoutPlansScreen";
 import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen";
 import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
+import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScreen";
 
 const Tab = createBottomTabNavigator();
 
