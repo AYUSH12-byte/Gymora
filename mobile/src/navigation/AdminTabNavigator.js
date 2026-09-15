@@ -3,10 +3,10 @@ import {
   createDrawerNavigator,
   DrawerContentScrollView,
   DrawerItemList,
+  DrawerItem,
 } from "@react-navigation/drawer";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { View, Text, StyleSheet } from "react-native";
 
+import { View, Text, StyleSheet } from "react-native";
 // Dashboard
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 
@@ -37,6 +37,12 @@ import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen"
 import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
 import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScreen";
 
+// Attendance screens
+import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
+import QRScannerScreen from "../screens/admin/qr/QRScannerScreen";
+
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 const Drawer = createDrawerNavigator();
 
 const MemberStack = createNativeStackNavigator();
@@ -45,179 +51,107 @@ const MembershipStack = createNativeStackNavigator();
 const TrainerStack = createNativeStackNavigator();
 const WorkoutPlanStack = createNativeStackNavigator();
 
-/*
-|--------------------------------------------------------------------------
-| Members Stack
-|--------------------------------------------------------------------------
-*/
-
 const MembersStack = () => {
   return (
-    <MemberStack.Navigator
-      screenOptions={{
-        headerShown: true,
-      }}
-    >
+    <MemberStack.Navigator>
       <MemberStack.Screen
         name="MembersList"
         component={MembersScreen}
-        options={{
-          title: "Members",
-        }}
+        options={{ title: "Members" }}
       />
 
       <MemberStack.Screen
         name="MemberDetails"
         component={MemberDetailsScreen}
-        options={{
-          title: "Member Details",
-        }}
+        options={{ title: "Member Details" }}
       />
 
       <MemberStack.Screen
         name="AddMember"
         component={AddMemberScreen}
-        options={{
-          title: "Add Member",
-        }}
+        options={{ title: "Add Member" }}
       />
     </MemberStack.Navigator>
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Packages Stack
-|--------------------------------------------------------------------------
-*/
-
 const PackagesStack = () => {
   return (
-    <PackageStack.Navigator
-      screenOptions={{
-        headerShown: true,
-      }}
-    >
+    <PackageStack.Navigator>
       <PackageStack.Screen
         name="PackagesList"
         component={PackagesScreen}
-        options={{
-          title: "Membership Packages",
-        }}
+        options={{ title: "Membership Packages" }}
       />
 
       <PackageStack.Screen
         name="AddPackage"
         component={AddPackageScreen}
-        options={{
-          title: "Add Package",
-        }}
+        options={{ title: "Add Package" }}
       />
 
       <PackageStack.Screen
         name="EditPackage"
         component={EditPackageScreen}
-        options={{
-          title: "Edit Package",
-        }}
+        options={{ title: "Edit Package" }}
       />
     </PackageStack.Navigator>
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Membership Stack
-|--------------------------------------------------------------------------
-*/
-
 const MembershipsStack = () => {
   return (
-    <MembershipStack.Navigator
-      screenOptions={{
-        headerShown: true,
-      }}
-    >
+    <MembershipStack.Navigator>
       <MembershipStack.Screen
         name="MembershipsList"
         component={MembershipsScreen}
-        options={{
-          title: "Memberships",
-        }}
+        options={{ title: "Memberships" }}
       />
 
       <MembershipStack.Screen
         name="RenewMembership"
         component={RenewMembershipScreen}
-        options={{
-          title: "Renew Membership",
-        }}
+        options={{ title: "Renew Membership" }}
       />
 
       <MembershipStack.Screen
         name="MembershipDetails"
         component={MembershipDetailsScreen}
-        options={{
-          title: "Membership Details",
-        }}
+        options={{ title: "Membership Details" }}
       />
     </MembershipStack.Navigator>
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Trainers Stack
-|--------------------------------------------------------------------------
-*/
-
 const TrainersStack = () => {
   return (
-    <TrainerStack.Navigator
-      screenOptions={{
-        headerShown: true,
-      }}
-    >
+    <TrainerStack.Navigator>
       <TrainerStack.Screen
         name="TrainersList"
         component={TrainersScreen}
-        options={{
-          title: "Trainers",
-        }}
+        options={{ title: "Trainers" }}
       />
 
       <TrainerStack.Screen
         name="AddTrainer"
         component={AddTrainerScreen}
-        options={{
-          title: "Add Trainer",
-        }}
+        options={{ title: "Add Trainer" }}
       />
 
       <TrainerStack.Screen
         name="TrainerDetails"
         component={TrainerDetailsScreen}
-        options={{
-          title: "Trainer Details",
-        }}
+        options={{ title: "Trainer Details" }}
       />
 
       <TrainerStack.Screen
         name="EditTrainer"
         component={EditTrainerScreen}
-        options={{
-          title: "Edit Trainer",
-        }}
+        options={{ title: "Edit Trainer" }}
       />
     </TrainerStack.Navigator>
   );
 };
-
-/*
-|--------------------------------------------------------------------------
-| Workout Plans Stack
-|--------------------------------------------------------------------------
-*/
 
 const WorkoutPlansStack = () => {
   return (
@@ -225,43 +159,54 @@ const WorkoutPlansStack = () => {
       <WorkoutPlanStack.Screen
         name="WorkoutPlansList"
         component={WorkoutPlansScreen}
-        options={{
-          title: "Workout Plans",
-        }}
+        options={{ title: "Workout Plans" }}
       />
 
       <WorkoutPlanStack.Screen
         name="AddWorkoutPlan"
         component={AddWorkoutPlanScreen}
-        options={{
-          title: "Add Workout Plan",
-        }}
+        options={{ title: "Add Workout Plan" }}
       />
 
       <WorkoutPlanStack.Screen
         name="WorkoutPlanDetails"
         component={WorkoutPlanDetailsScreen}
-        options={{
-          title: "Workout Plan Details",
-        }}
+        options={{ title: "Workout Plan Details" }}
       />
 
       <WorkoutPlanStack.Screen
         name="EditWorkoutPlan"
         component={EditWorkoutPlanScreen}
-        options={{
-          title: "Edit Workout Plan",
-        }}
+        options={{ title: "Edit Workout Plan" }}
       />
     </WorkoutPlanStack.Navigator>
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| Custom Drawer
-|--------------------------------------------------------------------------
-*/
+const AttendanceStack = createNativeStackNavigator();
+
+const AttendanceStackScreen = () => {
+  return (
+    <AttendanceStack.Navigator>
+      <AttendanceStack.Screen
+        name="AttendanceList"
+        component={AttendanceScreen}
+        options={{
+          title: "Attendance",
+        }}
+      />
+
+      <AttendanceStack.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{
+          title: "QR Scanner",
+          headerShown: false,
+        }}
+      />
+    </AttendanceStack.Navigator>
+  );
+};
 
 const CustomDrawerContent = (props) => {
   return (
@@ -269,37 +214,26 @@ const CustomDrawerContent = (props) => {
       {...props}
       contentContainerStyle={styles.drawerContainer}
     >
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.logo}>
           <Text style={styles.logoText}>G</Text>
         </View>
 
         <Text style={styles.appName}>GYM MANAGEMENT</Text>
-
         <Text style={styles.adminText}>Admin Panel</Text>
       </View>
 
-      {/* Menu */}
       <View style={styles.menuContainer}>
         <DrawerItemList {...props} />
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>Gym Management System</Text>
-
         <Text style={styles.versionText}>Version 1.0.0</Text>
       </View>
     </DrawerContentScrollView>
   );
 };
-
-/*
-|--------------------------------------------------------------------------
-| Admin Drawer Navigator
-|--------------------------------------------------------------------------
-*/
 
 const AdminTabNavigator = () => {
   return (
@@ -316,7 +250,6 @@ const AdminTabNavigator = () => {
         },
 
         drawerActiveTintColor: "#111",
-
         drawerInactiveTintColor: "#666",
 
         drawerActiveBackgroundColor: "#f0f0f0",
@@ -338,7 +271,6 @@ const AdminTabNavigator = () => {
         },
       }}
     >
-      {/* Dashboard */}
       <Drawer.Screen
         name="Dashboard"
         component={AdminDashboardScreen}
@@ -348,69 +280,62 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* Members */}
       <Drawer.Screen
         name="Members"
         component={MembersStack}
         options={{
           title: "Members",
           drawerLabel: "Members",
-          headerShown: false,
         }}
       />
 
-      {/* Packages */}
       <Drawer.Screen
         name="Packages"
         component={PackagesStack}
         options={{
-          title: "Membership Packages",
+          title: "Packages",
           drawerLabel: "Membership Packages",
-          headerShown: false,
         }}
       />
 
-      {/* Memberships */}
       <Drawer.Screen
         name="Memberships"
         component={MembershipsStack}
         options={{
           title: "Memberships",
           drawerLabel: "Memberships",
-          headerShown: false,
         }}
       />
 
-      {/* Trainers */}
       <Drawer.Screen
         name="Trainers"
         component={TrainersStack}
         options={{
           title: "Trainers",
           drawerLabel: "Trainers",
-          headerShown: false,
         }}
       />
 
-      {/* Workout Plans */}
       <Drawer.Screen
         name="WorkoutPlans"
         component={WorkoutPlansStack}
         options={{
           title: "Workout Plans",
           drawerLabel: "Workout Plans",
-          headerShown: false,
         }}
       />
+
+      <Drawer.Screen 
+      name="Attendance" component={AttendanceStackScreen}
+      options={{
+        title: "Attendance",
+        drawerLabel: "Attendance",
+      }}
+       />
+       
     </Drawer.Navigator>
   );
 };
-
-/*
-|--------------------------------------------------------------------------
-| Styles
-|--------------------------------------------------------------------------
-*/
 
 const styles = StyleSheet.create({
   drawerContainer: {
@@ -421,7 +346,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 35,
     paddingBottom: 25,
-
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
@@ -429,14 +353,10 @@ const styles = StyleSheet.create({
   logo: {
     width: 48,
     height: 48,
-
     borderRadius: 12,
-
     backgroundColor: "#111",
-
     justifyContent: "center",
     alignItems: "center",
-
     marginBottom: 12,
   },
 
@@ -464,9 +384,7 @@ const styles = StyleSheet.create({
 
   footer: {
     marginTop: "auto",
-
     padding: 20,
-
     borderTopWidth: 1,
     borderTopColor: "#eee",
   },
