@@ -20,14 +20,21 @@ import PackagesScreen from "../screens/admin/package/PackagesScreen";
 import AddPackageScreen from "../screens/admin/package/AddPackageScreen";
 import EditPackageScreen from "../screens/admin/package/EditPackageScreen";
 
+// Trainer screens
+import TrainersScreen from "../screens/admin/trainer/TrainersScreen";
+import AddTrainerScreen from "../screens/admin/trainer/AddTrainerScreen";
+import TrainerDetailsScreen from "../screens/admin/trainer/TrainerDetailsScreen";
+import EditTrainerScreen from "../screens/admin/trainer/EditTrainerScreen";
+
 const Tab = createBottomTabNavigator();
 
 const MemberStack = createNativeStackNavigator();
-const MembershipStack = createNativeStackNavigator();
 const PackageStack = createNativeStackNavigator();
+const MembershipStack = createNativeStackNavigator();
+const TrainerStack = createNativeStackNavigator();
 
 /* =========================
-   MEMBER STACK
+   MEMBERS STACK
 ========================= */
 
 const MembersStack = () => {
@@ -36,66 +43,26 @@ const MembersStack = () => {
       <MemberStack.Screen
         name="MembersList"
         component={MembersScreen}
-        options={{
-          title: "Members",
-        }}
-      />
-
-      <MemberStack.Screen
-        name="AddMember"
-        component={AddMemberScreen}
-        options={{
-          title: "Add Member",
-        }}
+        options={{ title: "Members" }}
       />
 
       <MemberStack.Screen
         name="MemberDetails"
         component={MemberDetailsScreen}
-        options={{
-          title: "Member Details",
-        }}
+        options={{ title: "Member Details" }}
+      />
+
+      <MemberStack.Screen
+        name="AddMember"
+        component={AddMemberScreen}
+        options={{ title: "Add Member" }}
       />
     </MemberStack.Navigator>
   );
 };
 
 /* =========================
-   MEMBERSHIP STACK
-========================= */
-
-const MembershipsStack = () => {
-  return (
-    <MembershipStack.Navigator>
-      <MembershipStack.Screen
-        name="MembershipsList"
-        component={MembershipsScreen}
-        options={{
-          title: "Memberships",
-        }}
-      />
-
-      <MembershipStack.Screen
-        name="MembershipDetails"
-        component={MembershipDetailsScreen}
-        options={{
-          title: "Membership Details",
-        }}
-      />
-
-      <MembershipStack.Screen
-        name="RenewMembership"
-        component={RenewMembershipScreen}
-        options={{
-          title: "Renew Membership",
-        }}
-      />
-    </MembershipStack.Navigator>
-  );
-};
-
-/* =========================
-   PACKAGE STACK
+   PACKAGES STACK
 ========================= */
 
 const PackagesStack = () => {
@@ -104,32 +71,88 @@ const PackagesStack = () => {
       <PackageStack.Screen
         name="PackagesList"
         component={PackagesScreen}
-        options={{
-          title: "Membership Packages",
-        }}
+        options={{ title: "Membership Packages" }}
       />
 
       <PackageStack.Screen
         name="AddPackage"
         component={AddPackageScreen}
-        options={{
-          title: "Add Package",
-        }}
+        options={{ title: "Add Package" }}
       />
 
       <PackageStack.Screen
         name="EditPackage"
         component={EditPackageScreen}
-        options={{
-          title: "Edit Package",
-        }}
+        options={{ title: "Edit Package" }}
       />
     </PackageStack.Navigator>
   );
 };
 
 /* =========================
-   ADMIN TAB NAVIGATOR
+   MEMBERSHIPS STACK
+========================= */
+
+const MembershipsStack = () => {
+  return (
+    <MembershipStack.Navigator>
+      <MembershipStack.Screen
+        name="MembershipsList"
+        component={MembershipsScreen}
+        options={{ title: "Memberships" }}
+      />
+
+      <MembershipStack.Screen
+        name="RenewMembership"
+        component={RenewMembershipScreen}
+        options={{ title: "Renew Membership" }}
+      />
+
+      <MembershipStack.Screen
+        name="MembershipDetails"
+        component={MembershipDetailsScreen}
+        options={{ title: "Membership Details" }}
+      />
+    </MembershipStack.Navigator>
+  );
+};
+
+/* =========================
+   TRAINERS STACK
+========================= */
+
+const TrainersStack = () => {
+  return (
+    <TrainerStack.Navigator>
+      <TrainerStack.Screen
+        name="TrainersList"
+        component={TrainersScreen}
+        options={{ title: "Trainers" }}
+      />
+
+      <TrainerStack.Screen
+        name="AddTrainer"
+        component={AddTrainerScreen}
+        options={{ title: "Add Trainer" }}
+      />
+
+      <TrainerStack.Screen
+        name="TrainerDetails"
+        component={TrainerDetailsScreen}
+        options={{ title: "Trainer Details" }}
+      />
+
+      <TrainerStack.Screen
+        name="EditTrainer"
+        component={EditTrainerScreen}
+        options={{ title: "Edit Trainer" }}
+      />
+    </TrainerStack.Navigator>
+  );
+};
+
+/* =========================
+   ADMIN TABS
 ========================= */
 
 const AdminTabNavigator = () => {
@@ -137,56 +160,33 @@ const AdminTabNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-
-        tabBarActiveTintColor: "#111111",
-        tabBarInactiveTintColor: "#888888",
-
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-        },
-
-        tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 5,
-        },
+        tabBarActiveTintColor: "#111",
+        tabBarInactiveTintColor: "#888",
       }}
     >
-      {/* Dashboard */}
       <Tab.Screen
         name="Dashboard"
         component={AdminDashboardScreen}
-        options={{
-          title: "Dashboard",
-        }}
       />
 
-      {/* Members */}
       <Tab.Screen
         name="Members"
         component={MembersStack}
-        options={{
-          title: "Members",
-        }}
       />
 
-      {/* Memberships */}
-      <Tab.Screen
-        name="Memberships"
-        component={MembershipsStack}
-        options={{
-          title: "Memberships",
-        }}
-      />
-
-      {/* Packages */}
       <Tab.Screen
         name="Packages"
         component={PackagesStack}
-        options={{
-          title: "Packages",
-        }}
+      />
+
+      <Tab.Screen
+        name="Memberships"
+        component={MembershipsStack}
+      />
+
+      <Tab.Screen
+        name="Trainers"
+        component={TrainersStack}
       />
     </Tab.Navigator>
   );
