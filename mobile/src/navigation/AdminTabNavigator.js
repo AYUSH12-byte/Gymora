@@ -10,6 +10,7 @@ import AddMemberScreen from "../screens/admin/AddMemberScreen";
 
 import PackagesScreen from "../screens/admin/PackagesScreen";
 import AddPackageScreen from "../screens/admin/AddPackageScreen";
+import EditPackageScreen from "../screens/admin/EditPackageScreen";
 
 const Tab = createBottomTabNavigator();
 const MemberStack = createNativeStackNavigator();
@@ -53,6 +54,13 @@ const PackagesStack = () => {
         component={AddPackageScreen}
         options={{ title: "Add Package" }}
       />
+
+      <PackageStack.Screen
+        name="EditPackage"
+        component={EditPackageScreen}
+        options={{ title: "Edit Package" }}
+      />
+
     </PackageStack.Navigator>
   );
 };
@@ -66,20 +74,11 @@ const AdminTabNavigator = () => {
         tabBarInactiveTintColor: "#888",
       }}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={AdminDashboardScreen}
-      />
+      <Tab.Screen name="Dashboard" component={AdminDashboardScreen} />
 
-      <Tab.Screen
-        name="Members"
-        component={MembersStack}
-      />
+      <Tab.Screen name="Members" component={MembersStack} />
 
-      <Tab.Screen
-        name="Packages"
-        component={PackagesStack}
-      />
+      <Tab.Screen name="Packages" component={PackagesStack} />
     </Tab.Navigator>
   );
 };

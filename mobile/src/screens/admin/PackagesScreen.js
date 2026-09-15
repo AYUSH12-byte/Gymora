@@ -17,8 +17,10 @@ const PackagesScreen = ({ navigation }) => {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
 
+  // LOAD PACKAGES
   const loadPackages = async () => {
     try {
       setError("");
@@ -27,39 +29,39 @@ const PackagesScreen = ({ navigation }) => {
 
       console.log("PACKAGES RESPONSE:", response.data);
 
+      const responseData = response.data;
+
       const data =
-        response.data.packages ||
-        response.data.data ||
+        responseData?.packages ||
+        responseData?.data?.packages ||
+        responseData?.data ||
         [];
 
       setPackages(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(
-        "Packages error:",
-        error.response?.data || error.message
-      );
+      console.log("Packages error:", error.response?.data || error.message);
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to load packages"
-      );
+      setError(error.response?.data?.message || "Failed to load packages");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // LOAD WHEN SCREEN FOCUSES
   useFocusEffect(
     useCallback(() => {
       loadPackages();
-    }, [])
+    }, []),
   );
 
+  // REFRESH
   const handleRefresh = () => {
     setRefreshing(true);
     loadPackages();
   };
 
+  // DELETE PACKAGE
   const handleDelete = (item) => {
     Alert.alert(
       "Delete Package",
@@ -74,44 +76,60 @@ const PackagesScreen = ({ navigation }) => {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.delete(`/packages/${item._id}`);
+              setDeletingId(item._id);
 
-              Alert.alert(
-                "Success",
-                "Package deleted successfully"
+              const response = await api.delete(`/packages/${item._id}`);
+
+              console.log("DELETE PACKAGE RESPONSE:", response.data);
+
+              if (response.data?.success === false) {
+                throw new Error(
+                  response.data?.message || "Failed to delete package",
+                );
+              }
+
+              Alert.alert("Success", "Package deleted successfully.");
+
+              await loadPackages();
+            } catch (error) {
+              console.log(
+                "Delete package error:",
+                error.response?.data || error.message,
               );
 
-              loadPackages();
-            } catch (error) {
               Alert.alert(
                 "Error",
                 error.response?.data?.message ||
-                  "Failed to delete package"
+                  error.message ||
+                  "Failed to delete package",
               );
+            } finally {
+              setDeletingId(null);
             }
           },
         },
-      ]
+      ],
     );
   };
 
+  // RENDER PACKAGE
   const renderPackage = ({ item }) => {
-    const discountedPrice =
-      Number(item.price || 0) -
-      (Number(item.price || 0) *
-        Number(item.discount || 0)) /
-        100;
+    const price = Number(item.price || 0);
+    const discount = Number(item.discount || 0);
+
+    const discountedPrice = price - (price * discount) / 100;
+
+    const isActive = item.isActive !== false;
 
     return (
       <View style={styles.card}>
+        {/* CARD HEADER */}
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
-            <Text style={styles.name}>
-              {item.name}
-            </Text>
+            <Text style={styles.name}>{item.name || "Unnamed Package"}</Text>
 
             <Text style={styles.description}>
-              {item.description || "No description"}
+              {item.description || "No description available"}
             </Text>
           </View>
 
@@ -119,9 +137,7 @@ const PackagesScreen = ({ navigation }) => {
             style={[
               styles.statusBadge,
               {
-                backgroundColor: item.isActive
-                  ? "#dcfce7"
-                  : "#fee2e2",
+                backgroundColor: isActive ? "#dcfce7" : "#fee2e2",
               },
             ]}
           >
@@ -129,134 +145,127 @@ const PackagesScreen = ({ navigation }) => {
               style={[
                 styles.statusText,
                 {
-                  color: item.isActive
-                    ? "#166534"
-                    : "#991b1b",
+                  color: isActive ? "#166534" : "#991b1b",
                 },
               ]}
             >
-              {item.isActive ? "Active" : "Inactive"}
+              {isActive ? "Active" : "Inactive"}
             </Text>
           </View>
         </View>
 
+        {/* PACKAGE INFORMATION */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Text style={styles.label}>
-              Duration
-            </Text>
+            <Text style={styles.label}>Duration</Text>
 
             <Text style={styles.value}>
-              {item.duration} {item.durationUnit}
+              {item.duration || 0} {item.durationUnit || "months"}
             </Text>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.label}>
-              Price
-            </Text>
+            <Text style={styles.label}>Original Price</Text>
 
-            <Text style={styles.price}>
-              Rs.{" "}
-              {Number(
-                item.price || 0
-              ).toLocaleString()}
-            </Text>
+            <Text style={styles.price}>Rs. {price.toLocaleString()}</Text>
           </View>
         </View>
 
-        {Number(item.discount || 0) > 0 && (
+        {/* DISCOUNT */}
+        {discount > 0 ? (
           <View style={styles.discountBox}>
             <View>
-              <Text style={styles.discountText}>
-                {item.discount}% OFF
-              </Text>
+              <Text style={styles.discountText}>{discount}% OFF</Text>
 
-              <Text style={styles.discountLabel}>
-                Discount
-              </Text>
+              <Text style={styles.discountLabel}>Discount</Text>
             </View>
 
-            <View>
-              <Text style={styles.discountLabel}>
-                Final Price
-              </Text>
+            <View style={styles.finalPriceContainer}>
+              <Text style={styles.discountLabel}>Final Price</Text>
 
               <Text style={styles.finalPrice}>
-                Rs.{" "}
-                {Number(
-                  discountedPrice
-                ).toLocaleString()}
+                Rs. {discountedPrice.toLocaleString()}
               </Text>
             </View>
+          </View>
+        ) : (
+          <View style={styles.noDiscountBox}>
+            <Text style={styles.noDiscountText}>No discount</Text>
           </View>
         )}
 
+        {/* ACTION BUTTONS */}
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.editButton}
+            activeOpacity={0.8}
             onPress={() =>
               navigation.navigate("EditPackage", {
                 packageData: item,
+                packageId: item._id,
               })
             }
           >
-            <Text style={styles.editButtonText}>
-              Edit
-            </Text>
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.deleteButton}
+            style={[
+              styles.deleteButton,
+              deletingId === item._id && styles.deleteButtonDisabled,
+            ]}
+            activeOpacity={0.8}
+            disabled={deletingId === item._id}
             onPress={() => handleDelete(item)}
           >
-            <Text style={styles.deleteButtonText}>
-              Delete
-            </Text>
+            {deletingId === item._id ? (
+              <ActivityIndicator size="small" color="#b91c1c" />
+            ) : (
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
     );
   };
 
+  // LOADING
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#111" />
 
-        <Text style={styles.loadingText}>
-          Loading packages...
-        </Text>
+        <Text style={styles.loadingText}>Loading packages...</Text>
       </View>
     );
   }
 
+  // ERROR
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>
-          {error}
-        </Text>
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+
+        <Text style={styles.error}>{error}</Text>
 
         <TouchableOpacity
           style={styles.retryButton}
+          activeOpacity={0.8}
           onPress={loadPackages}
         >
-          <Text style={styles.retryText}>
-            Retry
-          </Text>
+          <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // MAIN SCREEN
   return (
     <View style={styles.container}>
+      {/* HEADER */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>
-            Membership Packages
-          </Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.title}>Membership Packages</Text>
 
           <Text style={styles.subtitle}>
             {packages.length} package
@@ -266,51 +275,41 @@ const PackagesScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() =>
-            navigation.navigate("AddPackage")
-          }
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("AddPackage")}
         >
-          <Text style={styles.addButtonText}>
-            + Add
-          </Text>
+          <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
       </View>
 
+      {/* PACKAGE LIST */}
       <FlatList
         data={packages}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => item?._id || index.toString()}
         renderItem={renderPackage}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={
-          packages.length === 0
-            ? styles.emptyContainer
-            : styles.list
+          packages.length === 0 ? styles.emptyContainer : styles.list
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>
-              No Packages Found
-            </Text>
+            <Text style={styles.emptyIcon}>📦</Text>
+
+            <Text style={styles.emptyTitle}>No Packages Found</Text>
 
             <Text style={styles.empty}>
-              Create your first membership package.
+              Create your first membership package to get started.
             </Text>
 
             <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() =>
-                navigation.navigate("AddPackage")
-              }
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate("AddPackage")}
             >
-              <Text style={styles.emptyButtonText}>
-                + Add Package
-              </Text>
+              <Text style={styles.emptyButtonText}>+ Add Package</Text>
             </TouchableOpacity>
           </View>
         }
@@ -320,6 +319,8 @@ const PackagesScreen = ({ navigation }) => {
 };
 
 export default PackagesScreen;
+
+// STYLES
 
 const styles = StyleSheet.create({
   container: {
@@ -335,6 +336,13 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
     backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  headerTitleContainer: {
+    flex: 1,
+    paddingRight: 10,
   },
 
   title: {
@@ -372,18 +380,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: "#f5f6f8",
   },
 
   loadingText: {
     marginTop: 10,
     color: "#666",
+    fontSize: 14,
+  },
+
+  errorTitle: {
+    fontSize: 19,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
   },
 
   error: {
     color: "#dc2626",
-    fontSize: 16,
+    fontSize: 15,
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 18,
+    lineHeight: 21,
   },
 
   retryButton: {
@@ -403,7 +421,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
+
     elevation: 2,
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
 
   cardHeader: {
@@ -427,6 +454,7 @@ const styles = StyleSheet.create({
     color: "#777",
     marginTop: 6,
     lineHeight: 19,
+    fontSize: 13,
   },
 
   statusBadge: {
@@ -490,10 +518,26 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
 
+  finalPriceContainer: {
+    alignItems: "flex-end",
+  },
+
   finalPrice: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#111",
+  },
+
+  noDiscountBox: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+
+  noDiscountText: {
+    color: "#888",
+    fontSize: 12,
   },
 
   actions: {
@@ -511,11 +555,13 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
   },
 
   editButtonText: {
     color: "#111",
     fontWeight: "600",
+    fontSize: 14,
   },
 
   deleteButton: {
@@ -524,11 +570,18 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 42,
+  },
+
+  deleteButtonDisabled: {
+    opacity: 0.6,
   },
 
   deleteButtonText: {
     color: "#b91c1c",
     fontWeight: "600",
+    fontSize: 14,
   },
 
   emptyContainer: {
@@ -540,6 +593,12 @@ const styles = StyleSheet.create({
 
   emptyBox: {
     alignItems: "center",
+    maxWidth: 300,
+  },
+
+  emptyIcon: {
+    fontSize: 42,
+    marginBottom: 12,
   },
 
   emptyTitle: {
@@ -553,6 +612,7 @@ const styles = StyleSheet.create({
     color: "#888",
     textAlign: "center",
     marginBottom: 18,
+    lineHeight: 20,
   },
 
   emptyButton: {
