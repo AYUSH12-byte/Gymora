@@ -26,12 +26,18 @@ import AddTrainerScreen from "../screens/admin/trainer/AddTrainerScreen";
 import TrainerDetailsScreen from "../screens/admin/trainer/TrainerDetailsScreen";
 import EditTrainerScreen from "../screens/admin/trainer/EditTrainerScreen";
 
+// Workout screens
+import WorkoutPlansScreen from "../screens/admin/workout/WorkoutPlansScreen";
+import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen";
+import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
+
 const Tab = createBottomTabNavigator();
 
 const MemberStack = createNativeStackNavigator();
 const PackageStack = createNativeStackNavigator();
 const MembershipStack = createNativeStackNavigator();
 const TrainerStack = createNativeStackNavigator();
+const WorkoutPlanStack = createNativeStackNavigator();
 
 /* =========================
    MEMBERS STACK
@@ -152,6 +158,40 @@ const TrainersStack = () => {
 };
 
 /* =========================
+   WORKOUT PLAN STACK
+========================= */
+
+const WorkoutPlansStack = () => {
+  return (
+    <WorkoutPlanStack.Navigator>
+      <WorkoutPlanStack.Screen
+        name="WorkoutPlansList"
+        component={WorkoutPlansScreen}
+        options={{ title: "Workout Plans" }}
+      />
+
+      <WorkoutPlanStack.Screen
+        name="AddWorkoutPlan"
+        component={AddWorkoutPlanScreen}
+        options={{ title: "Add Workout Plan" }}
+      />
+
+      <WorkoutPlanStack.Screen
+        name="WorkoutPlanDetails"
+        component={WorkoutPlanDetailsScreen}
+        options={{ title: "Workout Plan Details" }}
+      />
+
+      <WorkoutPlanStack.Screen
+        name="EditWorkoutPlan"
+        component={EditWorkoutPlanScreen}
+        options={{ title: "Edit Workout Plan" }}
+      />
+    </WorkoutPlanStack.Navigator>
+  );
+};
+
+/* =========================
    ADMIN TABS
 ========================= */
 
@@ -187,6 +227,11 @@ const AdminTabNavigator = () => {
       <Tab.Screen
         name="Trainers"
         component={TrainersStack}
+      />
+
+      <Tab.Screen
+        name="Workout Plans"
+        component={WorkoutPlansStack}
       />
     </Tab.Navigator>
   );
