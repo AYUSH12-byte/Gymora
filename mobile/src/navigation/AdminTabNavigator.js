@@ -18,6 +18,8 @@ import EditPackageScreen from "../screens/admin/EditPackageScreen";
 // Memberships
 import MembershipsScreen from "../screens/admin/MembershipsScreen";
 import RenewMembershipScreen from "../screens/admin/RenewMembershipScreen";
+import MembershipDetailsScreen from "../screens/admin/MembershipDetailsScreen";
+
 
 const Tab = createBottomTabNavigator();
 
@@ -107,6 +109,14 @@ const MembershipsStack = () => {
         component={RenewMembershipScreen}
         options={{
           title: "Renew Membership",
+        }}
+      />
+
+      <MembershipStack.Screen
+        name="MembershipDetails"
+        component={MembershipDetailsScreen}
+        options={{
+          title: "Membership Details",
         }}
       />
     </MembershipStack.Navigator>
