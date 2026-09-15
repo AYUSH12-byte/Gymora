@@ -3,13 +3,17 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
+
 import MembersScreen from "../screens/admin/MembersScreen";
 import MemberDetailsScreen from "../screens/admin/MemberDetailsScreen";
 import AddMemberScreen from "../screens/admin/AddMemberScreen";
+
 import PackagesScreen from "../screens/admin/PackagesScreen";
+import AddPackageScreen from "../screens/admin/AddPackageScreen";
 
 const Tab = createBottomTabNavigator();
 const MemberStack = createNativeStackNavigator();
+const PackageStack = createNativeStackNavigator();
 
 const MembersStack = () => {
   return (
@@ -35,6 +39,24 @@ const MembersStack = () => {
   );
 };
 
+const PackagesStack = () => {
+  return (
+    <PackageStack.Navigator>
+      <PackageStack.Screen
+        name="PackagesList"
+        component={PackagesScreen}
+        options={{ title: "Membership Packages" }}
+      />
+
+      <PackageStack.Screen
+        name="AddPackage"
+        component={AddPackageScreen}
+        options={{ title: "Add Package" }}
+      />
+    </PackageStack.Navigator>
+  );
+};
+
 const AdminTabNavigator = () => {
   return (
     <Tab.Navigator
@@ -44,9 +66,20 @@ const AdminTabNavigator = () => {
         tabBarInactiveTintColor: "#888",
       }}
     >
-      <Tab.Screen name="Dashboard" component={AdminDashboardScreen} />
-      <Tab.Screen name="Packages" component={PackagesScreen} />
-      <Tab.Screen name="Members" component={MembersStack} />
+      <Tab.Screen
+        name="Dashboard"
+        component={AdminDashboardScreen}
+      />
+
+      <Tab.Screen
+        name="Members"
+        component={MembersStack}
+      />
+
+      <Tab.Screen
+        name="Packages"
+        component={PackagesStack}
+      />
     </Tab.Navigator>
   );
 };
