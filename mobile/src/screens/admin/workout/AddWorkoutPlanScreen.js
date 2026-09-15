@@ -11,49 +11,40 @@ import {
 } from "react-native";
 
 import api from "../../../services/api";
+import SelectPersonModal from "../../../components/SelectPersonModal";
 
-const AddWorkoutPlanScreen = ({
-  navigation,
-}) => {
+const AddWorkoutPlanScreen = ({ navigation }) => {
   const [name, setName] = useState("");
-  const [description, setDescription] =
-    useState("");
-  const [difficulty, setDifficulty] =
-    useState("beginner");
-  const [goal, setGoal] =
-    useState("fitness");
-
-  const [memberId, setMemberId] =
-    useState("");
-  const [trainerId, setTrainerId] =
-    useState("");
-
-  const [startDate, setStartDate] =
-    useState("");
-  const [endDate, setEndDate] =
-    useState("");
+  const [description, setDescription] = useState("");
+  const [difficulty, setDifficulty] = useState("beginner");
+  const [goal, setGoal] = useState("fitness");
 
   const [members, setMembers] = useState([]);
   const [trainers, setTrainers] = useState([]);
 
-  const [exercises, setExercises] =
-    useState([]);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [selectedTrainer, setSelectedTrainer] = useState(null);
 
-  const [exerciseName, setExerciseName] =
-    useState("");
+  const [memberModalVisible, setMemberModalVisible] =
+    useState(false);
+
+  const [trainerModalVisible, setTrainerModalVisible] =
+    useState(false);
+
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  const [exercises, setExercises] = useState([]);
+
+  const [exerciseName, setExerciseName] = useState("");
   const [sets, setSets] = useState("");
   const [reps, setReps] = useState("");
-  const [duration, setDuration] =
-    useState("");
-  const [restTime, setRestTime] =
-    useState("60");
-  const [exerciseNotes, setExerciseNotes] =
-    useState("");
+  const [duration, setDuration] = useState("");
+  const [restTime, setRestTime] = useState("60");
+  const [exerciseNotes, setExerciseNotes] = useState("");
 
-  const [loadingData, setLoadingData] =
-    useState(true);
-  const [saving, setSaving] =
-    useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadFormData();
@@ -61,6 +52,8 @@ const AddWorkoutPlanScreen = ({
 
   const loadFormData = async () => {
     try {
+      setLoadingData(true);
+
       const [membersResponse, trainersResponse] =
         await Promise.all([
           api.get("/members"),
@@ -89,6 +82,11 @@ const AddWorkoutPlanScreen = ({
           : []
       );
     } catch (error) {
+      console.log(
+        "Load form data error:",
+        error.response?.data || error.message
+      );
+
       Alert.alert(
         "Error",
         error.response?.data?.message ||
@@ -97,6 +95,38 @@ const AddWorkoutPlanScreen = ({
     } finally {
       setLoadingData(false);
     }
+  };
+
+  const getMemberName = (member) => {
+    return (
+      member.user?.name ||
+      member.name ||
+      "Unknown Member"
+    );
+  };
+
+  const getMemberEmail = (member) => {
+    return (
+      member.user?.email ||
+      member.email ||
+      "No email"
+    );
+  };
+
+  const getTrainerName = (trainer) => {
+    return (
+      trainer.user?.name ||
+      trainer.name ||
+      "Unknown Trainer"
+    );
+  };
+
+  const getTrainerEmail = (trainer) => {
+    return (
+      trainer.user?.email ||
+      trainer.email ||
+      "No email"
+    );
   };
 
   const addExercise = () => {
@@ -137,8 +167,8 @@ const AddWorkoutPlanScreen = ({
       notes: exerciseNotes.trim(),
     };
 
-    setExercises([
-      ...exercises,
+    setExercises((current) => [
+      ...current,
       newExercise,
     ]);
 
@@ -151,8 +181,8 @@ const AddWorkoutPlanScreen = ({
   };
 
   const removeExercise = (index) => {
-    setExercises(
-      exercises.filter(
+    setExercises((current) =>
+      current.filter(
         (_, exerciseIndex) =>
           exerciseIndex !== index
       )
@@ -168,18 +198,18 @@ const AddWorkoutPlanScreen = ({
       return;
     }
 
-    if (!memberId) {
+    if (!selectedMember) {
       Alert.alert(
         "Validation",
-        "Please enter a member ID."
+        "Please select a member."
       );
       return;
     }
 
-    if (!trainerId) {
+    if (!selectedTrainer) {
       Alert.alert(
         "Validation",
-        "Please enter a trainer ID."
+        "Please select a trainer."
       );
       return;
     }
@@ -192,6 +222,18 @@ const AddWorkoutPlanScreen = ({
       return;
     }
 
+    if (
+      startDate.trim() &&
+      endDate.trim() &&
+      new Date(endDate) < new Date(startDate)
+    ) {
+      Alert.alert(
+        "Validation",
+        "End date cannot be before start date."
+      );
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -199,17 +241,21 @@ const AddWorkoutPlanScreen = ({
         "/workout-plans",
         {
           name: name.trim(),
-          description:
-            description.trim(),
+          description: description.trim(),
           difficulty,
           goal,
-          member: memberId.trim(),
-          trainer: trainerId.trim(),
+
+          member: selectedMember._id,
+          trainer: selectedTrainer._id,
+
           exercises,
+
           startDate:
             startDate.trim() || undefined,
+
           endDate:
             endDate.trim() || undefined,
+
           isActive: true,
         }
       );
@@ -225,6 +271,12 @@ const AddWorkoutPlanScreen = ({
                 navigation.goBack(),
             },
           ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          response.data.message ||
+            "Failed to create workout plan"
         );
       }
     } catch (error) {
@@ -259,298 +311,381 @@ const AddWorkoutPlanScreen = ({
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>
-        Add Workout Plan
-      </Text>
-
-      <Text style={styles.label}>
-        Plan Name *
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="e.g. Weight Loss Plan"
-        value={name}
-        onChangeText={setName}
-      />
-
-      <Text style={styles.label}>
-        Description
-      </Text>
-
-      <TextInput
-        style={[
-          styles.input,
-          styles.textArea,
-        ]}
-        placeholder="Plan description..."
-        multiline
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      <Text style={styles.label}>
-        Difficulty
-      </Text>
-
-      <View style={styles.optionRow}>
-        {[
-          "beginner",
-          "intermediate",
-          "advanced",
-        ].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.option,
-              difficulty === item &&
-                styles.selectedOption,
-            ]}
-            onPress={() =>
-              setDifficulty(item)
-            }
-          >
-            <Text
-              style={[
-                styles.optionText,
-                difficulty === item &&
-                  styles.selectedOptionText,
-              ]}
-            >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>
-        Goal
-      </Text>
-
-      <View style={styles.optionWrap}>
-        {[
-          "weight_loss",
-          "muscle_gain",
-          "strength",
-          "fitness",
-          "endurance",
-        ].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.option,
-              goal === item &&
-                styles.selectedOption,
-            ]}
-            onPress={() =>
-              setGoal(item)
-            }
-          >
-            <Text
-              style={[
-                styles.optionText,
-                goal === item &&
-                  styles.selectedOptionText,
-              ]}
-            >
-              {item.replace("_", " ")}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionTitle}>
-        Assignment
-      </Text>
-
-      <Text style={styles.label}>
-        Member ID *
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Paste Member ObjectId"
-        value={memberId}
-        onChangeText={setMemberId}
-      />
-
-      <Text style={styles.helper}>
-        You can copy the member ID from the
-        member details screen.
-      </Text>
-
-      <Text style={styles.label}>
-        Trainer ID *
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Paste Trainer ObjectId"
-        value={trainerId}
-        onChangeText={setTrainerId}
-      />
-
-      <Text style={styles.helper}>
-        You can copy the trainer ID from the
-        trainer details screen.
-      </Text>
-
-      <Text style={styles.label}>
-        Start Date
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD"
-        value={startDate}
-        onChangeText={setStartDate}
-      />
-
-      <Text style={styles.label}>
-        End Date
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD"
-        value={endDate}
-        onChangeText={setEndDate}
-      />
-
-      <Text style={styles.sectionTitle}>
-        Exercises
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Exercise name"
-        value={exerciseName}
-        onChangeText={setExerciseName}
-      />
-
-      <View style={styles.twoColumns}>
-        <TextInput
-          style={[
-            styles.input,
-            styles.columnInput,
-          ]}
-          placeholder="Sets"
-          keyboardType="numeric"
-          value={sets}
-          onChangeText={setSets}
-        />
-
-        <TextInput
-          style={[
-            styles.input,
-            styles.columnInput,
-          ]}
-          placeholder="Reps"
-          keyboardType="numeric"
-          value={reps}
-          onChangeText={setReps}
-        />
-      </View>
-
-      <View style={styles.twoColumns}>
-        <TextInput
-          style={[
-            styles.input,
-            styles.columnInput,
-          ]}
-          placeholder="Duration min"
-          keyboardType="numeric"
-          value={duration}
-          onChangeText={setDuration}
-        />
-
-        <TextInput
-          style={[
-            styles.input,
-            styles.columnInput,
-          ]}
-          placeholder="Rest seconds"
-          keyboardType="numeric"
-          value={restTime}
-          onChangeText={setRestTime}
-        />
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Exercise notes"
-        value={exerciseNotes}
-        onChangeText={setExerciseNotes}
-      />
-
-      <TouchableOpacity
-        style={styles.addExerciseButton}
-        onPress={addExercise}
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.addExerciseText}>
-          + Add Exercise
+        <Text style={styles.title}>
+          Add Workout Plan
         </Text>
-      </TouchableOpacity>
 
-      {exercises.map((exercise, index) => (
-        <View
-          key={`${exercise.name}-${index}`}
-          style={styles.exerciseCard}
+        <Text style={styles.label}>
+          Plan Name *
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="e.g. Weight Loss Plan"
+          value={name}
+          onChangeText={setName}
+        />
+
+        <Text style={styles.label}>
+          Description
+        </Text>
+
+        <TextInput
+          style={[
+            styles.input,
+            styles.textArea,
+          ]}
+          placeholder="Plan description..."
+          multiline
+          value={description}
+          onChangeText={setDescription}
+        />
+
+        <Text style={styles.label}>
+          Difficulty
+        </Text>
+
+        <View style={styles.optionRow}>
+          {[
+            "beginner",
+            "intermediate",
+            "advanced",
+          ].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.option,
+                difficulty === item &&
+                  styles.selectedOption,
+              ]}
+              onPress={() =>
+                setDifficulty(item)
+              }
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  difficulty === item &&
+                    styles.selectedOptionText,
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>
+          Goal
+        </Text>
+
+        <View style={styles.optionWrap}>
+          {[
+            "weight_loss",
+            "muscle_gain",
+            "strength",
+            "fitness",
+            "endurance",
+          ].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.option,
+                goal === item &&
+                  styles.selectedOption,
+              ]}
+              onPress={() =>
+                setGoal(item)
+              }
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  goal === item &&
+                    styles.selectedOptionText,
+                ]}
+              >
+                {item.replace("_", " ")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>
+          Assignment
+        </Text>
+
+        {/* MEMBER SELECTOR */}
+
+        <Text style={styles.label}>
+          Member *
+        </Text>
+
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={() =>
+            setMemberModalVisible(true)
+          }
         >
-          <View style={styles.exerciseInfo}>
-            <Text style={styles.exerciseName}>
-              {index + 1}. {exercise.name}
+          <View style={styles.selectorContent}>
+            <Text style={styles.selectorTitle}>
+              {selectedMember
+                ? getMemberName(selectedMember)
+                : "Select Member"}
             </Text>
 
-            <Text style={styles.exerciseDetails}>
-              {exercise.sets} sets ×{" "}
-              {exercise.reps} reps
-              {"  "}•{" "}
-              {exercise.restTime}s rest
-            </Text>
-
-            {exercise.duration > 0 && (
-              <Text style={styles.exerciseDetails}>
-                Duration:{" "}
-                {exercise.duration} min
+            {selectedMember && (
+              <Text style={styles.selectorSubtitle}>
+                {getMemberEmail(
+                  selectedMember
+                )}
               </Text>
             )}
           </View>
 
-          <TouchableOpacity
-            onPress={() =>
-              removeExercise(index)
-            }
-          >
-            <Text style={styles.removeText}>
-              Remove
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          saving && styles.disabled,
-        ]}
-        onPress={handleSubmit}
-        disabled={saving}
-      >
-        {saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitText}>
-            Create Workout Plan
+          <Text style={styles.arrow}>
+            ›
           </Text>
+        </TouchableOpacity>
+
+        {/* TRAINER SELECTOR */}
+
+        <Text style={styles.label}>
+          Trainer *
+        </Text>
+
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={() =>
+            setTrainerModalVisible(true)
+          }
+        >
+          <View style={styles.selectorContent}>
+            <Text style={styles.selectorTitle}>
+              {selectedTrainer
+                ? getTrainerName(selectedTrainer)
+                : "Select Trainer"}
+            </Text>
+
+            {selectedTrainer && (
+              <Text style={styles.selectorSubtitle}>
+                {getTrainerEmail(
+                  selectedTrainer
+                )}
+              </Text>
+            )}
+          </View>
+
+          <Text style={styles.arrow}>
+            ›
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.label}>
+          Start Date
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="YYYY-MM-DD"
+          value={startDate}
+          onChangeText={setStartDate}
+        />
+
+        <Text style={styles.label}>
+          End Date
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="YYYY-MM-DD"
+          value={endDate}
+          onChangeText={setEndDate}
+        />
+
+        <Text style={styles.sectionTitle}>
+          Exercises
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Exercise name"
+          value={exerciseName}
+          onChangeText={setExerciseName}
+        />
+
+        <View style={styles.twoColumns}>
+          <TextInput
+            style={[
+              styles.input,
+              styles.columnInput,
+            ]}
+            placeholder="Sets"
+            keyboardType="numeric"
+            value={sets}
+            onChangeText={setSets}
+          />
+
+          <TextInput
+            style={[
+              styles.input,
+              styles.columnInput,
+            ]}
+            placeholder="Reps"
+            keyboardType="numeric"
+            value={reps}
+            onChangeText={setReps}
+          />
+        </View>
+
+        <View style={styles.twoColumns}>
+          <TextInput
+            style={[
+              styles.input,
+              styles.columnInput,
+            ]}
+            placeholder="Duration min"
+            keyboardType="numeric"
+            value={duration}
+            onChangeText={setDuration}
+          />
+
+          <TextInput
+            style={[
+              styles.input,
+              styles.columnInput,
+            ]}
+            placeholder="Rest seconds"
+            keyboardType="numeric"
+            value={restTime}
+            onChangeText={setRestTime}
+          />
+        </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Exercise notes"
+          value={exerciseNotes}
+          onChangeText={setExerciseNotes}
+        />
+
+        <TouchableOpacity
+          style={styles.addExerciseButton}
+          onPress={addExercise}
+        >
+          <Text style={styles.addExerciseText}>
+            + Add Exercise
+          </Text>
+        </TouchableOpacity>
+
+        {exercises.map(
+          (exercise, index) => (
+            <View
+              key={`${exercise.name}-${index}`}
+              style={styles.exerciseCard}
+            >
+              <View
+                style={styles.exerciseInfo}
+              >
+                <Text
+                  style={styles.exerciseName}
+                >
+                  {index + 1}.{" "}
+                  {exercise.name}
+                </Text>
+
+                <Text
+                  style={styles.exerciseDetails}
+                >
+                  {exercise.sets} sets ×{" "}
+                  {exercise.reps} reps
+                  {"  "}•{" "}
+                  {exercise.restTime}s rest
+                </Text>
+
+                {exercise.duration > 0 && (
+                  <Text
+                    style={
+                      styles.exerciseDetails
+                    }
+                  >
+                    Duration:{" "}
+                    {exercise.duration} min
+                  </Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                onPress={() =>
+                  removeExercise(index)
+                }
+              >
+                <Text
+                  style={styles.removeText}
+                >
+                  Remove
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )
         )}
-      </TouchableOpacity>
-    </ScrollView>
+
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            saving && styles.disabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitText}>
+              Create Workout Plan
+            </Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+
+      <SelectPersonModal
+        visible={memberModalVisible}
+        title="Select Member"
+        data={members}
+        selectedId={selectedMember?._id}
+        onSelect={(member) => {
+          setSelectedMember(member);
+          setMemberModalVisible(false);
+        }}
+        onClose={() =>
+          setMemberModalVisible(false)
+        }
+        getName={getMemberName}
+        getEmail={getMemberEmail}
+      />
+
+      <SelectPersonModal
+        visible={trainerModalVisible}
+        title="Select Trainer"
+        data={trainers}
+        selectedId={selectedTrainer?._id}
+        onSelect={(trainer) => {
+          setSelectedTrainer(trainer);
+          setTrainerModalVisible(false);
+        }}
+        onClose={() =>
+          setTrainerModalVisible(false)
+        }
+        getName={getTrainerName}
+        getEmail={getTrainerEmail}
+      />
+    </>
   );
 };
 
@@ -597,6 +732,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
     marginBottom: 7,
+    marginTop: 5,
   },
 
   input: {
@@ -607,18 +743,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 12,
     marginBottom: 14,
+    color: "#111",
   },
 
   textArea: {
     minHeight: 100,
     textAlignVertical: "top",
-  },
-
-  helper: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 14,
   },
 
   optionRow: {
@@ -656,6 +786,40 @@ const styles = StyleSheet.create({
 
   selectedOptionText: {
     color: "#fff",
+  },
+
+  selector: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  selectorContent: {
+    flex: 1,
+  },
+
+  selectorTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#111",
+  },
+
+  selectorSubtitle: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 3,
+  },
+
+  arrow: {
+    fontSize: 28,
+    color: "#777",
   },
 
   twoColumns: {
