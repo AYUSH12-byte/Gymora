@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const MembershipDetailsScreen = ({ route, navigation }) => {
   const { membershipId } = route.params;

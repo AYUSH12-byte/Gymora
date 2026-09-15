@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const EditPackageScreen = ({ route, navigation }) => {
   const { packageId } = route.params;

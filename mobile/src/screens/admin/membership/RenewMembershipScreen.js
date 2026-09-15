@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const RenewMembershipScreen = ({ route, navigation }) => {
   const { membershipId, memberName } = route.params;

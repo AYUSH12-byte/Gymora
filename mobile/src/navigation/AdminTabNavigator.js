@@ -2,32 +2,33 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// Admin Dashboard
+// Dashboard
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
 
-// Members
-import MembersScreen from "../screens/admin/MembersScreen";
-import MemberDetailsScreen from "../screens/admin/MemberDetailsScreen";
-import AddMemberScreen from "../screens/admin/AddMemberScreen";
+// Member screens
+import MembersScreen from "../screens/admin/member/MembersScreen";
+import AddMemberScreen from "../screens/admin/member/AddMemberScreen";
+import MemberDetailsScreen from "../screens/admin/member/MemberDetailsScreen";
 
-// Packages
-import PackagesScreen from "../screens/admin/PackagesScreen";
-import AddPackageScreen from "../screens/admin/AddPackageScreen";
-import EditPackageScreen from "../screens/admin/EditPackageScreen";
+// Membership screens
+import MembershipsScreen from "../screens/admin/membership/MembershipsScreen";
+import MembershipDetailsScreen from "../screens/admin/membership/MembershipDetailsScreen";
+import RenewMembershipScreen from "../screens/admin/membership/RenewMembershipScreen";
 
-// Memberships
-import MembershipsScreen from "../screens/admin/MembershipsScreen";
-import RenewMembershipScreen from "../screens/admin/RenewMembershipScreen";
-import MembershipDetailsScreen from "../screens/admin/MembershipDetailsScreen";
-
+// Package screens
+import PackagesScreen from "../screens/admin/package/PackagesScreen";
+import AddPackageScreen from "../screens/admin/package/AddPackageScreen";
+import EditPackageScreen from "../screens/admin/package/EditPackageScreen";
 
 const Tab = createBottomTabNavigator();
 
 const MemberStack = createNativeStackNavigator();
-const PackageStack = createNativeStackNavigator();
 const MembershipStack = createNativeStackNavigator();
+const PackageStack = createNativeStackNavigator();
 
-/*MEMBERS STACK*/
+/* =========================
+   MEMBER STACK
+========================= */
 
 const MembersStack = () => {
   return (
@@ -41,25 +42,61 @@ const MembersStack = () => {
       />
 
       <MemberStack.Screen
-        name="MemberDetails"
-        component={MemberDetailsScreen}
-        options={{
-          title: "Member Details",
-        }}
-      />
-
-      <MemberStack.Screen
         name="AddMember"
         component={AddMemberScreen}
         options={{
           title: "Add Member",
         }}
       />
+
+      <MemberStack.Screen
+        name="MemberDetails"
+        component={MemberDetailsScreen}
+        options={{
+          title: "Member Details",
+        }}
+      />
     </MemberStack.Navigator>
   );
 };
 
-/* PACKAGES STACK*/
+/* =========================
+   MEMBERSHIP STACK
+========================= */
+
+const MembershipsStack = () => {
+  return (
+    <MembershipStack.Navigator>
+      <MembershipStack.Screen
+        name="MembershipsList"
+        component={MembershipsScreen}
+        options={{
+          title: "Memberships",
+        }}
+      />
+
+      <MembershipStack.Screen
+        name="MembershipDetails"
+        component={MembershipDetailsScreen}
+        options={{
+          title: "Membership Details",
+        }}
+      />
+
+      <MembershipStack.Screen
+        name="RenewMembership"
+        component={RenewMembershipScreen}
+        options={{
+          title: "Renew Membership",
+        }}
+      />
+    </MembershipStack.Navigator>
+  );
+};
+
+/* =========================
+   PACKAGE STACK
+========================= */
 
 const PackagesStack = () => {
   return (
@@ -91,49 +128,28 @@ const PackagesStack = () => {
   );
 };
 
-/* MEMBERSHIP STACK*/
-
-const MembershipsStack = () => {
-  return (
-    <MembershipStack.Navigator>
-      <MembershipStack.Screen
-        name="MembershipsList"
-        component={MembershipsScreen}
-        options={{
-          title: "Memberships",
-        }}
-      />
-
-      <MembershipStack.Screen
-        name="RenewMembership"
-        component={RenewMembershipScreen}
-        options={{
-          title: "Renew Membership",
-        }}
-      />
-
-      <MembershipStack.Screen
-        name="MembershipDetails"
-        component={MembershipDetailsScreen}
-        options={{
-          title: "Membership Details",
-        }}
-      />
-    </MembershipStack.Navigator>
-  );
-};
-
-/*  ADMIN TAB NAVIGATOR= */
+/* =========================
+   ADMIN TAB NAVIGATOR
+========================= */
 
 const AdminTabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#111",
-        tabBarInactiveTintColor: "#888",
+
+        tabBarActiveTintColor: "#111111",
+        tabBarInactiveTintColor: "#888888",
+
         tabBarLabelStyle: {
           fontSize: 12,
+          fontWeight: "600",
+        },
+
+        tabBarStyle: {
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 5,
         },
       }}
     >
@@ -155,21 +171,21 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* Packages */}
-      <Tab.Screen
-        name="Packages"
-        component={PackagesStack}
-        options={{
-          title: "Packages",
-        }}
-      />
-
       {/* Memberships */}
       <Tab.Screen
         name="Memberships"
         component={MembershipsStack}
         options={{
           title: "Memberships",
+        }}
+      />
+
+      {/* Packages */}
+      <Tab.Screen
+        name="Packages"
+        component={PackagesStack}
+        options={{
+          title: "Packages",
         }}
       />
     </Tab.Navigator>
