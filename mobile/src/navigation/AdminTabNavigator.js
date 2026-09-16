@@ -47,7 +47,8 @@ import AddProgressScreen from "../screens/admin/progress/AddProgressScreen";
 import ProgressDetailsScreen from "../screens/admin/progress/ProgressDetailsScreen";
 import EditProgressScreen from "../screens/admin/progress/EditProgressScreen";
 
-
+// Notification screens
+import NotificationsScreen from "../screens/admin/notification/NotificationsScreen";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Drawer = createDrawerNavigator();
@@ -235,7 +236,7 @@ const ProgressStackScreen = () => {
           title: "Add Progress",
         }}
       />
-        <ProgressStack.Screen
+      <ProgressStack.Screen
         name="ProgressDetails"
         component={ProgressDetailsScreen}
         options={{
@@ -250,8 +251,23 @@ const ProgressStackScreen = () => {
           title: "Edit Progress",
         }}
       />
-
     </ProgressStack.Navigator>
+  );
+};
+
+const NotificationStack = createNativeStackNavigator();
+
+const NotificationsStack = () => {
+  return (
+    <NotificationStack.Navigator>
+      <NotificationStack.Screen
+        name="NotificationsList"
+        component={NotificationsScreen}
+        options={{
+          title: "Notifications",
+        }}
+      />
+    </NotificationStack.Navigator>
   );
 };
 
@@ -381,15 +397,23 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      <Drawer.Screen
+        name="Progress"
+        component={ProgressStackScreen}
+        options={{
+          title: "Progress",
+          drawerLabel: "Progress",
+        }}
+      />
       <Drawer.Screen 
-      name="Progress" 
-      component={ProgressStackScreen}
+      name="Notifications"
+      component={NotificationsStack}
       options={{
-        title: "Progress",
-        drawerLabel: "Progress",
-      }}
-     />
-
+        title:"Notification",
+        drawerLabel:"Notification",
+      }} 
+      />
+      
     </Drawer.Navigator>
   );
 };
