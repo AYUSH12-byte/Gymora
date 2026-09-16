@@ -41,8 +41,12 @@ import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScree
 import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
 import QRScannerScreen from "../screens/admin/qr/QRScannerScreen";
 
+// Progress screens
 import ProgressScreen from "../screens/admin/progress/ProgressScreen";
 import AddProgressScreen from "../screens/admin/progress/AddProgressScreen";
+import ProgressDetailsScreen from "../screens/admin/progress/ProgressDetailsScreen";
+import EditProgressScreen from "../screens/admin/progress/EditProgressScreen";
+
 
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -231,6 +235,22 @@ const ProgressStackScreen = () => {
           title: "Add Progress",
         }}
       />
+        <ProgressStack.Screen
+        name="ProgressDetails"
+        component={ProgressDetailsScreen}
+        options={{
+          title: "Progress Details",
+        }}
+      />
+
+      <ProgressStack.Screen
+        name="EditProgress"
+        component={EditProgressScreen}
+        options={{
+          title: "Edit Progress",
+        }}
+      />
+
     </ProgressStack.Navigator>
   );
 };
@@ -369,7 +389,7 @@ const AdminTabNavigator = () => {
         drawerLabel: "Progress",
       }}
      />
-     
+
     </Drawer.Navigator>
   );
 };
