@@ -2,6 +2,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 
 import AppNavigator from "./src/navigation/AppNavigator";
+import TrainerTabNavigator from "./src/navigation/TrainerTabNavigator";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 
 const AppContent = () => {
@@ -13,7 +14,7 @@ const AppContent = () => {
 
   return (
     <NavigationContainer>
-      <AppNavigator user={user} />
+      {user && user.isTrainer ? <TrainerTabNavigator /> : <AppNavigator user={user} />}
     </NavigationContainer>
   );
 };
