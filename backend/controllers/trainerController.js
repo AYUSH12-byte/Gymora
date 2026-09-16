@@ -318,6 +318,83 @@ const getTrainerDashboard = async (req, res) => {
   }
 };
 
+// Get trainer members
+
+// Get members assigned to logged-in trainer
+const getTrainerMembers = async (req, res) => {
+  try {
+    const trainer = await Trainer.findOne({
+      user: req.user._id,
+    });
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found",
+      });
+    }
+
+    // Find workout plans assigned to this trainer
+    const workoutPlans = await WorkoutPlan.find({
+      trainer: trainer._id,
+    }).select("member");
+
+    // Get unique member IDs
+    const memberIds = [
+      ...new Set(
+        workoutPlans
+          .map((plan) => plan.member?.toString())
+          .filter(Boolean)
+      ),
+    ];
+
+    if (memberIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        members: [],
+      });
+    }
+
+    // Get assigned members
+    const members = await Member.find({
+      _id: { $in: memberIds },
+    })
+      .populate("user", "name email role isActive")
+      .sort({ createdAt: -1 });
+
+    // Get workout plan information for each member
+    const membersWithPlans = await Promise.all(
+      members.map(async (member) => {
+        const plans = await WorkoutPlan.find({
+          trainer: trainer._id,
+          member: member._id,
+        }).select(
+          "name description difficulty goal startDate endDate isActive exercises"
+        );
+
+        return {
+          ...member.toObject(),
+          workoutPlans: plans,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      count: membersWithPlans.length,
+      members: membersWithPlans,
+    });
+  } catch (error) {
+    console.error("Get trainer members error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTrainer,
   getTrainers,
@@ -325,4 +402,5 @@ module.exports = {
   updateTrainer,
   deleteTrainer,
   getTrainerDashboard,
+  getTrainerMembers,
 };

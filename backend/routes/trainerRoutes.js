@@ -7,6 +7,7 @@ const {
   updateTrainer,
   deleteTrainer,
   getTrainerDashboard,
+  getTrainerMembers,
 } = require("../controllers/trainerController");
 
 const protect = require("../middleware/authMiddleware");
@@ -20,6 +21,14 @@ router.get(
   protect,
   authorizeRoles("trainer"),
   getTrainerDashboard,
+);
+
+// Get members assigned to logged-in trainer
+router.get(
+  "/my-members",
+  protect,
+  authorizeRoles("trainer"),
+  getTrainerMembers
 );
 
 // Admin creates trainer

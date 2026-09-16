@@ -8,7 +8,12 @@ import {
 
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
+// dashboard screen
 import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
+
+// members screen
+import TrainerMembersScreen from "../screens/trainer/TrainerMembersScreen";
+
 
 const Drawer = createDrawerNavigator();
 
@@ -143,16 +148,12 @@ const TrainerDrawerNavigator = () => {
 
       <Drawer.Screen
         name="TrainerMembers"
+        component={TrainerMembersScreen}
         options={{
-          title: "My Members",
+          title: "Members",
           drawerLabel: "My Members",
         }}
-      >
-        {() => (
-          <PlaceholderScreen title="My Members" />
-        )}
-      </Drawer.Screen>
-
+        />
       <Drawer.Screen
         name="TrainerWorkoutPlans"
         options={{
