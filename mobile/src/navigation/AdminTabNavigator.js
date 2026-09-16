@@ -49,6 +49,10 @@ import EditProgressScreen from "../screens/admin/progress/EditProgressScreen";
 
 // Notification screens
 import NotificationsScreen from "../screens/admin/notification/NotificationsScreen";
+
+// Report screens
+import ReportsScreen from "../screens/admin/report/ReportsScreen";
+
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Drawer = createDrawerNavigator();
@@ -405,15 +409,23 @@ const AdminTabNavigator = () => {
           drawerLabel: "Progress",
         }}
       />
-      <Drawer.Screen 
-      name="Notifications"
-      component={NotificationsStack}
-      options={{
-        title:"Notification",
-        drawerLabel:"Notification",
-      }} 
+      <Drawer.Screen
+        name="Notifications"
+        component={NotificationsStack}
+        options={{
+          title: "Notification",
+          drawerLabel: "Notification",
+        }}
       />
-      
+      <Drawer.Screen
+        name="Reports"
+        component={ReportsScreen}
+        options={{
+          title: "Reports",
+          drawerLabel: "Reports",
+        }}
+      />
+
     </Drawer.Navigator>
   );
 };
