@@ -24,16 +24,8 @@ const ReportsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  // ============================================================
-  // LOAD REPORTS
-  // ============================================================
-
-  const loadReports = async (showLoader = true) => {
+  const loadReports = async () => {
     try {
-      if (showLoader) {
-        setLoading(true);
-      }
-
       setError("");
 
       const [
@@ -48,43 +40,20 @@ const ReportsScreen = () => {
         api.get("/reports/members"),
       ]);
 
-      console.log("========== REPORT API RESPONSE ==========");
-
-      console.log(
-        "REVENUE:",
-        JSON.stringify(revenueResponse.data, null, 2)
-      );
-
-      console.log(
-        "MEMBERSHIPS:",
-        JSON.stringify(membershipResponse.data, null, 2)
-      );
-
-      console.log(
-        "ATTENDANCE:",
-        JSON.stringify(attendanceResponse.data, null, 2)
-      );
-
-      console.log(
-        "MEMBERS:",
-        JSON.stringify(memberResponse.data, null, 2)
-      );
-
-      console.log("========================================");
+      console.log("Revenue:", revenueResponse.data);
+      console.log("Memberships:", membershipResponse.data);
+      console.log("Attendance:", attendanceResponse.data);
+      console.log("Members:", memberResponse.data);
 
       setRevenueReport(revenueResponse.data);
       setMembershipReport(membershipResponse.data);
       setAttendanceReport(attendanceResponse.data);
       setMemberReport(memberResponse.data);
-    } catch (error) {
-      console.log(
-        "Reports error:",
-        error.response?.data || error.message
-      );
+    } catch (err) {
+      console.log("Reports Error:", err.response?.data || err.message);
 
       setError(
-        error.response?.data?.message ||
-          "Failed to load reports. Please try again."
+        err.response?.data?.message || err.message || "Failed to load reports",
       );
     } finally {
       setLoading(false);
@@ -92,38 +61,109 @@ const ReportsScreen = () => {
     }
   };
 
-  // ============================================================
-  // LOAD WHEN SCREEN OPENS
-  // ============================================================
-
   useFocusEffect(
     useCallback(() => {
       loadReports();
-    }, [])
+    }, []),
   );
-
-  // ============================================================
-  // REFRESH
-  // ============================================================
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadReports(false);
+    loadReports();
   };
 
-  // ============================================================
-  // FORMAT CURRENCY
-  // ============================================================
+  // =========================
+  // REVENUE DATA
+  // =========================
 
-  const formatCurrency = (amount) => {
-    const value = Number(amount || 0);
+  const totalRevenue = Number(revenueReport?.totalRevenue) || 0;
 
-    return `Rs. ${value.toLocaleString("en-IN")}`;
+  const totalPayments = Number(revenueReport?.totalPayments) || 0;
+
+  const revenuePayments = Array.isArray(revenueReport?.payments)
+    ? revenueReport.payments
+    : [];
+
+  // =========================
+  // MEMBERSHIP DATA
+  // =========================
+
+  const memberships = membershipReport?.memberships || {};
+
+  const membershipPayments = membershipReport?.payments || {};
+
+  const totalMemberships = Number(memberships.total) || 0;
+
+  const activeMemberships = Number(memberships.active) || 0;
+
+  const upcomingMemberships = Number(memberships.upcoming) || 0;
+
+  const expiredMemberships = Number(memberships.expired) || 0;
+
+  const cancelledMemberships = Number(memberships.cancelled) || 0;
+
+  const paidMemberships = Number(membershipPayments.paid) || 0;
+
+  const partialMemberships = Number(membershipPayments.partial) || 0;
+
+  const pendingMemberships = Number(membershipPayments.pending) || 0;
+
+  // =========================
+  // ATTENDANCE DATA
+  // =========================
+
+  const attendanceSummary = attendanceReport?.summary || {};
+
+  const totalAttendance = Number(attendanceSummary.totalAttendance) || 0;
+
+  const completedAttendance = Number(attendanceSummary.completed) || 0;
+
+  const currentlyPresent = Number(attendanceSummary.currentlyPresent) || 0;
+
+  const attendanceRecords = Array.isArray(attendanceReport?.attendance)
+    ? attendanceReport.attendance
+    : [];
+
+  // =========================
+  // MEMBER DATA
+  // =========================
+
+  const memberSummary = memberReport?.summary || {};
+
+  const totalMembers = Number(memberSummary.totalMembers) || 0;
+
+  const activeMembers = Number(memberSummary.activeMembers) || 0;
+
+  const inactiveMembers = Number(memberSummary.inactiveMembers) || 0;
+
+  const members = Array.isArray(memberReport?.members)
+    ? memberReport.members
+    : [];
+
+  // =========================
+  // HELPERS
+  // =========================
+
+  const getMemberName = (member) => {
+    if (!member) {
+      return "Member unavailable";
+    }
+
+    return (
+      member?.user?.name ||
+      member?.name ||
+      member?.fullName ||
+      "Member unavailable"
+    );
   };
 
-  // ============================================================
-  // FORMAT DATE
-  // ============================================================
+  const getMemberEmail = (member) => {
+    if (!member) {
+      return "";
+    }
+
+    return member?.user?.email || member?.email || "";
+  };
 
   const formatDate = (date) => {
     if (!date) {
@@ -139,959 +179,481 @@ const ReportsScreen = () => {
     return parsedDate.toLocaleDateString();
   };
 
-  // ============================================================
-  // GET NESTED VALUE
-  // ============================================================
-
-  const getNestedValue = (object, paths) => {
-    if (!object) {
-      return undefined;
-    }
-
-    for (const path of paths) {
-      const keys = path.split(".");
-
-      let value = object;
-
-      for (const key of keys) {
-        if (value === null || value === undefined) {
-          value = undefined;
-          break;
-        }
-
-        value = value[key];
-      }
-
-      if (value !== undefined && value !== null) {
-        return value;
-      }
-    }
-
-    return undefined;
+  const formatCurrency = (amount) => {
+    return `Rs. ${Number(amount || 0).toLocaleString()}`;
   };
 
-  // ============================================================
-  // GET NUMBER
-  // ============================================================
-
-  const getNumber = (object, paths) => {
-    const value = getNestedValue(object, paths);
-
-    if (
-      value === undefined ||
-      value === null ||
-      value === ""
-    ) {
-      return 0;
-    }
-
-    const number = Number(value);
-
-    return Number.isNaN(number) ? 0 : number;
-  };
-
-  // ============================================================
-  // GET ARRAY
-  // ============================================================
-
-  const getArray = (object, paths) => {
-    const value = getNestedValue(object, paths);
-
-    return Array.isArray(value) ? value : [];
-  };
-
-  // ============================================================
-  // REVENUE REPORT
-  // ============================================================
-
-  const renderRevenueReport = () => {
-    const totalRevenue = getNumber(revenueReport, [
-      "totalRevenue",
-      "revenue",
-      "total",
-      "report.totalRevenue",
-      "report.revenue",
-      "report.total",
-      "data.totalRevenue",
-      "data.revenue",
-      "data.total",
-    ]);
-
-    const totalPayments = getNumber(revenueReport, [
-      "totalPayments",
-      "paymentCount",
-      "count",
-      "report.totalPayments",
-      "report.paymentCount",
-      "report.count",
-      "data.totalPayments",
-      "data.paymentCount",
-      "data.count",
-    ]);
-
-    const payments = getArray(revenueReport, [
-      "payments",
-      "records",
-      "paymentRecords",
-      "transactions",
-      "report.payments",
-      "report.records",
-      "report.paymentRecords",
-      "report.transactions",
-      "data.payments",
-      "data.records",
-      "data.paymentRecords",
-      "data.transactions",
-    ]);
-
-    return (
-      <View>
-        {/* Revenue Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>
-            Total Revenue
-          </Text>
-
-          <Text style={styles.summaryValue}>
-            {formatCurrency(totalRevenue)}
-          </Text>
-
-          <Text style={styles.summarySubtext}>
-            {totalPayments} payment
-            {totalPayments !== 1 ? "s" : ""}
-          </Text>
-        </View>
-
-        {/* Payment Records */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Payment Records
-          </Text>
-
-          {payments.length === 0 ? (
-            <EmptyState text="No payment records found." />
-          ) : (
-            payments.map((payment, index) => {
-              const memberName =
-                payment.member?.user?.name ||
-                payment.member?.name ||
-                payment.user?.name ||
-                payment.name ||
-                "Unknown Member";
-
-              const amount =
-                payment.amount ||
-                payment.paidAmount ||
-                payment.paymentAmount ||
-                0;
-
-              const method =
-                payment.paymentMethod ||
-                payment.method ||
-                "Unknown method";
-
-              const date =
-                payment.paidAt ||
-                payment.paymentDate ||
-                payment.createdAt;
-
-              return (
-                <View
-                  style={styles.recordCard}
-                  key={
-                    payment._id ||
-                    payment.id ||
-                    String(index)
-                  }
-                >
-                  <View style={styles.rowBetween}>
-                    <Text
-                      style={styles.recordTitle}
-                      numberOfLines={1}
-                    >
-                      {memberName}
-                    </Text>
-
-                    <Text style={styles.amount}>
-                      {formatCurrency(amount)}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.recordText}>
-                    Payment Method: {method}
-                  </Text>
-
-                  {payment.receiptNumber ? (
-                    <Text style={styles.recordText}>
-                      Receipt: {payment.receiptNumber}
-                    </Text>
-                  ) : null}
-
-                  {payment.transactionId ? (
-                    <Text style={styles.recordText}>
-                      Transaction ID: {payment.transactionId}
-                    </Text>
-                  ) : null}
-
-                  <Text style={styles.date}>
-                    {formatDate(date)}
-                  </Text>
-                </View>
-              );
-            })
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  // ============================================================
-  // MEMBERSHIP REPORT
-  // ============================================================
-
-  const renderMembershipReport = () => {
-    const total = getNumber(membershipReport, [
-      "total",
-      "totalMemberships",
-      "report.total",
-      "report.totalMemberships",
-      "data.total",
-      "data.totalMemberships",
-    ]);
-
-    const active = getNumber(membershipReport, [
-      "active",
-      "activeMemberships",
-      "report.active",
-      "report.activeMemberships",
-      "data.active",
-      "data.activeMemberships",
-    ]);
-
-    const expired = getNumber(membershipReport, [
-      "expired",
-      "expiredMemberships",
-      "report.expired",
-      "report.expiredMemberships",
-      "data.expired",
-      "data.expiredMemberships",
-    ]);
-
-    const upcoming = getNumber(membershipReport, [
-      "upcoming",
-      "upcomingMemberships",
-      "report.upcoming",
-      "report.upcomingMemberships",
-      "data.upcoming",
-      "data.upcomingMemberships",
-    ]);
-
-    const pending = getNumber(membershipReport, [
-      "pending",
-      "pendingPayments",
-      "report.pending",
-      "report.pendingPayments",
-      "data.pending",
-      "data.pendingPayments",
-    ]);
-
-    const partial = getNumber(membershipReport, [
-      "partial",
-      "partialPayments",
-      "report.partial",
-      "report.partialPayments",
-      "data.partial",
-      "data.partialPayments",
-    ]);
-
-    const paid = getNumber(membershipReport, [
-      "paid",
-      "paidMemberships",
-      "report.paid",
-      "report.paidMemberships",
-      "data.paid",
-      "data.paidMemberships",
-    ]);
-
-    return (
-      <View>
-        {/* Membership Summary */}
-        <View style={styles.grid}>
-          <SummaryBox
-            title="Total"
-            value={total}
-          />
-
-          <SummaryBox
-            title="Active"
-            value={active}
-          />
-
-          <SummaryBox
-            title="Expired"
-            value={expired}
-          />
-
-          <SummaryBox
-            title="Upcoming"
-            value={upcoming}
-          />
-        </View>
-
-        {/* Payment Status */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Payment Status
-          </Text>
-
-          <View style={styles.statusCard}>
-            <StatusRow
-              label="Paid"
-              value={paid}
-            />
-
-            <StatusRow
-              label="Partial"
-              value={partial}
-            />
-
-            <StatusRow
-              label="Pending"
-              value={pending}
-              last
-            />
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  // ============================================================
-  // ATTENDANCE REPORT
-  // ============================================================
-
-  const renderAttendanceReport = () => {
-    const total = getNumber(attendanceReport, [
-      "total",
-      "totalAttendance",
-      "totalRecords",
-      "report.total",
-      "report.totalAttendance",
-      "report.totalRecords",
-      "data.total",
-      "data.totalAttendance",
-      "data.totalRecords",
-    ]);
-
-    const present = getNumber(attendanceReport, [
-      "present",
-      "presentCount",
-      "report.present",
-      "report.presentCount",
-      "data.present",
-      "data.presentCount",
-    ]);
-
-    const completed = getNumber(attendanceReport, [
-      "completed",
-      "completedCount",
-      "report.completed",
-      "report.completedCount",
-      "data.completed",
-      "data.completedCount",
-    ]);
-
-    return (
-      <View>
-        {/* Attendance Summary */}
-        <View style={styles.grid}>
-          <SummaryBox
-            title="Total Visits"
-            value={total}
-          />
-
-          <SummaryBox
-            title="Present"
-            value={present}
-          />
-
-          <SummaryBox
-            title="Completed"
-            value={completed}
-          />
-        </View>
-
-        {/* Attendance Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Attendance Information
-          </Text>
-
-          <View style={styles.statusCard}>
-            <StatusRow
-              label="Total Visits"
-              value={total}
-            />
-
-            <StatusRow
-              label="Present"
-              value={present}
-            />
-
-            <StatusRow
-              label="Completed"
-              value={completed}
-              last
-            />
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  // ============================================================
-  // MEMBER REPORT
-  // ============================================================
-
-  const renderMemberReport = () => {
-    const total = getNumber(memberReport, [
-      "total",
-      "totalMembers",
-      "report.total",
-      "report.totalMembers",
-      "data.total",
-      "data.totalMembers",
-    ]);
-
-    const active = getNumber(memberReport, [
-      "active",
-      "activeMembers",
-      "report.active",
-      "report.activeMembers",
-      "data.active",
-      "data.activeMembers",
-    ]);
-
-    const inactive = getNumber(memberReport, [
-      "inactive",
-      "inactiveMembers",
-      "report.inactive",
-      "report.inactiveMembers",
-      "data.inactive",
-      "data.inactiveMembers",
-    ]);
-
-    const members = getArray(memberReport, [
-      "members",
-      "records",
-      "memberRecords",
-      "report.members",
-      "report.records",
-      "report.memberRecords",
-      "data.members",
-      "data.records",
-      "data.memberRecords",
-    ]);
-
-    return (
-      <View>
-        {/* Member Summary */}
-        <View style={styles.grid}>
-          <SummaryBox
-            title="Total Members"
-            value={total}
-          />
-
-          <SummaryBox
-            title="Active"
-            value={active}
-          />
-
-          <SummaryBox
-            title="Inactive"
-            value={inactive}
-          />
-        </View>
-
-        {/* Member Records */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Member Records
-          </Text>
-
-          {members.length === 0 ? (
-            <EmptyState text="No member records found." />
-          ) : (
-            members.map((member, index) => {
-              const name =
-                member.user?.name ||
-                member.name ||
-                member.fullName ||
-                "Unknown Member";
-
-              const email =
-                member.user?.email ||
-                member.email ||
-                "No email";
-
-              const status =
-                member.status ||
-                member.user?.status ||
-                "Unknown";
-
-              const phone =
-                member.phone ||
-                member.user?.phone ||
-                "";
-
-              const joinDate =
-                member.joinDate ||
-                member.createdAt ||
-                member.user?.createdAt;
-
-              const normalizedStatus =
-                String(status).toLowerCase();
-
-              const isActive =
-                normalizedStatus === "active";
-
-              return (
-                <View
-                  style={styles.recordCard}
-                  key={
-                    member._id ||
-                    member.id ||
-                    String(index)
-                  }
-                >
-                  <View style={styles.rowBetween}>
-                    <Text
-                      style={styles.recordTitle}
-                      numberOfLines={1}
-                    >
-                      {name}
-                    </Text>
-
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        isActive
-                          ? styles.activeBadge
-                          : styles.inactiveBadge,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusBadgeText,
-                          isActive
-                            ? styles.activeBadgeText
-                            : styles.inactiveBadgeText,
-                        ]}
-                      >
-                        {status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.recordText}>
-                    {email}
-                  </Text>
-
-                  {phone ? (
-                    <Text style={styles.recordText}>
-                      Phone: {phone}
-                    </Text>
-                  ) : null}
-
-                  <Text style={styles.date}>
-                    Joined: {formatDate(joinDate)}
-                  </Text>
-                </View>
-              );
-            })
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  // ============================================================
-  // ACTIVE REPORT
-  // ============================================================
-
-  const renderReport = () => {
-    switch (activeReport) {
-      case "revenue":
-        return renderRevenueReport();
-
-      case "memberships":
-        return renderMembershipReport();
-
-      case "attendance":
-        return renderAttendanceReport();
-
-      case "members":
-        return renderMemberReport();
-
-      default:
-        return null;
-    }
-  };
-
-  // ============================================================
-  // LOADING SCREEN
-  // ============================================================
+  // =========================
+  // LOADING
+  // =========================
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator
-          size="large"
-          color="#111"
-        />
-
-        <Text style={styles.loadingText}>
-          Loading reports...
-        </Text>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Loading reports...</Text>
       </View>
     );
   }
 
-  // ============================================================
-  // ERROR SCREEN
-  // ============================================================
+  // =========================
+  // ERROR
+  // =========================
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorTitle}>
-          Unable to Load Reports
-        </Text>
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
 
-        <Text style={styles.errorText}>
-          {error}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => loadReports()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.retryText}>
-            Retry
-          </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadReports}>
+          <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  // ============================================================
-  // MAIN SCREEN
-  // ============================================================
+  // =========================
+  // RENDER REVENUE
+  // =========================
+
+  const renderRevenueReport = () => {
+    return (
+      <View>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Total Revenue</Text>
+
+          <Text style={styles.bigValue}>{formatCurrency(totalRevenue)}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Total Payments</Text>
+
+          <Text style={styles.bigValue}>{totalPayments}</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Payment Records</Text>
+
+        {revenuePayments.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No payment records found.</Text>
+          </View>
+        ) : (
+          revenuePayments.map((payment, index) => {
+            const memberName = getMemberName(payment?.member);
+
+            const memberEmail = getMemberEmail(payment?.member);
+
+            return (
+              <View
+                key={payment?._id || payment?.id || `payment-${index}`}
+                style={styles.recordCard}
+              >
+                <View style={styles.recordHeader}>
+                  <Text style={styles.recordName}>{memberName}</Text>
+
+                  <Text style={styles.amountText}>
+                    {formatCurrency(payment?.amount)}
+                  </Text>
+                </View>
+
+                {memberEmail ? (
+                  <Text style={styles.recordSubText}>{memberEmail}</Text>
+                ) : null}
+
+                <Text style={styles.recordText}>
+                  Payment Date: {formatDate(payment?.paidAt)}
+                </Text>
+
+                <Text style={styles.recordText}>
+                  Payment Method: {payment?.paymentMethod || "-"}
+                </Text>
+
+                <Text style={styles.recordText}>
+                  Receipt: {payment?.receiptNumber || "-"}
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    );
+  };
+
+  // =========================
+  // RENDER MEMBERSHIP
+  // =========================
+
+  const renderMembershipReport = () => {
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Membership Overview</Text>
+
+        <View style={styles.grid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total</Text>
+            <Text style={styles.statValue}>{totalMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statValue}>{activeMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Upcoming</Text>
+            <Text style={styles.statValue}>{upcomingMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Expired</Text>
+            <Text style={styles.statValue}>{expiredMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Cancelled</Text>
+            <Text style={styles.statValue}>{cancelledMemberships}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Payment Status</Text>
+
+        <View style={styles.grid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Paid</Text>
+            <Text style={styles.statValue}>{paidMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Partial</Text>
+            <Text style={styles.statValue}>{partialMemberships}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Pending</Text>
+            <Text style={styles.statValue}>{pendingMemberships}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // =========================
+  // RENDER ATTENDANCE
+  // =========================
+
+  const renderAttendanceReport = () => {
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Attendance Overview</Text>
+
+        <View style={styles.grid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Attendance</Text>
+
+            <Text style={styles.statValue}>{totalAttendance}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Completed</Text>
+
+            <Text style={styles.statValue}>{completedAttendance}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Currently Present</Text>
+
+            <Text style={styles.statValue}>{currentlyPresent}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Attendance Records</Text>
+
+        {attendanceRecords.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No attendance records found.</Text>
+          </View>
+        ) : (
+          attendanceRecords.map((attendance, index) => {
+            const memberName = getMemberName(attendance?.member);
+
+            const memberEmail = getMemberEmail(attendance?.member);
+
+            return (
+              <View
+                key={attendance?._id || attendance?.id || `attendance-${index}`}
+                style={styles.recordCard}
+              >
+                <View style={styles.recordHeader}>
+                  <Text style={styles.recordName}>{memberName}</Text>
+
+                  <Text style={styles.statusText}>
+                    {attendance?.status || "-"}
+                  </Text>
+                </View>
+
+                {memberEmail ? (
+                  <Text style={styles.recordSubText}>{memberEmail}</Text>
+                ) : null}
+
+                <Text style={styles.recordText}>
+                  Date: {formatDate(attendance?.date)}
+                </Text>
+
+                <Text style={styles.recordText}>
+                  Check In: {formatDate(attendance?.checkIn)}
+                </Text>
+
+                <Text style={styles.recordText}>
+                  Check Out:{" "}
+                  {attendance?.checkOut
+                    ? formatDate(attendance.checkOut)
+                    : "Still Present"}
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    );
+  };
+
+  // =========================
+  // RENDER MEMBERS
+  // =========================
+
+  const renderMemberReport = () => {
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Member Overview</Text>
+
+        <View style={styles.grid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Members</Text>
+
+            <Text style={styles.statValue}>{totalMembers}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Active Members</Text>
+
+            <Text style={styles.statValue}>{activeMembers}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Inactive Members</Text>
+
+            <Text style={styles.statValue}>{inactiveMembers}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Member Records</Text>
+
+        {members.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No member records found.</Text>
+          </View>
+        ) : (
+          members.map((member, index) => {
+            const memberName = getMemberName(member);
+
+            const memberEmail = getMemberEmail(member);
+
+            return (
+              <View
+                key={member?._id || member?.id || `member-${index}`}
+                style={styles.recordCard}
+              >
+                <View style={styles.recordHeader}>
+                  <Text style={styles.recordName}>{memberName}</Text>
+
+                  <Text style={styles.statusText}>{member?.status || "-"}</Text>
+                </View>
+
+                {memberEmail ? (
+                  <Text style={styles.recordSubText}>{memberEmail}</Text>
+                ) : null}
+
+                {member?.phone ? (
+                  <Text style={styles.recordText}>Phone: {member.phone}</Text>
+                ) : null}
+
+                <Text style={styles.recordText}>
+                  Joined: {formatDate(member?.createdAt)}
+                </Text>
+              </View>
+            );
+          })
+        )}
+      </View>
+    );
+  };
+
+  // =========================
+  // MAIN RENDER
+  // =========================
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.heading}>
-            Reports
-          </Text>
-
-          <Text style={styles.subHeading}>
-            Gym performance overview
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => loadReports()}
-          activeOpacity={0.7}
-          style={styles.refreshButton}
-        >
-          <Text style={styles.refreshText}>
-            Refresh
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* TABS */}
-      <View style={styles.tabs}>
-        <ReportTab
-          title="Revenue"
-          active={activeReport === "revenue"}
-          onPress={() => setActiveReport("revenue")}
-        />
-
-        <ReportTab
-          title="Memberships"
-          active={activeReport === "memberships"}
-          onPress={() =>
-            setActiveReport("memberships")
-          }
-        />
-
-        <ReportTab
-          title="Attendance"
-          active={activeReport === "attendance"}
-          onPress={() =>
-            setActiveReport("attendance")
-          }
-        />
-
-        <ReportTab
-          title="Members"
-          active={activeReport === "members"}
-          onPress={() => setActiveReport("members")}
-        />
-      </View>
-
-      {/* CONTENT */}
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#111"
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        showsVerticalScrollIndicator={false}
       >
-        {renderReport()}
+        <Text style={styles.title}>Reports</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabContainer}
+        >
+          <TouchableOpacity
+            style={[styles.tab, activeReport === "revenue" && styles.activeTab]}
+            onPress={() => setActiveReport("revenue")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeReport === "revenue" && styles.activeTabText,
+              ]}
+            >
+              Revenue
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeReport === "memberships" && styles.activeTab,
+            ]}
+            onPress={() => setActiveReport("memberships")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeReport === "memberships" && styles.activeTabText,
+              ]}
+            >
+              Memberships
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeReport === "attendance" && styles.activeTab,
+            ]}
+            onPress={() => setActiveReport("attendance")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeReport === "attendance" && styles.activeTabText,
+              ]}
+            >
+              Attendance
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tab, activeReport === "members" && styles.activeTab]}
+            onPress={() => setActiveReport("members")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeReport === "members" && styles.activeTabText,
+              ]}
+            >
+              Members
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {activeReport === "revenue" && renderRevenueReport()}
+
+        {activeReport === "memberships" && renderMembershipReport()}
+
+        {activeReport === "attendance" && renderAttendanceReport()}
+
+        {activeReport === "members" && renderMemberReport()}
       </ScrollView>
     </View>
   );
 };
 
-// ============================================================
-// REPORT TAB
-// ============================================================
-
-const ReportTab = ({
-  title,
-  active,
-  onPress,
-}) => {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.tab,
-        active && styles.activeTab,
-      ]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <Text
-        style={[
-          styles.tabText,
-          active && styles.activeTabText,
-        ]}
-      >
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-};
-
-// ============================================================
-// SUMMARY BOX
-// ============================================================
-
-const SummaryBox = ({
-  title,
-  value,
-}) => {
-  return (
-    <View style={styles.summaryBox}>
-      <Text style={styles.summaryBoxTitle}>
-        {title}
-      </Text>
-
-      <Text style={styles.summaryBoxValue}>
-        {value}
-      </Text>
-    </View>
-  );
-};
-
-// ============================================================
-// STATUS ROW
-// ============================================================
-
-const StatusRow = ({
-  label,
-  value,
-  last = false,
-}) => {
-  return (
-    <View
-      style={[
-        styles.statusRow,
-        last && styles.lastStatusRow,
-      ]}
-    >
-      <Text style={styles.statusLabel}>
-        {label}
-      </Text>
-
-      <Text style={styles.statusValue}>
-        {value}
-      </Text>
-    </View>
-  );
-};
-
-// ============================================================
-// EMPTY STATE
-// ============================================================
-
-const EmptyState = ({
-  text,
-}) => {
-  return (
-    <View style={styles.emptyCard}>
-      <Text style={styles.emptyIcon}>
-        —
-      </Text>
-
-      <Text style={styles.emptyText}>
-        {text}
-      </Text>
-    </View>
-  );
-};
-
-// ============================================================
-// STYLES
-// ============================================================
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f5f7fb",
   },
-
-  // ----------------------------------------------------------
-  // HEADER
-  // ----------------------------------------------------------
-
-  header: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-
-  headerTextContainer: {
-    flex: 1,
-    paddingRight: 10,
-  },
-
-  heading: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#111",
-  },
-
-  subHeading: {
-    marginTop: 4,
-    color: "#666",
-    fontSize: 13,
-  },
-
-  refreshButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 5,
-  },
-
-  refreshText: {
-    color: "#111",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-
-  // ----------------------------------------------------------
-  // TABS
-  // ----------------------------------------------------------
-
-  tabs: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
-  },
-
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    marginHorizontal: 2,
-  },
-
-  activeTab: {
-    backgroundColor: "#111",
-  },
-
-  tabText: {
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "600",
-  },
-
-  activeTabText: {
-    color: "#fff",
-  },
-
-  // ----------------------------------------------------------
-  // CONTENT
-  // ----------------------------------------------------------
 
   content: {
-    padding: 15,
+    padding: 16,
     paddingBottom: 40,
   },
 
-  // ----------------------------------------------------------
-  // REVENUE SUMMARY
-  // ----------------------------------------------------------
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    marginBottom: 16,
+    color: "#111827",
+  },
 
-  summaryCard: {
-    backgroundColor: "#111",
+  tabContainer: {
+    paddingBottom: 16,
+    gap: 8,
+  },
+
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#e5e7eb",
+    marginRight: 8,
+  },
+
+  activeTab: {
+    backgroundColor: "#111827",
+  },
+
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
+
+  activeTabText: {
+    color: "#ffffff",
+  },
+
+  card: {
+    backgroundColor: "#ffffff",
     borderRadius: 14,
-    padding: 20,
-    marginBottom: 15,
+    padding: 18,
+    marginBottom: 12,
+    elevation: 2,
   },
 
-  summaryLabel: {
-    color: "#ccc",
-    fontSize: 13,
+  cardTitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 8,
   },
 
-  summaryValue: {
-    color: "#fff",
+  bigValue: {
     fontSize: 28,
-    fontWeight: "800",
-    marginTop: 5,
+    fontWeight: "700",
+    color: "#111827",
   },
 
-  summarySubtext: {
-    color: "#aaa",
-    marginTop: 5,
-    fontSize: 13,
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: "700",
+    color: "#111827",
+    marginTop: 18,
+    marginBottom: 12,
   },
-
-  // ----------------------------------------------------------
-  // GRID
-  // ----------------------------------------------------------
 
   grid: {
     flexDirection: "row",
@@ -1099,228 +661,115 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  summaryBox: {
+  statCard: {
     width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
     padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
+    marginBottom: 12,
+    elevation: 2,
   },
 
-  summaryBoxTitle: {
-    color: "#666",
-    fontSize: 12,
+  statLabel: {
+    fontSize: 13,
+    color: "#6b7280",
+    marginBottom: 8,
   },
 
-  summaryBoxValue: {
-    marginTop: 8,
-    color: "#111",
-    fontSize: 24,
+  statValue: {
+    fontSize: 25,
     fontWeight: "700",
+    color: "#111827",
   },
-
-  // ----------------------------------------------------------
-  // SECTION
-  // ----------------------------------------------------------
-
-  section: {
-    marginTop: 20,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: 10,
-  },
-
-  // ----------------------------------------------------------
-  // STATUS CARD
-  // ----------------------------------------------------------
-
-  statusCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
-  },
-
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-
-  lastStatusRow: {
-    borderBottomWidth: 0,
-  },
-
-  statusLabel: {
-    color: "#555",
-    fontSize: 14,
-  },
-
-  statusValue: {
-    color: "#111",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  // ----------------------------------------------------------
-  // RECORD CARD
-  // ----------------------------------------------------------
 
   recordCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
   },
 
-  rowBetween: {
+  recordHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 6,
   },
 
-  recordTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#111",
+  recordName: {
     flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111827",
+    marginRight: 10,
+  },
+
+  recordSubText: {
+    fontSize: 13,
+    color: "#6b7280",
+    marginBottom: 8,
   },
 
   recordText: {
-    marginTop: 5,
-    color: "#666",
     fontSize: 13,
+    color: "#4b5563",
+    marginTop: 5,
   },
 
-  amount: {
-    color: "#111",
+  amountText: {
+    fontSize: 16,
     fontWeight: "700",
-    marginLeft: 10,
-    fontSize: 14,
+    color: "#16a34a",
   },
 
-  date: {
-    marginTop: 6,
-    color: "#888",
-    fontSize: 11,
-  },
-
-  // ----------------------------------------------------------
-  // STATUS BADGE
-  // ----------------------------------------------------------
-
-  statusBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginLeft: 10,
-  },
-
-  activeBadge: {
-    backgroundColor: "#dcfce7",
-  },
-
-  inactiveBadge: {
-    backgroundColor: "#fee2e2",
-  },
-
-  statusBadgeText: {
-    fontSize: 11,
+  statusText: {
+    fontSize: 12,
     fontWeight: "700",
+    color: "#2563eb",
+    textTransform: "capitalize",
   },
-
-  activeBadgeText: {
-    color: "#166534",
-  },
-
-  inactiveBadgeText: {
-    color: "#991b1b",
-  },
-
-  // ----------------------------------------------------------
-  // EMPTY STATE
-  // ----------------------------------------------------------
 
   emptyCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 25,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e5e5e5",
-  },
-
-  emptyIcon: {
-    color: "#aaa",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 5,
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 20,
+    marginBottom: 12,
   },
 
   emptyText: {
-    color: "#777",
-    fontSize: 13,
     textAlign: "center",
+    color: "#6b7280",
+    fontSize: 14,
   },
 
-  // ----------------------------------------------------------
-  // LOADING
-  // ----------------------------------------------------------
-
-  center: {
+  centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f5f5f5",
   },
 
   loadingText: {
     marginTop: 10,
-    color: "#666",
-    fontSize: 14,
-  },
-
-  // ----------------------------------------------------------
-  // ERROR
-  // ----------------------------------------------------------
-
-  errorTitle: {
-    color: "#111",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 8,
-    textAlign: "center",
+    color: "#6b7280",
   },
 
   errorText: {
     color: "#dc2626",
     textAlign: "center",
-    marginBottom: 15,
-    fontSize: 13,
+    marginBottom: 16,
   },
 
   retryButton: {
-    backgroundColor: "#111",
+    backgroundColor: "#111827",
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
   },
 
-  retryText: {
-    color: "#fff",
+  retryButtonText: {
+    color: "#ffffff",
     fontWeight: "600",
   },
 });
