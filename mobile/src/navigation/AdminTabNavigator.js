@@ -8,7 +8,7 @@ import {
 
 import { View, Text, StyleSheet } from "react-native";
 // Dashboard
-import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
+import AdminDashboardScreen from "../screens/admin/dashboard/AdminDashboardScreen";
 
 // Member screens
 import MembersScreen from "../screens/admin/member/MembersScreen";

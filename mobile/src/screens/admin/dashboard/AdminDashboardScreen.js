@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import api from "../../../services/api";
+import { useAuth } from "../../../context/AuthContext";
 
 const AdminDashboardScreen = () => {
   const { user } = useAuth();
