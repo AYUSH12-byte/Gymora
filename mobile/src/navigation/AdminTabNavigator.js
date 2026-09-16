@@ -53,6 +53,9 @@ import NotificationsScreen from "../screens/admin/notification/NotificationsScre
 // Report screens
 import ReportsScreen from "../screens/admin/report/ReportsScreen";
 
+// Profile screens
+import AdminProfileScreen from "../screens/admin/profile/AdminProfileScreen";
+
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Drawer = createDrawerNavigator();
@@ -426,6 +429,14 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      <Drawer.Screen 
+      name="Profile" 
+      component={AdminProfileScreen} 
+      options={{
+        title:"Profile",
+        drawerLabel:"Profile"    }}
+      
+      />
     </Drawer.Navigator>
   );
 };
