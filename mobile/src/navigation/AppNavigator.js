@@ -5,6 +5,7 @@ import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
 import AdminTabNavigator from "./AdminTabNavigator";
+import TrainerTabNavigator from "./TrainerTabNavigator";
 
 import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
 import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
@@ -36,8 +37,8 @@ const AppNavigator = ({ user }) => {
         />
       ) : user.role === "trainer" ? (
         <Stack.Screen
-          name="TrainerDashboard"
-          component={TrainerDashboardScreen}
+          name="TrainerTabs"
+          component={TrainerTabNavigator  }
           options={{ headerShown: false }}
         />
       ) : (

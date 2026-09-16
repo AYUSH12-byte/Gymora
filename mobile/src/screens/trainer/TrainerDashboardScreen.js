@@ -7,7 +7,6 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 
 import api from "../../services/api";
 
@@ -17,22 +16,19 @@ const TrainerDashboardScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setError("");
 
-      /*
-       * Trainer-specific dashboard endpoint.
-       * We will add this backend endpoint next.
-       */
-      const response = await api.get("/trainer/dashboard");
+      const response = await api.get("/trainers/dashboard");
 
-      const data =
-        response.data?.dashboard ||
-        response.data?.data ||
-        response.data;
-
-      setDashboard(data || {});
+      if (response.data?.success) {
+        setDashboard(response.data.dashboard);
+      } else {
+        setError(
+          response.data?.message || "Failed to load trainer dashboard"
+        );
+      }
     } catch (err) {
       console.log(
         "Trainer dashboard error:",
@@ -41,21 +37,19 @@ const TrainerDashboardScreen = () => {
 
       setError(
         err.response?.data?.message ||
-          "Failed to load trainer dashboard."
+          "Unable to load trainer dashboard"
       );
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadDashboard();
-    }, [])
-  );
+  React.useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
-  const onRefresh = () => {
+  const handleRefresh = () => {
     setRefreshing(true);
     loadDashboard();
   };
@@ -64,50 +58,29 @@ const TrainerDashboardScreen = () => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
-
         <Text style={styles.loadingText}>
-          Loading trainer dashboard...
+          Loading dashboard...
         </Text>
       </View>
     );
   }
 
-  if (error) {
+  if (error && !dashboard) {
     return (
-      <ScrollView
-        contentContainerStyle={styles.center}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
-      >
-        <Text style={styles.error}>{error}</Text>
-      </ScrollView>
+      <View style={styles.center}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
     );
   }
 
-  const members =
-    dashboard?.members?.total ??
-    dashboard?.assignedMembers ??
-    dashboard?.membersCount ??
-    0;
+  const trainer = dashboard?.trainer || {};
+  const members = dashboard?.members || {};
+  const workoutPlans = dashboard?.workoutPlans || {};
+  const attendance = dashboard?.attendance || {};
 
-  const activeMembers =
-    dashboard?.members?.active ??
-    dashboard?.activeMembers ??
-    0;
-
-  const todayAttendance =
-    dashboard?.attendance?.today ??
-    dashboard?.todayAttendance ??
-    0;
-
-  const workoutPlans =
-    dashboard?.workoutPlans?.total ??
-    dashboard?.workoutPlansCount ??
-    0;
+  const assignedMembers = dashboard?.assignedMembers || [];
+  const workoutPlansList = dashboard?.workoutPlansList || [];
+  const todayAttendance = dashboard?.todayAttendance || [];
 
   return (
     <ScrollView
@@ -116,115 +89,259 @@ const TrainerDashboardScreen = () => {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={onRefresh}
+          onRefresh={handleRefresh}
         />
       }
     >
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Trainer Dashboard
+        <Text style={styles.welcome}>Welcome back</Text>
+
+        <Text style={styles.name}>
+          {trainer.name || "Trainer"}
         </Text>
 
-        <Text style={styles.subtitle}>
-          Manage your training activities
+        <Text style={styles.specialization}>
+          {trainer.specialization || "Fitness Trainer"}
         </Text>
       </View>
 
-      <View style={styles.grid}>
-        <View style={styles.card}>
-          <Text style={styles.cardValue}>
-            {members}
+      {/* Stats */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {members.total || 0}
           </Text>
-
-          <Text style={styles.cardLabel}>
-            My Members
-          </Text>
+          <Text style={styles.statLabel}>Members</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardValue}>
-            {activeMembers}
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {workoutPlans.total || 0}
           </Text>
-
-          <Text style={styles.cardLabel}>
-            Active Members
-          </Text>
+          <Text style={styles.statLabel}>Workout Plans</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardValue}>
-            {todayAttendance}
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {attendance.today || 0}
           </Text>
-
-          <Text style={styles.cardLabel}>
-            Today's Attendance
-          </Text>
+          <Text style={styles.statLabel}>Today Attendance</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardValue}>
-            {workoutPlans}
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {trainer.experience || 0}
           </Text>
-
-          <Text style={styles.cardLabel}>
-            Workout Plans
-          </Text>
+          <Text style={styles.statLabel}>Experience</Text>
         </View>
       </View>
 
-      <View style={styles.section}>
+      {/* Trainer Information */}
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>
-          Trainer Activities
+          Trainer Information
         </Text>
 
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>
-            Member Training
-          </Text>
+        <InfoRow
+          label="Name"
+          value={trainer.name || "N/A"}
+        />
 
-          <Text style={styles.activityText}>
-            View and manage members assigned to you.
-          </Text>
-        </View>
+        <InfoRow
+          label="Email"
+          value={trainer.email || "N/A"}
+        />
 
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>
-            Workout Plans
-          </Text>
+        <InfoRow
+          label="Phone"
+          value={trainer.phone || "N/A"}
+        />
 
-          <Text style={styles.activityText}>
-            Review workout plans and assigned exercises.
-          </Text>
-        </View>
+        <InfoRow
+          label="Specialization"
+          value={trainer.specialization || "N/A"}
+        />
 
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>
-            Progress Tracking
-          </Text>
+        <InfoRow
+          label="Experience"
+          value={`${trainer.experience || 0} years`}
+        />
 
-          <Text style={styles.activityText}>
-            Monitor member workout and fitness progress.
-          </Text>
-        </View>
-
-        <View style={styles.activityCard}>
-          <Text style={styles.activityTitle}>
-            Attendance
-          </Text>
-
-          <Text style={styles.activityText}>
-            Check today's attendance and attendance history.
-          </Text>
-        </View>
+        <InfoRow
+          label="Status"
+          value={trainer.status || "N/A"}
+        />
       </View>
+
+      {/* Assigned Members */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          Assigned Members
+        </Text>
+
+        {assignedMembers.length === 0 ? (
+          <Text style={styles.emptyText}>
+            No members assigned yet.
+          </Text>
+        ) : (
+          assignedMembers.map((member) => (
+            <View
+              key={member._id}
+              style={styles.listItem}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {(
+                    member.user?.name ||
+                    "M"
+                  )
+                    .charAt(0)
+                    .toUpperCase()}
+                </Text>
+              </View>
+
+              <View style={styles.listInfo}>
+                <Text style={styles.listTitle}>
+                  {member.user?.name || "Unknown Member"}
+                </Text>
+
+                <Text style={styles.listSubtitle}>
+                  {member.phone || "No phone"}
+                </Text>
+
+                <Text style={styles.listStatus}>
+                  {member.status || "active"}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+
+      {/* Workout Plans */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          Workout Plans
+        </Text>
+
+        {workoutPlansList.length === 0 ? (
+          <Text style={styles.emptyText}>
+            No workout plans assigned.
+          </Text>
+        ) : (
+          workoutPlansList.map((plan) => (
+            <View
+              key={plan._id}
+              style={styles.planItem}
+            >
+              <Text style={styles.listTitle}>
+                {plan.name || "Workout Plan"}
+              </Text>
+
+              <Text style={styles.listSubtitle}>
+                Member:{" "}
+                {plan.member?.user?.name ||
+                  "Unknown Member"}
+              </Text>
+
+              <Text style={styles.listSubtitle}>
+                Difficulty:{" "}
+                {plan.difficulty || "beginner"}
+              </Text>
+
+              <Text style={styles.listSubtitle}>
+                Goal:{" "}
+                {plan.goal || "fitness"}
+              </Text>
+
+              <Text style={styles.listSubtitle}>
+                Exercises:{" "}
+                {plan.exercises?.length || 0}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      {/* Today's Attendance */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          Today's Attendance
+        </Text>
+
+        {todayAttendance.length === 0 ? (
+          <Text style={styles.emptyText}>
+            No attendance recorded today.
+          </Text>
+        ) : (
+          todayAttendance.map((item) => (
+            <View
+              key={item._id}
+              style={styles.attendanceItem}
+            >
+              <View>
+                <Text style={styles.listTitle}>
+                  {item.member?.user?.name ||
+                    "Unknown Member"}
+                </Text>
+
+                <Text style={styles.listSubtitle}>
+                  Check in:{" "}
+                  {item.checkIn
+                    ? new Date(
+                        item.checkIn
+                      ).toLocaleTimeString()
+                    : "N/A"}
+                </Text>
+
+                <Text style={styles.listSubtitle}>
+                  Check out:{" "}
+                  {item.checkOut
+                    ? new Date(
+                        item.checkOut
+                      ).toLocaleTimeString()
+                    : "Not checked out"}
+                </Text>
+              </View>
+
+              <Text style={styles.attendanceStatus}>
+                {item.status || "present"}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      {/* Bio */}
+      {trainer.bio ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>
+            About Trainer
+          </Text>
+
+          <Text style={styles.bio}>
+            {trainer.bio}
+          </Text>
+        </View>
+      ) : null}
     </ScrollView>
+  );
+};
+
+const InfoRow = ({ label, value }) => {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: "#f5f7fb",
   },
 
   content: {
@@ -233,110 +350,193 @@ const styles = StyleSheet.create({
   },
 
   center: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: "#f5f7fb",
   },
 
   loadingText: {
     marginTop: 10,
+    fontSize: 15,
     color: "#666",
   },
 
-  error: {
+  errorText: {
     color: "#d32f2f",
-    textAlign: "center",
     fontSize: 15,
+    textAlign: "center",
   },
 
   header: {
     marginBottom: 20,
   },
 
-  title: {
-    fontSize: 26,
+  welcome: {
+    fontSize: 15,
+    color: "#666",
+  },
+
+  name: {
+    fontSize: 28,
     fontWeight: "700",
-    color: "#222",
+    color: "#111",
+    marginTop: 3,
   },
 
-  subtitle: {
-    marginTop: 5,
-    fontSize: 14,
-    color: "#777",
+  specialization: {
+    fontSize: 15,
+    color: "#666",
+    marginTop: 4,
   },
 
-  grid: {
+  statsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    marginBottom: 16,
   },
 
-  card: {
+  statCard: {
     width: "48%",
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 18,
-    marginBottom: 14,
+    marginBottom: 12,
     elevation: 2,
-    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 5,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
   },
 
-  cardValue: {
-    fontSize: 28,
+  statNumber: {
+    fontSize: 25,
     fontWeight: "700",
-    color: "#222",
+    color: "#111",
   },
 
-  cardLabel: {
-    marginTop: 6,
+  statLabel: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 5,
+  },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 14,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  infoLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#222",
+    maxWidth: "60%",
+    textAlign: "right",
+  },
+
+  emptyText: {
     color: "#777",
     fontSize: 14,
   },
 
-  section: {
-    marginTop: 10,
+  listItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
 
-  sectionTitle: {
-    fontSize: 20,
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#e8e8e8",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  avatarText: {
+    fontSize: 17,
     fontWeight: "700",
-    marginBottom: 12,
+    color: "#333",
+  },
+
+  listInfo: {
+    flex: 1,
+  },
+
+  listTitle: {
+    fontSize: 15,
+    fontWeight: "700",
     color: "#222",
   },
 
-  activityCard: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-  },
-
-  activityTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#222",
-  },
-
-  activityText: {
-    marginTop: 5,
+  listSubtitle: {
+    fontSize: 13,
     color: "#666",
-    lineHeight: 20,
+    marginTop: 3,
+  },
+
+  listStatus: {
+    fontSize: 12,
+    color: "#2e7d32",
+    marginTop: 3,
+    textTransform: "capitalize",
+  },
+
+  planItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  attendanceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  attendanceStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2e7d32",
+    textTransform: "capitalize",
+  },
+
+  bio: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#555",
   },
 });
 

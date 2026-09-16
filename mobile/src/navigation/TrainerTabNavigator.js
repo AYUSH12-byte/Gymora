@@ -3,109 +3,293 @@ import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createDrawerNavigator } from "@react-navigation/drawer";
 
 import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
 
-const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 const PlaceholderScreen = ({ title }) => {
   return (
-    <View style={styles.center}>
-      <Text style={styles.title}>
-        {title}
-      </Text>
+    <View style={styles.placeholderContainer}>
+      <Text style={styles.placeholderTitle}>{title}</Text>
 
-      <Text style={styles.subtitle}>
-        This module will be added in the next step.
+      <Text style={styles.placeholderText}>
+        This section will be added next.
       </Text>
     </View>
   );
 };
 
-const TrainerTabNavigator = () => {
+const CustomDrawerContent = (props) => {
+  const { navigation, state } = props;
+
+  const currentRoute = state.routes[state.index]?.name;
+
+  const menuItems = [
+    {
+      name: "TrainerDashboard",
+      label: "Dashboard",
+    },
+    {
+      name: "TrainerMembers",
+      label: "My Members",
+    },
+    {
+      name: "TrainerWorkoutPlans",
+      label: "Workout Plans",
+    },
+    {
+      name: "TrainerAttendance",
+      label: "Attendance",
+    },
+    {
+      name: "TrainerProfile",
+      label: "Profile",
+    },
+  ];
+
   return (
-    <Tab.Navigator
+    <View style={styles.drawerContainer}>
+      {/* Drawer Header */}
+      <View style={styles.drawerHeader}>
+        <View style={styles.profileCircle}>
+          <Text style={styles.profileLetter}>T</Text>
+        </View>
+
+        <Text style={styles.drawerTitle}>
+          Trainer Panel
+        </Text>
+
+        <Text style={styles.drawerSubtitle}>
+          Gym Management
+        </Text>
+      </View>
+
+      {/* Menu */}
+      <View style={styles.menuContainer}>
+        {menuItems.map((item) => {
+          const isActive = currentRoute === item.name;
+
+          return (
+            <TouchableOpacity
+              key={item.name}
+              style={[
+                styles.menuItem,
+                isActive && styles.activeMenuItem,
+              ]}
+              onPress={() => navigation.navigate(item.name)}
+            >
+              <Text
+                style={[
+                  styles.menuText,
+                  isActive && styles.activeMenuText,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Footer */}
+      <View style={styles.drawerFooter}>
+        <Text style={styles.footerText}>
+          Trainer Account
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const TrainerDrawerNavigator = () => {
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: "#222",
-        tabBarInactiveTintColor: "#888",
+
+        headerStyle: {
+          backgroundColor: "#111827",
+        },
+
+        headerTintColor: "#fff",
+
+        headerTitleStyle: {
+          fontWeight: "700",
+        },
+
+        drawerType: "front",
+
+        drawerStyle: {
+          width: 285,
+        },
       }}
     >
-      <Tab.Screen
+      <Drawer.Screen
         name="TrainerDashboard"
         component={TrainerDashboardScreen}
         options={{
           title: "Dashboard",
-          tabBarLabel: "Home",
+          drawerLabel: "Dashboard",
         }}
       />
 
-      <Tab.Screen
+      <Drawer.Screen
         name="TrainerMembers"
-        children={() => (
-          <PlaceholderScreen title="My Members" />
-        )}
         options={{
           title: "My Members",
+          drawerLabel: "My Members",
         }}
-      />
-
-      <Tab.Screen
-        name="TrainerWorkouts"
-        children={() => (
-          <PlaceholderScreen title="Workout Plans" />
+      >
+        {() => (
+          <PlaceholderScreen title="My Members" />
         )}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="TrainerWorkoutPlans"
         options={{
           title: "Workout Plans",
+          drawerLabel: "Workout Plans",
         }}
-      />
-
-      <Tab.Screen
-        name="TrainerProgress"
-        children={() => (
-          <PlaceholderScreen title="Progress" />
+      >
+        {() => (
+          <PlaceholderScreen title="Workout Plans" />
         )}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="TrainerAttendance"
         options={{
-          title: "Progress",
+          title: "Attendance",
+          drawerLabel: "Attendance",    
         }}
-      />
-
-      <Tab.Screen
-        name="TrainerProfile"
-        children={() => (
-          <PlaceholderScreen title="Profile" />
+      >
+        {() => (
+          <PlaceholderScreen title="Attendance" />
         )}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="TrainerProfile"
         options={{
           title: "Profile",
+          drawerLabel: "Profile",
         }}
-      />
-    </Tab.Navigator>
+      >
+        {() => (
+          <PlaceholderScreen title="Trainer Profile" />
+        )}
+      </Drawer.Screen>
+    </Drawer.Navigator>
   );
 };
 
 const styles = StyleSheet.create({
-  center: {
+  drawerContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
+  drawerHeader: {
+    backgroundColor: "#111827",
+    paddingTop: 55,
+    paddingBottom: 25,
+    paddingHorizontal: 20,
+  },
+
+  profileCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: "#374151",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+
+  profileLetter: {
+    fontSize: 25,
+    fontWeight: "700",
+    color: "#fff",
+  },
+
+  drawerTitle: {
+    fontSize: 21,
+    fontWeight: "700",
+    color: "#fff",
+  },
+
+  drawerSubtitle: {
+    fontSize: 13,
+    color: "#d1d5db",
+    marginTop: 4,
+  },
+
+  menuContainer: {
+    paddingTop: 15,
+    paddingHorizontal: 12,
+  },
+
+  menuItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+
+  activeMenuItem: {
+    backgroundColor: "#f3f4f6",
+  },
+
+  menuText: {
+    fontSize: 15,
+    color: "#4b5563",
+    fontWeight: "500",
+  },
+
+  activeMenuText: {
+    color: "#111827",
+    fontWeight: "700",
+  },
+
+  drawerFooter: {
+    marginTop: "auto",
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+  },
+
+  footerText: {
+    fontSize: 12,
+    color: "#9ca3af",
+  },
+
+  placeholderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: "#f5f6f8",
   },
 
-  title: {
-    fontSize: 24,
+  placeholderTitle: {
+    fontSize: 22,
     fontWeight: "700",
-    color: "#222",
+    color: "#111827",
   },
 
-  subtitle: {
+  placeholderText: {
     marginTop: 8,
-    color: "#777",
-    textAlign: "center",
+    fontSize: 14,
+    color: "#6b7280",
   },
 });
 
-export default TrainerTabNavigator;
+export default TrainerDrawerNavigator;
