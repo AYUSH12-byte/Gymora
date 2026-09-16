@@ -17,10 +17,18 @@ const checkMemberOwnership = require("../middleware/memberOwnership");
 
 const router = express.Router();
 
+// Today's attendance
+router.get(
+  "/today",
+  protect,
+  authorizeRoles("admin", "trainer"),
+  getTodayAttendance,
+);
+
 // Check in
 router.post("/check-in", protect, authorizeRoles("admin", "trainer"), checkIn);
 
-// Check in by QR code
+// Check in by QR
 router.post(
   "/qr-check-in",
   protect,
@@ -28,7 +36,7 @@ router.post(
   checkInByQR,
 );
 
-// Check out by QR code
+// Check out by QR
 router.post(
   "/qr-check-out",
   protect,
@@ -46,14 +54,6 @@ router.post(
 
 // All attendance
 router.get("/", protect, authorizeRoles("admin", "trainer"), getAttendance);
-
-// Today's attendance
-router.get(
-  "/today",
-  protect,
-  authorizeRoles("admin", "trainer"),
-  getTodayAttendance,
-);
 
 // Member attendance history
 router.get(

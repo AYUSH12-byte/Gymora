@@ -218,14 +218,22 @@ const getAttendance = async (req, res) => {
 // GET TODAY'S ATTENDANCE
 const getTodayAttendance = async (req, res) => {
   try {
-    const startOfDay = new Date();
+    const now = new Date();
+
+    // Start of today
+    const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date();
+    // End of today
+    const endOfDay = new Date(now);
     endOfDay.setHours(23, 59, 59, 999);
 
+    console.log("Today's Attendance Date Range:");
+    console.log("Start:", startOfDay);
+    console.log("End:", endOfDay);
+
     const attendance = await Attendance.find({
-      checkIn: {
+      date: {
         $gte: startOfDay,
         $lte: endOfDay,
       },
@@ -237,7 +245,19 @@ const getTodayAttendance = async (req, res) => {
           select: "name email",
         },
       })
-      .sort({ checkIn: -1 });
+      .sort({
+        checkIn: -1,
+      });
+
+    console.log(
+      "Today's Attendance Count:",
+      attendance.length
+    );
+
+    console.log(
+      "Today's Attendance:",
+      attendance
+    );
 
     return res.status(200).json({
       success: true,
@@ -245,7 +265,10 @@ const getTodayAttendance = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error("Get Today's Attendance Error:", error);
+    console.error(
+      "Get Today's Attendance Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
