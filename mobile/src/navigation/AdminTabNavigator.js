@@ -41,6 +41,9 @@ import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScree
 import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
 import QRScannerScreen from "../screens/admin/qr/QRScannerScreen";
 
+import ProgressScreen from "../screens/admin/progress/ProgressScreen";
+import AddProgressScreen from "../screens/admin/progress/AddProgressScreen";
+
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Drawer = createDrawerNavigator();
@@ -208,6 +211,30 @@ const AttendanceStackScreen = () => {
   );
 };
 
+const ProgressStack = createNativeStackNavigator();
+
+const ProgressStackScreen = () => {
+  return (
+    <ProgressStack.Navigator>
+      <ProgressStack.Screen
+        name="ProgressList"
+        component={ProgressScreen}
+        options={{
+          title: "Progress",
+        }}
+      />
+
+      <ProgressStack.Screen
+        name="AddProgress"
+        component={AddProgressScreen}
+        options={{
+          title: "Add Progress",
+        }}
+      />
+    </ProgressStack.Navigator>
+  );
+};
+
 const CustomDrawerContent = (props) => {
   return (
     <DrawerContentScrollView
@@ -325,14 +352,24 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      <Drawer.Screen
+        name="Attendance"
+        component={AttendanceStackScreen}
+        options={{
+          title: "Attendance",
+          drawerLabel: "Attendance",
+        }}
+      />
+
       <Drawer.Screen 
-      name="Attendance" component={AttendanceStackScreen}
+      name="Progress" 
+      component={ProgressStackScreen}
       options={{
-        title: "Attendance",
-        drawerLabel: "Attendance",
+        title: "Progress",
+        drawerLabel: "Progress",
       }}
-       />
-       
+     />
+     
     </Drawer.Navigator>
   );
 };
