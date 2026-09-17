@@ -7,7 +7,7 @@ import RegisterScreen from "../screens/auth/RegisterScreen";
 import AdminTabNavigator from "./AdminTabNavigator";
 import TrainerTabNavigator from "./TrainerTabNavigator";
 
-import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
+import TrainerDashboardScreen from "../screens/trainer/dashboard/TrainerDashboardScreen";
 import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
 
 const Stack = createNativeStackNavigator();

@@ -436,6 +436,73 @@ const getTrainerWorkoutPlans = async (req, res) => {
   }
 };
 
+// Get trainer's assigned members attendance
+const getTrainerAttendance = async (req, res) => {
+  try {
+    const trainer = await Trainer.findOne({
+      user: req.user._id,
+    });
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found",
+      });
+    }
+
+    // Find members assigned to this trainer through workout plans
+    const workoutPlans = await WorkoutPlan.find({
+      trainer: trainer._id,
+    }).select("member");
+
+    const memberIds = [
+      ...new Set(
+        workoutPlans
+          .map((plan) => plan.member?.toString())
+          .filter(Boolean)
+      ),
+    ];
+
+    if (memberIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        attendance: [],
+      });
+    }
+
+    const attendance = await Attendance.find({
+      member: {
+        $in: memberIds,
+      },
+    })
+      .populate({
+        path: "member",
+        populate: {
+          path: "user",
+          select: "name email isActive",
+        },
+      })
+      .sort({
+        date: -1,
+        checkIn: -1,
+      });
+
+    res.status(200).json({
+      success: true,
+      count: attendance.length,
+      attendance,
+    });
+  } catch (error) {
+    console.error("Get trainer attendance error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTrainer,
   getTrainers,
@@ -445,4 +512,5 @@ module.exports = {
   getTrainerDashboard,
   getTrainerMembers,
   getTrainerWorkoutPlans,
+  getTrainerAttendance,
 };

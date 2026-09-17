@@ -9,6 +9,7 @@ const {
   getTrainerDashboard,
   getTrainerMembers,
   getTrainerWorkoutPlans,
+  getTrainerAttendance,
 } = require("../controllers/trainerController");
 
 const protect = require("../middleware/authMiddleware");
@@ -38,6 +39,14 @@ router.get(
   protect,
   authorizeRoles("trainer"),
   getTrainerWorkoutPlans
+);
+
+// Get attendance records for members assigned to logged-in trainer
+router.get(
+  "/my-attendance",
+  protect,
+  authorizeRoles("trainer"),
+  getTrainerAttendance
 );
 
 // Admin creates trainer

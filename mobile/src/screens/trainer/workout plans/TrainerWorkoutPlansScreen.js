@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const TrainerWorkoutPlansScreen = ({ navigation }) => {
   const [workoutPlans, setWorkoutPlans] = useState([]);

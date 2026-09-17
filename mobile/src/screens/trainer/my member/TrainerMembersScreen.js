@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const TrainerMembersScreen = () => {
   const [members, setMembers] = useState([]);

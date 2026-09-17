@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const TrainerDashboardScreen = () => {
   const [dashboard, setDashboard] = useState(null);

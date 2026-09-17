@@ -1,22 +1,20 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
 // Dashboard
-import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
+import TrainerDashboardScreen from "../screens/trainer/dashboard/TrainerDashboardScreen";
 
 // Members
-import TrainerMembersScreen from "../screens/trainer/TrainerMembersScreen";
+import TrainerMembersScreen from "../screens/trainer/my member/TrainerMembersScreen";
 
 // Workout Plans
-import TrainerWorkoutPlansScreen from "../screens/trainer/TrainerWorkoutPlansScreen";
-import TrainerWorkoutPlanDetailsScreen from "../screens/trainer/TrainerWorkoutPlanDetailsScreen";
+import TrainerWorkoutPlansScreen from "../screens/trainer/workout plans/TrainerWorkoutPlansScreen";
+import TrainerWorkoutPlanDetailsScreen from "../screens/trainer/workout plans/TrainerWorkoutPlanDetailsScreen";
+
+// Attendance
+import TrainerAttendanceScreen from "../screens/trainer/attendance/TrainerAttendanceScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -56,13 +54,9 @@ const CustomDrawerContent = (props) => {
           <Text style={styles.profileLetter}>T</Text>
         </View>
 
-        <Text style={styles.drawerTitle}>
-          Trainer Panel
-        </Text>
+        <Text style={styles.drawerTitle}>Trainer Panel</Text>
 
-        <Text style={styles.drawerSubtitle}>
-          Gym Management
-        </Text>
+        <Text style={styles.drawerSubtitle}>Gym Management</Text>
       </View>
 
       {/* Menu */}
@@ -73,17 +67,11 @@ const CustomDrawerContent = (props) => {
           return (
             <TouchableOpacity
               key={item.name}
-              style={[
-                styles.menuItem,
-                isActive && styles.activeMenuItem,
-              ]}
+              style={[styles.menuItem, isActive && styles.activeMenuItem]}
               onPress={() => navigation.navigate(item.name)}
             >
               <Text
-                style={[
-                  styles.menuText,
-                  isActive && styles.activeMenuText,
-                ]}
+                style={[styles.menuText, isActive && styles.activeMenuText]}
               >
                 {item.label}
               </Text>
@@ -94,9 +82,7 @@ const CustomDrawerContent = (props) => {
 
       {/* Footer */}
       <View style={styles.drawerFooter}>
-        <Text style={styles.footerText}>
-          Trainer Account
-        </Text>
+        <Text style={styles.footerText}>Trainer Account</Text>
       </View>
     </View>
   );
@@ -105,9 +91,7 @@ const CustomDrawerContent = (props) => {
 const TrainerDrawerNavigator = () => {
   return (
     <Drawer.Navigator
-      drawerContent={(props) => (
-        <CustomDrawerContent {...props} />
-      )}
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
 
@@ -148,7 +132,7 @@ const TrainerDrawerNavigator = () => {
         }}
       />
 
-      {/* Workout Plans List */}
+      {/* Workout Plans */}
       <Drawer.Screen
         name="TrainerWorkoutPlans"
         component={TrainerWorkoutPlansScreen}
@@ -170,18 +154,15 @@ const TrainerDrawerNavigator = () => {
         }}
       />
 
-      {/* Attendance - Coming Next */}
+      {/* Attendance */}
       <Drawer.Screen
         name="TrainerAttendance"
+        component={TrainerAttendanceScreen}
         options={{
           title: "Attendance",
           drawerLabel: "Attendance",
         }}
-      >
-        {() => (
-          <PlaceholderScreen title="Attendance" />
-        )}
-      </Drawer.Screen>
+      />
 
       {/* Profile - Coming Next */}
       <Drawer.Screen
@@ -191,9 +172,7 @@ const TrainerDrawerNavigator = () => {
           drawerLabel: "Profile",
         }}
       >
-        {() => (
-          <PlaceholderScreen title="Trainer Profile" />
-        )}
+        {() => <PlaceholderScreen title="Trainer Profile" />}
       </Drawer.Screen>
     </Drawer.Navigator>
   );
@@ -202,9 +181,7 @@ const TrainerDrawerNavigator = () => {
 const PlaceholderScreen = ({ title }) => {
   return (
     <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderTitle}>
-        {title}
-      </Text>
+      <Text style={styles.placeholderTitle}>{title}</Text>
 
       <Text style={styles.placeholderText}>
         This section will be added next.
