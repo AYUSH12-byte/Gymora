@@ -2,7 +2,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT
-const generateToken = (user) => {
+const generateToken = (user, rememberMe = false) => {
   return jwt.sign(
     {
       id: user._id,
@@ -10,7 +10,7 @@ const generateToken = (user) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: rememberMe ? "30d" : "1d",
     },
   );
 };
@@ -43,7 +43,17 @@ const register = async (req, res) => {
       role: "member",
     });
 
-    const token = generateToken(user);
+    // Registration token remains valid for 7 days
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
 
     res.status(201).json({
       success: true,
@@ -67,7 +77,7 @@ const register = async (req, res) => {
 // Login
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe = false } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -101,12 +111,15 @@ const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user);
+    // Remember Me controls JWT expiry
+    const token = generateToken(user, rememberMe);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
       token,
+      rememberMe,
+      expiresIn: rememberMe ? "30d" : "1d",
       user: {
         id: user._id,
         name: user.name,

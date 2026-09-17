@@ -18,12 +18,12 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    // Validation
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please enter email and password");
       return;
@@ -32,9 +32,10 @@ const LoginScreen = ({ navigation }) => {
     try {
       setLoading(true);
 
-      const data = await login(email.trim(), password);
+      const data = await login(email.trim(), password, rememberMe);
 
       console.log("Logged in user:", data.user);
+      console.log("Remember Me:", rememberMe);
     } catch (error) {
       console.log("Login error:", error.response?.data || error.message);
 
@@ -109,6 +110,22 @@ const LoginScreen = ({ navigation }) => {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Remember Me */}
+          <TouchableOpacity
+            style={styles.rememberContainer}
+            onPress={() => setRememberMe(!rememberMe)}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+            >
+              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+
+            <Text style={styles.rememberText}>Remember me</Text>
+          </TouchableOpacity>
 
           {/* Login Button */}
           <TouchableOpacity
@@ -205,7 +222,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 10,
     backgroundColor: "#fff",
   },
 
@@ -226,6 +243,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#111",
+  },
+
+  rememberContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    paddingVertical: 5,
+  },
+
+  checkbox: {
+    width: 21,
+    height: 21,
+    borderWidth: 1.5,
+    borderColor: "#aaa",
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+  },
+
+  checkboxChecked: {
+    backgroundColor: "#111",
+    borderColor: "#111",
+  },
+
+  checkmark: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
+    lineHeight: 18,
+  },
+
+  rememberText: {
+    fontSize: 14,
+    color: "#333",
   },
 
   button: {

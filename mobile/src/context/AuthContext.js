@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Load stored user when app starts
   const loadUser = async () => {
     try {
       const storedUser = await authService.getStoredUser();
@@ -26,21 +27,29 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (email, password) => {
-    const data = await authService.login(email, password);
+  // Login
+  const login = async (email, password, rememberMe = false) => {
+    const data = await authService.login(email, password, rememberMe);
 
     setUser(data.user);
 
     return data;
   };
 
+  // Register
   const register = async (name, email, password) => {
     return await authService.register(name, email, password);
   };
 
+  // Logout
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (error) {
+      console.log("Logout error:", error);
+      setUser(null);
+    }
   };
 
   return (
