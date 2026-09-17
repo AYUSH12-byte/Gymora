@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import api from "../../../services/api";
@@ -66,6 +68,7 @@ const RenewMembershipScreen = ({ route, navigation }) => {
     if (!selectedPackage) return 0;
 
     const price = Number(selectedPackage.price || 0);
+
     const discount = Number(selectedPackage.discount || 0);
 
     return (price * discount) / 100;
@@ -75,6 +78,7 @@ const RenewMembershipScreen = ({ route, navigation }) => {
     if (!selectedPackage) return 0;
 
     const price = Number(selectedPackage.price || 0);
+
     const discountAmount = calculateDiscount();
 
     return Math.max(price - discountAmount, 0);
@@ -149,177 +153,216 @@ const RenewMembershipScreen = ({ route, navigation }) => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={styles.keyboardContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
     >
-      <View style={styles.memberCard}>
-        <Text style={styles.sectionTitle}>Member</Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
+      >
+        {/* Member Information */}
+        <View style={styles.memberCard}>
+          <Text style={styles.sectionTitle}>Member</Text>
 
-        <Text style={styles.memberName}>{memberName || "Unknown Member"}</Text>
-
-        {membership?.package?.name ? (
-          <Text style={styles.currentPackage}>
-            Current Package: {membership.package.name}
+          <Text style={styles.memberName}>
+            {memberName || "Unknown Member"}
           </Text>
-        ) : null}
 
-        <Text style={styles.currentEndDate}>
-          Current End Date:{" "}
-          {membership?.endDate
-            ? new Date(membership.endDate).toLocaleDateString()
-            : "N/A"}
-        </Text>
-      </View>
+          {membership?.package?.name ? (
+            <Text style={styles.currentPackage}>
+              Current Package: {membership.package.name}
+            </Text>
+          ) : null}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Package</Text>
-
-        {packages.map((item) => {
-          const discountAmount =
-            (Number(item.price || 0) * Number(item.discount || 0)) / 100;
-
-          const finalPrice = Math.max(
-            Number(item.price || 0) - discountAmount,
-            0,
-          );
-
-          const selected = selectedPackage?._id === item._id;
-
-          return (
-            <TouchableOpacity
-              key={item._id}
-              style={[styles.packageCard, selected && styles.selectedPackage]}
-              onPress={() => setSelectedPackage(item)}
-            >
-              <View style={styles.packageHeader}>
-                <Text style={styles.packageName}>{item.name}</Text>
-
-                {selected && (
-                  <View style={styles.selectedBadge}>
-                    <Text style={styles.selectedText}>Selected</Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.packageDuration}>
-                Duration: {item.duration} {item.durationUnit}
-              </Text>
-
-              <View style={styles.priceRow}>
-                <Text style={styles.packagePrice}>
-                  Rs. {finalPrice.toLocaleString()}
-                </Text>
-
-                {Number(item.discount || 0) > 0 && (
-                  <Text style={styles.discountText}>{item.discount}% OFF</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-
-        {packages.length === 0 && (
-          <Text style={styles.noPackages}>No active packages available.</Text>
-        )}
-      </View>
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.sectionTitle}>Payment Summary</Text>
-
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Package Price</Text>
-
-          <Text style={styles.summaryValue}>
-            Rs. {Number(selectedPackage?.price || 0).toLocaleString()}
+          <Text style={styles.currentEndDate}>
+            Current End Date:{" "}
+            {membership?.endDate
+              ? new Date(membership.endDate).toLocaleDateString()
+              : "N/A"}
           </Text>
         </View>
 
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Discount</Text>
+        {/* Select Package */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Package</Text>
 
-          <Text style={styles.discountValue}>
-            - Rs. {calculateDiscount().toLocaleString()}
-          </Text>
-        </View>
+          {packages.map((item) => {
+            const discountAmount =
+              (Number(item.price || 0) * Number(item.discount || 0)) / 100;
 
-        <View style={styles.divider} />
+            const finalPrice = Math.max(
+              Number(item.price || 0) - discountAmount,
+              0,
+            );
 
-        <View style={styles.summaryRow}>
-          <Text style={styles.totalLabel}>Final Amount</Text>
-
-          <Text style={styles.totalValue}>
-            Rs. {finalAmount.toLocaleString()}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Payment Amount</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter payment amount"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          value={paymentAmount}
-          onChangeText={setPaymentAmount}
-        />
-
-        {paymentAmount && Number(paymentAmount) < finalAmount && (
-          <Text style={styles.remainingText}>
-            Remaining: Rs.{" "}
-            {Math.max(finalAmount - Number(paymentAmount), 0).toLocaleString()}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.inputLabel}>Payment Method</Text>
-
-        <View style={styles.methods}>
-          {["cash", "card", "online", "bank_transfer"].map((method) => {
-            const selected = paymentMethod === method;
+            const selected = selectedPackage?._id === item._id;
 
             return (
               <TouchableOpacity
-                key={method}
-                style={[styles.methodButton, selected && styles.selectedMethod]}
-                onPress={() => setPaymentMethod(method)}
+                key={item._id}
+                style={[styles.packageCard, selected && styles.selectedPackage]}
+                onPress={() => setSelectedPackage(item)}
+                disabled={renewing}
+                activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.methodText,
-                    selected && styles.selectedMethodText,
-                  ]}
-                >
-                  {method
-                    .replace("_", " ")
-                    .replace(/^\w/, (c) => c.toUpperCase())}
+                <View style={styles.packageHeader}>
+                  <Text style={styles.packageName}>{item.name}</Text>
+
+                  {selected && (
+                    <View style={styles.selectedBadge}>
+                      <Text style={styles.selectedText}>Selected</Text>
+                    </View>
+                  )}
+                </View>
+
+                <Text style={styles.packageDuration}>
+                  Duration: {item.duration} {item.durationUnit}
                 </Text>
+
+                <View style={styles.priceRow}>
+                  <Text style={styles.packagePrice}>
+                    Rs. {finalPrice.toLocaleString()}
+                  </Text>
+
+                  {Number(item.discount || 0) > 0 && (
+                    <Text style={styles.discountText}>
+                      {item.discount}% OFF
+                    </Text>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
-        </View>
-      </View>
 
-      <TouchableOpacity
-        style={[styles.renewButton, renewing && styles.disabledButton]}
-        onPress={handleRenew}
-        disabled={renewing}
-      >
-        {renewing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.renewButtonText}>Renew Membership</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+          {packages.length === 0 && (
+            <Text style={styles.noPackages}>No active packages available.</Text>
+          )}
+        </View>
+
+        {/* Payment Summary */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.sectionTitle}>Payment Summary</Text>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Package Price</Text>
+
+            <Text style={styles.summaryValue}>
+              Rs. {Number(selectedPackage?.price || 0).toLocaleString()}
+            </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Discount</Text>
+
+            <Text style={styles.discountValue}>
+              - Rs. {calculateDiscount().toLocaleString()}
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.totalLabel}>Final Amount</Text>
+
+            <Text style={styles.totalValue}>
+              Rs. {finalAmount.toLocaleString()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Payment Amount */}
+        <View style={styles.section}>
+          <Text style={styles.inputLabel}>Payment Amount</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Enter payment amount"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={paymentAmount}
+            onChangeText={setPaymentAmount}
+            editable={!renewing}
+            returnKeyType="done"
+          />
+
+          {paymentAmount && Number(paymentAmount) < finalAmount && (
+            <Text style={styles.remainingText}>
+              Remaining: Rs.{" "}
+              {Math.max(
+                finalAmount - Number(paymentAmount),
+                0,
+              ).toLocaleString()}
+            </Text>
+          )}
+        </View>
+
+        {/* Payment Method */}
+        <View style={styles.section}>
+          <Text style={styles.inputLabel}>Payment Method</Text>
+
+          <View style={styles.methods}>
+            {["cash", "card", "online", "bank_transfer"].map((method) => {
+              const selected = paymentMethod === method;
+
+              return (
+                <TouchableOpacity
+                  key={method}
+                  style={[
+                    styles.methodButton,
+                    selected && styles.selectedMethod,
+                  ]}
+                  onPress={() => setPaymentMethod(method)}
+                  disabled={renewing}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.methodText,
+                      selected && styles.selectedMethodText,
+                    ]}
+                  >
+                    {method
+                      .replace("_", " ")
+                      .replace(/^\w/, (c) => c.toUpperCase())}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Renew Button */}
+        <TouchableOpacity
+          style={[styles.renewButton, renewing && styles.disabledButton]}
+          onPress={handleRenew}
+          disabled={renewing}
+          activeOpacity={0.8}
+        >
+          {renewing ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#fff" />
+
+              <Text style={styles.renewButtonText}>Renewing...</Text>
+            </View>
+          ) : (
+            <Text style={styles.renewButtonText}>Renew Membership</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -327,7 +370,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
 
   center: {
@@ -360,6 +403,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  memberCard: {
+    backgroundColor: "#111",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 18,
+  },
+
+  memberCard: {
+    backgroundColor: "#111",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 18,
+  },
 
   memberName: {
     color: "#fff",
@@ -539,13 +595,21 @@ const styles = StyleSheet.create({
   renewButton: {
     backgroundColor: "#111",
     borderRadius: 10,
-    paddingVertical: 15,
+    height: 52,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 5,
+    marginBottom: 20,
   },
 
   disabledButton: {
     opacity: 0.6,
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 
   renewButtonText: {

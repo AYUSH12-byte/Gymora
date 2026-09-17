@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import api from "../../../services/api";
@@ -25,11 +27,8 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
 
-  const [memberModalVisible, setMemberModalVisible] =
-    useState(false);
-
-  const [trainerModalVisible, setTrainerModalVisible] =
-    useState(false);
+  const [memberModalVisible, setMemberModalVisible] = useState(false);
+  const [trainerModalVisible, setTrainerModalVisible] = useState(false);
 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -54,43 +53,28 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
     try {
       setLoadingData(true);
 
-      const [membersResponse, trainersResponse] =
-        await Promise.all([
-          api.get("/members"),
-          api.get("/trainers"),
-        ]);
+      const [membersResponse, trainersResponse] = await Promise.all([
+        api.get("/members"),
+        api.get("/trainers"),
+      ]);
 
       const membersData =
-        membersResponse.data.members ||
-        membersResponse.data.data ||
-        [];
+        membersResponse.data.members || membersResponse.data.data || [];
 
       const trainersData =
-        trainersResponse.data.trainers ||
-        trainersResponse.data.data ||
-        [];
+        trainersResponse.data.trainers || trainersResponse.data.data || [];
 
-      setMembers(
-        Array.isArray(membersData)
-          ? membersData
-          : []
-      );
-
-      setTrainers(
-        Array.isArray(trainersData)
-          ? trainersData
-          : []
-      );
+      setMembers(Array.isArray(membersData) ? membersData : []);
+      setTrainers(Array.isArray(trainersData) ? trainersData : []);
     } catch (error) {
       console.log(
         "Load form data error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to load members and trainers"
+        error.response?.data?.message || "Failed to load members and trainers",
       );
     } finally {
       setLoadingData(false);
@@ -98,59 +82,44 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
   };
 
   const getMemberName = (member) => {
-    return (
-      member.user?.name ||
-      member.name ||
-      "Unknown Member"
-    );
+    return member.user?.name || member.name || "Unknown Member";
   };
 
   const getMemberEmail = (member) => {
-    return (
-      member.user?.email ||
-      member.email ||
-      "No email"
-    );
+    return member.user?.email || member.email || "No email";
   };
 
   const getTrainerName = (trainer) => {
-    return (
-      trainer.user?.name ||
-      trainer.name ||
-      "Unknown Trainer"
-    );
+    return trainer.user?.name || trainer.name || "Unknown Trainer";
   };
 
   const getTrainerEmail = (trainer) => {
-    return (
-      trainer.user?.email ||
-      trainer.email ||
-      "No email"
-    );
+    return trainer.user?.email || trainer.email || "No email";
   };
 
   const addExercise = () => {
     if (!exerciseName.trim()) {
-      Alert.alert(
-        "Validation",
-        "Exercise name is required."
-      );
+      Alert.alert("Validation", "Exercise name is required.");
       return;
     }
 
     if (!sets || Number(sets) < 1) {
-      Alert.alert(
-        "Validation",
-        "Sets must be at least 1."
-      );
+      Alert.alert("Validation", "Sets must be at least 1.");
       return;
     }
 
     if (!reps || Number(reps) < 1) {
-      Alert.alert(
-        "Validation",
-        "Reps must be at least 1."
-      );
+      Alert.alert("Validation", "Reps must be at least 1.");
+      return;
+    }
+
+    if (duration && Number(duration) < 0) {
+      Alert.alert("Validation", "Duration cannot be negative.");
+      return;
+    }
+
+    if (restTime && Number(restTime) < 0) {
+      Alert.alert("Validation", "Rest time cannot be negative.");
       return;
     }
 
@@ -158,19 +127,12 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
       name: exerciseName.trim(),
       sets: Number(sets),
       reps: Number(reps),
-      duration: duration
-        ? Number(duration)
-        : 0,
-      restTime: restTime
-        ? Number(restTime)
-        : 60,
+      duration: duration ? Number(duration) : 0,
+      restTime: restTime ? Number(restTime) : 60,
       notes: exerciseNotes.trim(),
     };
 
-    setExercises((current) => [
-      ...current,
-      newExercise,
-    ]);
+    setExercises((current) => [...current, newExercise]);
 
     setExerciseName("");
     setSets("");
@@ -182,43 +144,28 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
 
   const removeExercise = (index) => {
     setExercises((current) =>
-      current.filter(
-        (_, exerciseIndex) =>
-          exerciseIndex !== index
-      )
+      current.filter((_, exerciseIndex) => exerciseIndex !== index),
     );
   };
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      Alert.alert(
-        "Validation",
-        "Workout plan name is required."
-      );
+      Alert.alert("Validation", "Workout plan name is required.");
       return;
     }
 
     if (!selectedMember) {
-      Alert.alert(
-        "Validation",
-        "Please select a member."
-      );
+      Alert.alert("Validation", "Please select a member.");
       return;
     }
 
     if (!selectedTrainer) {
-      Alert.alert(
-        "Validation",
-        "Please select a trainer."
-      );
+      Alert.alert("Validation", "Please select a trainer.");
       return;
     }
 
     if (exercises.length === 0) {
-      Alert.alert(
-        "Validation",
-        "Add at least one exercise."
-      );
+      Alert.alert("Validation", "Add at least one exercise.");
       return;
     }
 
@@ -227,68 +174,53 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
       endDate.trim() &&
       new Date(endDate) < new Date(startDate)
     ) {
-      Alert.alert(
-        "Validation",
-        "End date cannot be before start date."
-      );
+      Alert.alert("Validation", "End date cannot be before start date.");
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await api.post(
-        "/workout-plans",
-        {
-          name: name.trim(),
-          description: description.trim(),
-          difficulty,
-          goal,
+      const response = await api.post("/workout-plans", {
+        name: name.trim(),
+        description: description.trim(),
+        difficulty,
+        goal,
 
-          member: selectedMember._id,
-          trainer: selectedTrainer._id,
+        member: selectedMember._id,
+        trainer: selectedTrainer._id,
 
-          exercises,
+        exercises,
 
-          startDate:
-            startDate.trim() || undefined,
+        startDate: startDate.trim() || undefined,
 
-          endDate:
-            endDate.trim() || undefined,
+        endDate: endDate.trim() || undefined,
 
-          isActive: true,
-        }
-      );
+        isActive: true,
+      });
 
       if (response.data.success) {
-        Alert.alert(
-          "Success",
-          "Workout plan created successfully.",
-          [
-            {
-              text: "OK",
-              onPress: () =>
-                navigation.goBack(),
-            },
-          ]
-        );
+        Alert.alert("Success", "Workout plan created successfully.", [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]);
       } else {
         Alert.alert(
           "Error",
-          response.data.message ||
-            "Failed to create workout plan"
+          response.data.message || "Failed to create workout plan",
         );
       }
     } catch (error) {
       console.log(
         "Create workout plan error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to create workout plan"
+        error.response?.data?.message || "Failed to create workout plan",
       );
     } finally {
       setSaving(false);
@@ -298,81 +230,74 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
   if (loadingData) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator
-          size="large"
-          color="#111"
-        />
+        <ActivityIndicator size="large" color="#111" />
 
-        <Text style={styles.loadingText}>
-          Loading form...
-        </Text>
+        <Text style={styles.loadingText}>Loading form...</Text>
       </View>
     );
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      style={styles.keyboardContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
+    >
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
       >
-        <Text style={styles.title}>
-          Add Workout Plan
-        </Text>
+        <Text style={styles.title}>Add Workout Plan</Text>
 
-        <Text style={styles.label}>
-          Plan Name *
-        </Text>
+        {/* PLAN DETAILS */}
+
+        <Text style={styles.label}>Plan Name *</Text>
 
         <TextInput
           style={styles.input}
           placeholder="e.g. Weight Loss Plan"
+          placeholderTextColor="#999"
           value={name}
           onChangeText={setName}
+          editable={!saving}
+          returnKeyType="next"
         />
 
-        <Text style={styles.label}>
-          Description
-        </Text>
+        <Text style={styles.label}>Description</Text>
 
         <TextInput
-          style={[
-            styles.input,
-            styles.textArea,
-          ]}
+          style={[styles.input, styles.textArea]}
           placeholder="Plan description..."
+          placeholderTextColor="#999"
           multiline
           value={description}
           onChangeText={setDescription}
+          editable={!saving}
+          textAlignVertical="top"
         />
 
-        <Text style={styles.label}>
-          Difficulty
-        </Text>
+        {/* DIFFICULTY */}
+
+        <Text style={styles.label}>Difficulty</Text>
 
         <View style={styles.optionRow}>
-          {[
-            "beginner",
-            "intermediate",
-            "advanced",
-          ].map((item) => (
+          {["beginner", "intermediate", "advanced"].map((item) => (
             <TouchableOpacity
               key={item}
               style={[
                 styles.option,
-                difficulty === item &&
-                  styles.selectedOption,
+                difficulty === item && styles.selectedOption,
               ]}
-              onPress={() =>
-                setDifficulty(item)
-              }
+              onPress={() => setDifficulty(item)}
+              disabled={saving}
             >
               <Text
                 style={[
                   styles.optionText,
-                  difficulty === item &&
-                    styles.selectedOptionText,
+                  difficulty === item && styles.selectedOptionText,
                 ]}
               >
                 {item}
@@ -381,9 +306,9 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
           ))}
         </View>
 
-        <Text style={styles.label}>
-          Goal
-        </Text>
+        {/* GOAL */}
+
+        <Text style={styles.label}>Goal</Text>
 
         <View style={styles.optionWrap}>
           {[
@@ -395,20 +320,14 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
           ].map((item) => (
             <TouchableOpacity
               key={item}
-              style={[
-                styles.option,
-                goal === item &&
-                  styles.selectedOption,
-              ]}
-              onPress={() =>
-                setGoal(item)
-              }
+              style={[styles.option, goal === item && styles.selectedOption]}
+              onPress={() => setGoal(item)}
+              disabled={saving}
             >
               <Text
                 style={[
                   styles.optionText,
-                  goal === item &&
-                    styles.selectedOptionText,
+                  goal === item && styles.selectedOptionText,
                 ]}
               >
                 {item.replace("_", " ")}
@@ -417,54 +336,38 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Assignment
-        </Text>
+        {/* ASSIGNMENT */}
 
-        {/* MEMBER SELECTOR */}
+        <Text style={styles.sectionTitle}>Assignment</Text>
 
-        <Text style={styles.label}>
-          Member *
-        </Text>
+        <Text style={styles.label}>Member *</Text>
 
         <TouchableOpacity
           style={styles.selector}
-          onPress={() =>
-            setMemberModalVisible(true)
-          }
+          onPress={() => setMemberModalVisible(true)}
+          disabled={saving}
         >
           <View style={styles.selectorContent}>
             <Text style={styles.selectorTitle}>
-              {selectedMember
-                ? getMemberName(selectedMember)
-                : "Select Member"}
+              {selectedMember ? getMemberName(selectedMember) : "Select Member"}
             </Text>
 
             {selectedMember && (
               <Text style={styles.selectorSubtitle}>
-                {getMemberEmail(
-                  selectedMember
-                )}
+                {getMemberEmail(selectedMember)}
               </Text>
             )}
           </View>
 
-          <Text style={styles.arrow}>
-            ›
-          </Text>
+          <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
 
-        {/* TRAINER SELECTOR */}
-
-        <Text style={styles.label}>
-          Trainer *
-        </Text>
+        <Text style={styles.label}>Trainer *</Text>
 
         <TouchableOpacity
           style={styles.selector}
-          onPress={() =>
-            setTrainerModalVisible(true)
-          }
+          onPress={() => setTrainerModalVisible(true)}
+          disabled={saving}
         >
           <View style={styles.selectorContent}>
             <Text style={styles.selectorTitle}>
@@ -475,184 +378,178 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
 
             {selectedTrainer && (
               <Text style={styles.selectorSubtitle}>
-                {getTrainerEmail(
-                  selectedTrainer
-                )}
+                {getTrainerEmail(selectedTrainer)}
               </Text>
             )}
           </View>
 
-          <Text style={styles.arrow}>
-            ›
-          </Text>
+          <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>
-          Start Date
-        </Text>
+        {/* DATES */}
+
+        <Text style={styles.label}>Start Date</Text>
 
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
+          placeholderTextColor="#999"
           value={startDate}
           onChangeText={setStartDate}
+          editable={!saving}
+          returnKeyType="next"
         />
 
-        <Text style={styles.label}>
-          End Date
-        </Text>
+        <Text style={styles.label}>End Date</Text>
 
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
+          placeholderTextColor="#999"
           value={endDate}
           onChangeText={setEndDate}
+          editable={!saving}
+          returnKeyType="done"
         />
 
-        <Text style={styles.sectionTitle}>
-          Exercises
-        </Text>
+        {/* EXERCISES */}
+
+        <Text style={styles.sectionTitle}>Exercises</Text>
 
         <TextInput
           style={styles.input}
           placeholder="Exercise name"
+          placeholderTextColor="#999"
           value={exerciseName}
           onChangeText={setExerciseName}
+          editable={!saving}
+          returnKeyType="next"
         />
 
         <View style={styles.twoColumns}>
           <TextInput
-            style={[
-              styles.input,
-              styles.columnInput,
-            ]}
+            style={[styles.input, styles.columnInput]}
             placeholder="Sets"
+            placeholderTextColor="#999"
             keyboardType="numeric"
             value={sets}
             onChangeText={setSets}
+            editable={!saving}
+            returnKeyType="next"
           />
 
           <TextInput
-            style={[
-              styles.input,
-              styles.columnInput,
-            ]}
+            style={[styles.input, styles.columnInput]}
             placeholder="Reps"
+            placeholderTextColor="#999"
             keyboardType="numeric"
             value={reps}
             onChangeText={setReps}
+            editable={!saving}
+            returnKeyType="next"
           />
         </View>
 
         <View style={styles.twoColumns}>
           <TextInput
-            style={[
-              styles.input,
-              styles.columnInput,
-            ]}
+            style={[styles.input, styles.columnInput]}
             placeholder="Duration min"
+            placeholderTextColor="#999"
             keyboardType="numeric"
             value={duration}
             onChangeText={setDuration}
+            editable={!saving}
+            returnKeyType="next"
           />
 
           <TextInput
-            style={[
-              styles.input,
-              styles.columnInput,
-            ]}
+            style={[styles.input, styles.columnInput]}
             placeholder="Rest seconds"
+            placeholderTextColor="#999"
             keyboardType="numeric"
             value={restTime}
             onChangeText={setRestTime}
+            editable={!saving}
+            returnKeyType="next"
           />
         </View>
 
         <TextInput
           style={styles.input}
           placeholder="Exercise notes"
+          placeholderTextColor="#999"
           value={exerciseNotes}
           onChangeText={setExerciseNotes}
+          editable={!saving}
+          returnKeyType="done"
         />
 
         <TouchableOpacity
-          style={styles.addExerciseButton}
+          style={[styles.addExerciseButton, saving && styles.disabled]}
           onPress={addExercise}
+          disabled={saving}
         >
-          <Text style={styles.addExerciseText}>
-            + Add Exercise
-          </Text>
+          <Text style={styles.addExerciseText}>+ Add Exercise</Text>
         </TouchableOpacity>
 
-        {exercises.map(
-          (exercise, index) => (
-            <View
-              key={`${exercise.name}-${index}`}
-              style={styles.exerciseCard}
-            >
-              <View
-                style={styles.exerciseInfo}
-              >
-                <Text
-                  style={styles.exerciseName}
-                >
-                  {index + 1}.{" "}
-                  {exercise.name}
-                </Text>
+        {/* EXERCISE LIST */}
 
-                <Text
-                  style={styles.exerciseDetails}
-                >
-                  {exercise.sets} sets ×{" "}
-                  {exercise.reps} reps
-                  {"  "}•{" "}
-                  {exercise.restTime}s rest
-                </Text>
+        {exercises.map((exercise, index) => (
+          <View key={`${exercise.name}-${index}`} style={styles.exerciseCard}>
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName}>
+                {index + 1}. {exercise.name}
+              </Text>
 
-                {exercise.duration > 0 && (
-                  <Text
-                    style={
-                      styles.exerciseDetails
-                    }
-                  >
-                    Duration:{" "}
-                    {exercise.duration} min
-                  </Text>
-                )}
-              </View>
+              <Text style={styles.exerciseDetails}>
+                {exercise.sets} sets × {exercise.reps} reps
+                {"  "}• {exercise.restTime}s rest
+              </Text>
 
-              <TouchableOpacity
-                onPress={() =>
-                  removeExercise(index)
-                }
-              >
-                <Text
-                  style={styles.removeText}
-                >
-                  Remove
+              {exercise.duration > 0 && (
+                <Text style={styles.exerciseDetails}>
+                  Duration: {exercise.duration} min
                 </Text>
-              </TouchableOpacity>
+              )}
+
+              {exercise.notes && (
+                <Text style={styles.exerciseDetails}>
+                  Notes: {exercise.notes}
+                </Text>
+              )}
             </View>
-          )
-        )}
+
+            <TouchableOpacity
+              onPress={() => removeExercise(index)}
+              disabled={saving}
+            >
+              <Text style={styles.removeText}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* SUBMIT */}
 
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            saving && styles.disabled,
-          ]}
+          style={[styles.submitButton, saving && styles.disabled]}
           onPress={handleSubmit}
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <>
+              <ActivityIndicator color="#fff" />
+
+              <Text style={[styles.submitText, styles.savingText]}>
+                Creating...
+              </Text>
+            </>
           ) : (
-            <Text style={styles.submitText}>
-              Create Workout Plan
-            </Text>
+            <Text style={styles.submitText}>Create Workout Plan</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* MEMBER MODAL */}
 
       <SelectPersonModal
         visible={memberModalVisible}
@@ -663,12 +560,12 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
           setSelectedMember(member);
           setMemberModalVisible(false);
         }}
-        onClose={() =>
-          setMemberModalVisible(false)
-        }
+        onClose={() => setMemberModalVisible(false)}
         getName={getMemberName}
         getEmail={getMemberEmail}
       />
+
+      {/* TRAINER MODAL */}
 
       <SelectPersonModal
         visible={trainerModalVisible}
@@ -679,17 +576,19 @@ const AddWorkoutPlanScreen = ({ navigation }) => {
           setSelectedTrainer(trainer);
           setTrainerModalVisible(false);
         }}
-        onClose={() =>
-          setTrainerModalVisible(false)
-        }
+        onClose={() => setTrainerModalVisible(false)}
         getName={getTrainerName}
         getEmail={getTrainerEmail}
       />
-    </>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -697,7 +596,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
 
   center: {
@@ -880,7 +779,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 9,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     marginTop: 15,
+    marginBottom: 20,
+  },
+
+  savingText: {
+    marginLeft: 8,
   },
 
   disabled: {
