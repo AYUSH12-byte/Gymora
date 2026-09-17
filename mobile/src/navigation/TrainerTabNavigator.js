@@ -8,26 +8,17 @@ import {
 
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
-// dashboard screen
+// Dashboard
 import TrainerDashboardScreen from "../screens/trainer/TrainerDashboardScreen";
 
-// members screen
+// Members
 import TrainerMembersScreen from "../screens/trainer/TrainerMembersScreen";
 
+// Workout Plans
+import TrainerWorkoutPlansScreen from "../screens/trainer/TrainerWorkoutPlansScreen";
+import TrainerWorkoutPlanDetailsScreen from "../screens/trainer/TrainerWorkoutPlanDetailsScreen";
 
 const Drawer = createDrawerNavigator();
-
-const PlaceholderScreen = ({ title }) => {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderTitle}>{title}</Text>
-
-      <Text style={styles.placeholderText}>
-        This section will be added next.
-      </Text>
-    </View>
-  );
-};
 
 const CustomDrawerContent = (props) => {
   const { navigation, state } = props;
@@ -137,6 +128,7 @@ const TrainerDrawerNavigator = () => {
         },
       }}
     >
+      {/* Dashboard */}
       <Drawer.Screen
         name="TrainerDashboard"
         component={TrainerDashboardScreen}
@@ -146,6 +138,7 @@ const TrainerDrawerNavigator = () => {
         }}
       />
 
+      {/* Members */}
       <Drawer.Screen
         name="TrainerMembers"
         component={TrainerMembersScreen}
@@ -153,24 +146,36 @@ const TrainerDrawerNavigator = () => {
           title: "Members",
           drawerLabel: "My Members",
         }}
-        />
+      />
+
+      {/* Workout Plans List */}
       <Drawer.Screen
         name="TrainerWorkoutPlans"
+        component={TrainerWorkoutPlansScreen}
         options={{
           title: "Workout Plans",
           drawerLabel: "Workout Plans",
         }}
-      >
-        {() => (
-          <PlaceholderScreen title="Workout Plans" />
-        )}
-      </Drawer.Screen>
+      />
 
+      {/* Workout Plan Details */}
+      <Drawer.Screen
+        name="TrainerWorkoutPlanDetails"
+        component={TrainerWorkoutPlanDetailsScreen}
+        options={{
+          title: "Workout Details",
+          drawerItemStyle: {
+            display: "none",
+          },
+        }}
+      />
+
+      {/* Attendance - Coming Next */}
       <Drawer.Screen
         name="TrainerAttendance"
         options={{
           title: "Attendance",
-          drawerLabel: "Attendance",    
+          drawerLabel: "Attendance",
         }}
       >
         {() => (
@@ -178,6 +183,7 @@ const TrainerDrawerNavigator = () => {
         )}
       </Drawer.Screen>
 
+      {/* Profile - Coming Next */}
       <Drawer.Screen
         name="TrainerProfile"
         options={{
@@ -190,6 +196,20 @@ const TrainerDrawerNavigator = () => {
         )}
       </Drawer.Screen>
     </Drawer.Navigator>
+  );
+};
+
+const PlaceholderScreen = ({ title }) => {
+  return (
+    <View style={styles.placeholderContainer}>
+      <Text style={styles.placeholderTitle}>
+        {title}
+      </Text>
+
+      <Text style={styles.placeholderText}>
+        This section will be added next.
+      </Text>
+    </View>
   );
 };
 

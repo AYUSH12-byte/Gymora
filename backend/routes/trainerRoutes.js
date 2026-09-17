@@ -8,6 +8,7 @@ const {
   deleteTrainer,
   getTrainerDashboard,
   getTrainerMembers,
+  getTrainerWorkoutPlans,
 } = require("../controllers/trainerController");
 
 const protect = require("../middleware/authMiddleware");
@@ -29,6 +30,14 @@ router.get(
   protect,
   authorizeRoles("trainer"),
   getTrainerMembers
+);
+
+// Get workout plans assigned to logged-in trainer
+router.get(
+  "/my-workout-plans",
+  protect,
+  authorizeRoles("trainer"),
+  getTrainerWorkoutPlans
 );
 
 // Admin creates trainer

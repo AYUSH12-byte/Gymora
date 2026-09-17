@@ -395,6 +395,47 @@ const getTrainerMembers = async (req, res) => {
   }
 };
 
+// Get trainer's assigned workout plans
+const getTrainerWorkoutPlans = async (req, res) => {
+  try {
+    const trainer = await Trainer.findOne({
+      user: req.user._id,
+    });
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found",
+      });
+    }
+
+    const workoutPlans = await WorkoutPlan.find({
+      trainer: trainer._id,
+    })
+      .populate({
+        path: "member",
+        populate: {
+          path: "user",
+          select: "name email isActive",
+        },
+      })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: workoutPlans.length,
+      workoutPlans,
+    });
+  } catch (error) {
+    console.error("Get trainer workout plans error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTrainer,
   getTrainers,
@@ -403,4 +444,5 @@ module.exports = {
   deleteTrainer,
   getTrainerDashboard,
   getTrainerMembers,
+  getTrainerWorkoutPlans,
 };
