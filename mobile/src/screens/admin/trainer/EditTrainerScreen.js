@@ -8,27 +8,33 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 
 import api from "../../../services/api";
 
-const EditTrainerScreen = ({ route, navigation }) => {
+const EditTrainerScreen = ({
+  route,
+  navigation,
+}) => {
   const { trainerId } = route.params;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [specialization, setSpecialization] = useState("");
+  const [specialization, setSpecialization] =
+    useState("");
   const [experience, setExperience] = useState("");
   const [salary, setSalary] = useState("");
-  const [joiningDate, setJoiningDate] = useState("");
+  const [joiningDate, setJoiningDate] =
+    useState("");
   const [bio, setBio] = useState("");
-  const [status, setStatus] = useState("active");
+  const [status, setStatus] =
+    useState("active");
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
+  const [saving, setSaving] =
+    useState(false);
 
   useEffect(() => {
     loadTrainer();
@@ -36,45 +42,71 @@ const EditTrainerScreen = ({ route, navigation }) => {
 
   const loadTrainer = async () => {
     try {
-      const response = await api.get(`/trainers/${trainerId}`);
+      const response = await api.get(
+        `/trainers/${trainerId}`
+      );
 
-      const trainer = response.data.trainer || response.data.data;
+      const trainer =
+        response.data.trainer ||
+        response.data.data;
 
       if (!trainer) {
-        throw new Error("Trainer not found");
+        throw new Error(
+          "Trainer not found"
+        );
       }
 
-      setName(trainer.user?.name || trainer.name || "");
+      setName(
+        trainer.user?.name ||
+          trainer.name ||
+          ""
+      );
 
-      setEmail(trainer.user?.email || trainer.email || "");
+      setEmail(
+        trainer.user?.email ||
+          trainer.email ||
+          ""
+      );
 
       setPhone(trainer.phone || "");
 
-      setSpecialization(trainer.specialization || "");
-
-      setExperience(
-        trainer.experience != null ? String(trainer.experience) : "",
+      setSpecialization(
+        trainer.specialization || ""
       );
 
-      setSalary(trainer.salary != null ? String(trainer.salary) : "");
+      setExperience(
+        trainer.experience != null
+          ? String(trainer.experience)
+          : ""
+      );
+
+      setSalary(
+        trainer.salary != null
+          ? String(trainer.salary)
+          : ""
+      );
 
       setJoiningDate(
         trainer.joiningDate
-          ? new Date(trainer.joiningDate).toISOString().split("T")[0]
-          : "",
+          ? new Date(
+              trainer.joiningDate
+            )
+              .toISOString()
+              .split("T")[0]
+          : ""
       );
 
       setBio(trainer.bio || "");
 
-      setStatus(trainer.status || "active");
+      setStatus(
+        trainer.status || "active"
+      );
     } catch (error) {
-      console.log("Load trainer error:", error.response?.data || error.message);
-
       Alert.alert(
         "Error",
         error.response?.data?.message ||
           error.message ||
-          "Failed to load trainer",
+          "Failed to load trainer"
       );
     } finally {
       setLoading(false);
@@ -82,43 +114,65 @@ const EditTrainerScreen = ({ route, navigation }) => {
   };
 
   const handleUpdate = async () => {
-    if (!name.trim() || !email.trim() || !phone.trim()) {
-      Alert.alert("Validation Error", "Name, email and phone are required.");
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !phone.trim()
+    ) {
+      Alert.alert(
+        "Validation Error",
+        "Name, email and phone are required."
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await api.put(`/trainers/${trainerId}`, {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
-        specialization: specialization.trim(),
-        experience: experience ? Number(experience) : 0,
-        salary: salary ? Number(salary) : 0,
-        joiningDate: joiningDate.trim() || undefined,
-        bio: bio.trim(),
-        status,
-      });
+      const response = await api.put(
+        `/trainers/${trainerId}`,
+        {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          specialization:
+            specialization.trim(),
+          experience: experience
+            ? Number(experience)
+            : 0,
+          salary: salary
+            ? Number(salary)
+            : 0,
+          joiningDate:
+            joiningDate.trim() || undefined,
+          bio: bio.trim(),
+          status,
+        }
+      );
 
       if (response.data.success) {
-        Alert.alert("Success", "Trainer updated successfully.", [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        Alert.alert(
+          "Success",
+          "Trainer updated successfully.",
+          [
+            {
+              text: "OK",
+              onPress: () =>
+                navigation.goBack(),
+            },
+          ]
+        );
       }
     } catch (error) {
       console.log(
         "Update trainer error:",
-        error.response?.data || error.message,
+        error.response?.data || error.message
       );
 
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to update trainer",
+        error.response?.data?.message ||
+          "Failed to update trainer"
       );
     } finally {
       setSaving(false);
@@ -128,212 +182,185 @@ const EditTrainerScreen = ({ route, navigation }) => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#111" />
-
-        <Text style={styles.loadingText}>Loading trainer...</Text>
+        <ActivityIndicator
+          size="large"
+          color="#111"
+        />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        automaticallyAdjustKeyboardInsets={true}
-      >
-        <Text style={styles.title}>Edit Trainer</Text>
+      <Text style={styles.title}>
+        Edit Trainer
+      </Text>
 
-        {/* Full Name */}
-        <Text style={styles.label}>Full Name *</Text>
+      <Text style={styles.label}>
+        Full Name *
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter trainer name"
-          placeholderTextColor="#999"
-          autoCapitalize="words"
-          autoCorrect={false}
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+      />
 
-        {/* Email */}
-        <Text style={styles.label}>Email *</Text>
+      <Text style={styles.label}>
+        Email *
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="trainer@example.com"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
 
-        {/* Phone */}
-        <Text style={styles.label}>Phone *</Text>
+      <Text style={styles.label}>
+        Phone *
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Enter phone number"
-          placeholderTextColor="#999"
-          keyboardType="phone-pad"
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+      />
 
-        {/* Specialization */}
-        <Text style={styles.label}>Specialization</Text>
+      <Text style={styles.label}>
+        Specialization
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={specialization}
-          onChangeText={setSpecialization}
-          placeholder="e.g. Weight Training"
-          placeholderTextColor="#999"
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={specialization}
+        onChangeText={setSpecialization}
+      />
 
-        {/* Experience */}
-        <Text style={styles.label}>Experience (years)</Text>
+      <Text style={styles.label}>
+        Experience (years)
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={experience}
-          onChangeText={setExperience}
-          placeholder="e.g. 3"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={experience}
+        onChangeText={setExperience}
+        keyboardType="numeric"
+      />
 
-        {/* Salary */}
-        <Text style={styles.label}>Salary</Text>
+      <Text style={styles.label}>
+        Salary
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          value={salary}
-          onChangeText={setSalary}
-          placeholder="e.g. 30000"
-          placeholderTextColor="#999"
-          keyboardType="numeric"
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        value={salary}
+        onChangeText={setSalary}
+        keyboardType="numeric"
+      />
 
-        {/* Joining Date */}
-        <Text style={styles.label}>Joining Date</Text>
+      <Text style={styles.label}>
+        Joining Date
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          placeholderTextColor="#999"
-          value={joiningDate}
-          onChangeText={setJoiningDate}
-          editable={!saving}
-          returnKeyType="next"
-        />
+      <TextInput
+        style={styles.input}
+        placeholder="YYYY-MM-DD"
+        value={joiningDate}
+        onChangeText={setJoiningDate}
+      />
 
-        {/* Status */}
-        <Text style={styles.label}>Status</Text>
+      <Text style={styles.label}>
+        Status
+      </Text>
 
-        <View style={styles.statusRow}>
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              status === "active" && styles.selectedStatus,
-            ]}
-            onPress={() => setStatus("active")}
-            disabled={saving}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.statusButtonText,
-                status === "active" && styles.selectedStatusText,
-              ]}
-            >
-              Active
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.statusButton,
-              status === "inactive" && styles.selectedStatus,
-            ]}
-            onPress={() => setStatus("inactive")}
-            disabled={saving}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.statusButtonText,
-                status === "inactive" && styles.selectedStatusText,
-              ]}
-            >
-              Inactive
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bio */}
-        <Text style={styles.label}>Bio</Text>
-
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Trainer description..."
-          placeholderTextColor="#999"
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-          editable={!saving}
-        />
-
-        {/* Update Button */}
+      <View style={styles.statusRow}>
         <TouchableOpacity
-          style={[styles.saveButton, saving && styles.disabled]}
-          onPress={handleUpdate}
-          disabled={saving}
-          activeOpacity={0.8}
+          style={[
+            styles.statusButton,
+            status === "active" &&
+              styles.selectedStatus,
+          ]}
+          onPress={() =>
+            setStatus("active")
+          }
         >
-          {saving ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#fff" />
-
-              <Text style={styles.saveText}>Updating...</Text>
-            </View>
-          ) : (
-            <Text style={styles.saveText}>Update Trainer</Text>
-          )}
+          <Text
+            style={[
+              styles.statusButtonText,
+              status === "active" &&
+                styles.selectedStatusText,
+            ]}
+          >
+            Active
+          </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <TouchableOpacity
+          style={[
+            styles.statusButton,
+            status === "inactive" &&
+              styles.selectedStatus,
+          ]}
+          onPress={() =>
+            setStatus("inactive")
+          }
+        >
+          <Text
+            style={[
+              styles.statusButtonText,
+              status === "inactive" &&
+                styles.selectedStatusText,
+            ]}
+          >
+            Inactive
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.label}>
+        Bio
+      </Text>
+
+      <TextInput
+        style={[
+          styles.input,
+          styles.textArea,
+        ]}
+        value={bio}
+        onChangeText={setBio}
+        multiline
+        numberOfLines={5}
+        textAlignVertical="top"
+      />
+
+      <TouchableOpacity
+        style={[
+          styles.saveButton,
+          saving && styles.disabled,
+        ]}
+        onPress={handleUpdate}
+        disabled={saving}
+      >
+        {saving ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveText}>
+            Update Trainer
+          </Text>
+        )}
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -341,19 +368,13 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-  },
-
-  loadingText: {
-    marginTop: 10,
-    color: "#666",
   },
 
   title: {
@@ -378,13 +399,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 12,
     marginBottom: 15,
-    fontSize: 15,
-    color: "#111",
   },
 
   textArea: {
     minHeight: 110,
-    textAlignVertical: "top",
   },
 
   statusRow: {
@@ -419,22 +437,13 @@ const styles = StyleSheet.create({
 
   saveButton: {
     backgroundColor: "#111",
-    height: 52,
+    paddingVertical: 14,
     borderRadius: 9,
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 5,
-    marginBottom: 20,
   },
 
   disabled: {
     opacity: 0.6,
-  },
-
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
   },
 
   saveText: {
