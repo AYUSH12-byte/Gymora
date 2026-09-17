@@ -1,0 +1,298 @@
+import React from "react";
+
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+
+import { createDrawerNavigator } from "@react-navigation/drawer";
+
+import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
+import MemberMembershipScreen from "../screens/member/MemberMembershipScreen";
+const Drawer = createDrawerNavigator();
+
+const PlaceholderScreen = ({ title }) => {
+  return (
+    <View style={styles.placeholderContainer}>
+      <Text style={styles.placeholderTitle}>{title}</Text>
+
+      <Text style={styles.placeholderText}>
+        This screen will be implemented next.
+      </Text>
+    </View>
+  );
+};
+
+const CustomDrawerContent = (props) => {
+  const { navigation, state } = props;
+
+  const currentRoute = state.routes[state.index]?.name;
+
+  const menuItems = [
+    {
+      name: "MemberDashboard",
+      label: "Dashboard",
+    },
+    {
+      name: "MemberMembership",
+      label: "Membership",
+    },
+    {
+      name: "MemberWorkoutPlans",
+      label: "Workout Plans",
+    },
+    {
+      name: "MemberAttendance",
+      label: "Attendance",
+    },
+    {
+      name: "MemberPayments",
+      label: "Payments",
+    },
+    {
+      name: "MemberProgress",
+      label: "Progress",
+    },
+    {
+      name: "MemberProfile",
+      label: "Profile",
+    },
+  ];
+
+  return (
+    <View style={styles.drawerContainer}>
+      <View style={styles.drawerHeader}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoText}>M</Text>
+        </View>
+
+        <Text style={styles.drawerTitle}>Member Panel</Text>
+
+        <Text style={styles.drawerSubtitle}>Gym Management</Text>
+      </View>
+
+      <View style={styles.menuContainer}>
+        {menuItems.map((item) => {
+          const isActive = currentRoute === item.name;
+
+          return (
+            <TouchableOpacity
+              key={item.name}
+              style={[styles.menuItem, isActive && styles.activeMenuItem]}
+              onPress={() => navigation.navigate(item.name)}
+            >
+              <Text
+                style={[styles.menuLabel, isActive && styles.activeMenuLabel]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <View style={styles.drawerFooter}>
+        <Text style={styles.footerTitle}>Member Account</Text>
+
+        <Text style={styles.footerText}>Manage your gym activity</Text>
+      </View>
+    </View>
+  );
+};
+
+const MemberDrawerNavigator = () => {
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: "#111827",
+        },
+        headerTintColor: "#fff",
+        headerTitleStyle: {
+          fontWeight: "700",
+        },
+        drawerType: "front",
+        drawerStyle: {
+          width: 285,
+        },
+      }}
+    >
+      <Drawer.Screen
+        name="MemberDashboard"
+        component={MemberDashboardScreen}
+        options={{
+          title: "Dashboard",
+          drawerLabel: "Dashboard",
+        }}
+      />
+
+      <Drawer.Screen
+        name="MemberMembership"
+        component={MemberMembershipScreen}
+        options={{
+          title: "Membership",
+          drawerLabel: "Membership",
+        }}
+      />
+
+      <Drawer.Screen
+        name="MemberWorkoutPlans"
+        options={{
+          title: "Workout Plans",
+          drawerLabel: "Workout Plans",
+        }}
+      >
+        {() => <PlaceholderScreen title="Workout Plans" />}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="MemberAttendance"
+        options={{
+          title: "Attendance",
+          drawerLabel: "Attendance",
+        }}
+      >
+        {() => <PlaceholderScreen title="Attendance" />}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="MemberPayments"
+        options={{
+          title: "Payments",
+          drawerLabel: "Payments",
+        }}
+      >
+        {() => <PlaceholderScreen title="Payments" />}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="MemberProgress"
+        options={{
+          title: "Progress",
+          drawerLabel: "Progress",
+        }}
+      >
+        {() => <PlaceholderScreen title="Progress" />}
+      </Drawer.Screen>
+
+      <Drawer.Screen
+        name="MemberProfile"
+        options={{
+          title: "Profile",
+          drawerLabel: "Profile",
+        }}
+      >
+        {() => <PlaceholderScreen title="Profile" />}
+      </Drawer.Screen>
+    </Drawer.Navigator>
+  );
+};
+
+const styles = StyleSheet.create({
+  drawerContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
+  drawerHeader: {
+    backgroundColor: "#111827",
+    paddingHorizontal: 20,
+    paddingTop: 55,
+    paddingBottom: 22,
+  },
+
+  logoCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#2563eb",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+
+  logoText: {
+    color: "#fff",
+    fontSize: 21,
+    fontWeight: "800",
+  },
+
+  drawerTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+
+  drawerSubtitle: {
+    color: "#9ca3af",
+    fontSize: 13,
+    marginTop: 4,
+  },
+
+  menuContainer: {
+    paddingTop: 15,
+    paddingHorizontal: 12,
+  },
+
+  menuItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 14,
+    borderRadius: 9,
+    marginBottom: 4,
+  },
+
+  activeMenuItem: {
+    backgroundColor: "#eff6ff",
+  },
+
+  menuLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#374151",
+  },
+
+  activeMenuLabel: {
+    color: "#2563eb",
+    fontWeight: "800",
+  },
+
+  drawerFooter: {
+    marginTop: "auto",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    padding: 18,
+  },
+
+  footerTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  footerText: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+
+  placeholderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#f3f4f6",
+  },
+
+  placeholderTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  placeholderText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6b7280",
+  },
+});
+
+export default MemberDrawerNavigator;

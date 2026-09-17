@@ -7,8 +7,7 @@ import RegisterScreen from "../screens/auth/RegisterScreen";
 import AdminTabNavigator from "./AdminTabNavigator";
 import TrainerTabNavigator from "./TrainerTabNavigator";
 
-import TrainerDashboardScreen from "../screens/trainer/dashboard/TrainerDashboardScreen";
-import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
+import MemberDrawerNavigator from "./MemberDrawerNavigator";
 
 const Stack = createNativeStackNavigator();
 
@@ -43,8 +42,8 @@ const AppNavigator = ({ user }) => {
         />
       ) : (
         <Stack.Screen
-          name="MemberDashboard"
-          component={MemberDashboardScreen}
+          name="MemberDrawer"
+          component={MemberDrawerNavigator}
           options={{ headerShown: false }}
         />
       )}

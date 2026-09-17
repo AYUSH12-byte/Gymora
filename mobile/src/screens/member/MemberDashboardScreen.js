@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+
 import {
   View,
   Text,
@@ -8,47 +9,40 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+
 import { useFocusEffect } from "@react-navigation/native";
 
 import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
 
-const MemberDashboardScreen = () => {
-  const { user } = useAuth();
-
+const MemberDashboardScreen = ({ navigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       setError("");
 
       const response = await api.get("/member-portal/dashboard");
 
-      console.log(
-        "MEMBER DASHBOARD RESPONSE:",
-        response.data
-      );
+      const data =
+        response.data?.dashboard || response.data?.data || response.data;
 
-      if (response.data.success) {
-        setDashboard(response.data.dashboard);
-      } else {
-        setError(
-          response.data.message || "Failed to load dashboard"
-        );
-      }
-    } catch (error) {
-      console.log(
+      setDashboard(data);
+    } catch (err) {
+      console.error(
         "Member dashboard error:",
-        error.response?.data || error.message
+        err?.response?.data || err.message,
       );
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to load member dashboard"
-      );
+      setError(err?.response?.data?.message || "Failed to load dashboard");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,43 +52,118 @@ const MemberDashboardScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadDashboard();
-    }, [])
+    }, []),
   );
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadDashboard();
+  const formatDate = (date) => {
+    if (!date) return "Not available";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "Not available";
+    }
+
+    return parsedDate.toLocaleDateString();
   };
 
-  if (loading) {
+  const getMembership = () => {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
+      dashboard?.membership ||
+      dashboard?.activeMembership ||
+      dashboard?.currentMembership ||
+      null
+    );
+  };
 
-        <Text style={styles.loadingText}>
-          Loading dashboard...
-        </Text>
+  const getAttendance = () => {
+    return dashboard?.attendance || dashboard?.attendanceSummary || {};
+  };
+
+  const getPayments = () => {
+    return dashboard?.payments || dashboard?.paymentSummary || {};
+  };
+
+  const getWorkoutPlans = () => {
+    return (
+      dashboard?.workoutPlans ||
+      dashboard?.workoutPlanSummary ||
+      dashboard?.plans ||
+      []
+    );
+  };
+
+  const membership = getMembership();
+  const attendance = getAttendance();
+  const payments = getPayments();
+  const workoutPlans = getWorkoutPlans();
+
+  const membershipStatus =
+    membership?.status ||
+    membership?.membershipStatus ||
+    (membership ? "active" : "No Membership");
+
+  const packageName =
+    membership?.package?.name ||
+    membership?.packageName ||
+    membership?.membershipPackage?.name ||
+    "No active package";
+
+  const startDate = membership?.startDate || membership?.membershipStartDate;
+
+  const endDate =
+    membership?.endDate ||
+    membership?.expiryDate ||
+    membership?.membershipEndDate;
+
+  const daysRemaining =
+    membership?.daysRemaining ?? membership?.remainingDays ?? null;
+
+  const attendanceCount =
+    attendance?.total ??
+    attendance?.count ??
+    attendance?.totalAttendance ??
+    (Array.isArray(attendance) ? attendance.length : 0);
+
+  const paymentBalance =
+    payments?.balance ??
+    payments?.pending ??
+    payments?.pendingAmount ??
+    payments?.remaining ??
+    0;
+
+  const totalPaid = payments?.totalPaid ?? payments?.paid ?? 0;
+
+  const planCount = Array.isArray(workoutPlans)
+    ? workoutPlans.length
+    : (workoutPlans?.total ?? workoutPlans?.count ?? 0);
+
+  if (loading && !dashboard) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#2563eb" />
+
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
       </View>
     );
   }
 
-  if (error) {
+  if (error && !dashboard) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.error}>{error}</Text>
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorTitle}>Something went wrong</Text>
+
+        <Text style={styles.errorText}>{error}</Text>
 
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={loadDashboard}
+          onPress={() => loadDashboard()}
         >
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
-  const member = dashboard?.member;
-  const membership = dashboard?.membership;
 
   return (
     <ScrollView
@@ -103,439 +172,469 @@ const MemberDashboardScreen = () => {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={handleRefresh}
+          onRefresh={() => loadDashboard(true)}
         />
       }
+      showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Welcome, {member?.name || user?.name || "Member"} 👋
-        </Text>
+        <View>
+          <Text style={styles.welcomeText}>Welcome back</Text>
 
-        <Text style={styles.email}>
-          {member?.email || user?.email || ""}
-        </Text>
+          <Text style={styles.memberName}>
+            {dashboard?.member?.name ||
+              dashboard?.user?.name ||
+              dashboard?.name ||
+              "Member"}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate("MemberProfile")}
+        >
+          <Text style={styles.profileButtonText}>Profile</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Membership */}
+      {error ? (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>{error}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.membershipCard}>
-        <Text style={styles.cardLabel}>
-          Current Membership
-        </Text>
+        <View style={styles.cardHeader}>
+          <View>
+            <Text style={styles.cardLabel}>CURRENT MEMBERSHIP</Text>
 
-        {membership ? (
-          <>
-            <Text style={styles.packageName}>
-              {membership.package?.name || "Membership"}
+            <Text style={styles.packageName}>{packageName}</Text>
+          </View>
+
+          <View
+            style={[
+              styles.statusBadge,
+              membershipStatus?.toLowerCase() === "active"
+                ? styles.activeBadge
+                : styles.inactiveBadge,
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                membershipStatus?.toLowerCase() === "active"
+                  ? styles.activeText
+                  : styles.inactiveText,
+              ]}
+            >
+              {String(membershipStatus).toUpperCase()}
             </Text>
+          </View>
+        </View>
 
-            <View style={styles.membershipRow}>
-              <View>
-                <Text style={styles.smallLabel}>
-                  Status
-                </Text>
+        <View style={styles.dateRow}>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>START DATE</Text>
 
-                <Text style={styles.status}>
-                  {membership.status}
-                </Text>
-              </View>
+            <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
+          </View>
 
-              <View>
-                <Text style={styles.smallLabel}>
-                  Expires
-                </Text>
+          <View style={styles.dateBox}>
+            <Text style={styles.dateLabel}>EXPIRY DATE</Text>
 
-                <Text style={styles.date}>
-                  {membership.endDate
-                    ? new Date(
-                        membership.endDate
-                      ).toLocaleDateString()
-                    : "N/A"}
-                </Text>
-              </View>
-            </View>
+            <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
+          </View>
+        </View>
 
-            <View style={styles.membershipRow}>
-              <View>
-                <Text style={styles.smallLabel}>
-                  Amount
-                </Text>
+        {daysRemaining !== null ? (
+          <View style={styles.remainingBox}>
+            <Text style={styles.remainingNumber}>{daysRemaining}</Text>
 
-                <Text style={styles.amount}>
-                  Rs.{" "}
-                  {Number(
-                    membership.finalAmount || 0
-                  ).toLocaleString()}
-                </Text>
-              </View>
+            <Text style={styles.remainingLabel}>days remaining</Text>
+          </View>
+        ) : null}
 
-              <View>
-                <Text style={styles.smallLabel}>
-                  Payment
-                </Text>
-
-                <Text style={styles.paymentStatus}>
-                  {membership.paymentStatus}
-                </Text>
-              </View>
-            </View>
-          </>
-        ) : (
-          <Text style={styles.empty}>
-            No active membership
-          </Text>
-        )}
+        <TouchableOpacity
+          style={styles.membershipButton}
+          onPress={() => navigation.navigate("MemberMembership")}
+        >
+          <Text style={styles.membershipButtonText}>View Membership</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Statistics */}
-      <View style={styles.grid}>
-        <StatCard
-          title="Total Visits"
-          value={
-            dashboard?.attendance?.totalVisits ?? 0
-          }
-        />
+      <Text style={styles.sectionTitle}>Overview</Text>
 
-        <StatCard
-          title="Workout Plans"
-          value={
-            dashboard?.workoutPlans?.length ?? 0
-          }
-        />
+      <View style={styles.statsGrid}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{attendanceCount}</Text>
 
-        <StatCard
-          title="Progress Records"
-          value={
-            dashboard?.recentProgress?.length ?? 0
-          }
-        />
+          <Text style={styles.statLabel}>Attendance</Text>
+        </View>
 
-        <StatCard
-          title="Notifications"
-          value={
-            dashboard?.notifications?.unread ?? 0
-          }
-        />
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{planCount}</Text>
+
+          <Text style={styles.statLabel}>Workout Plans</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            Rs. {Number(totalPaid || 0).toLocaleString()}
+          </Text>
+
+          <Text style={styles.statLabel}>Total Paid</Text>
+        </View>
+
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            Rs. {Number(paymentBalance || 0).toLocaleString()}
+          </Text>
+
+          <Text style={styles.statLabel}>Balance</Text>
+        </View>
       </View>
 
-      {/* Workout Plans */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          My Workout Plans
-        </Text>
+      <Text style={styles.sectionTitle}>Quick Access</Text>
 
-        {dashboard?.workoutPlans?.length > 0 ? (
-          dashboard.workoutPlans.map((plan) => (
-            <View
-              key={plan._id}
-              style={styles.listItem}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemTitle}>
-                  {plan.name}
-                </Text>
+      <View style={styles.quickAccess}>
+        <TouchableOpacity
+          style={styles.quickCard}
+          onPress={() => navigation.navigate("MemberWorkoutPlans")}
+        >
+          <Text style={styles.quickIcon}>💪</Text>
 
-                <Text style={styles.itemSubtitle}>
-                  {plan.difficulty || "General"} •{" "}
-                  {plan.goal || "Fitness"}
-                </Text>
+          <Text style={styles.quickTitle}>Workout Plans</Text>
 
-                <Text style={styles.trainer}>
-                  Trainer:{" "}
-                  {plan.trainer?.user?.name ||
-                    "Not assigned"}
-                </Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.empty}>
-            No workout plans assigned
+          <Text style={styles.quickDescription}>
+            View your assigned exercises
           </Text>
-        )}
-      </View>
+        </TouchableOpacity>
 
-      {/* Recent Progress */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          Recent Progress
-        </Text>
+        <TouchableOpacity
+          style={styles.quickCard}
+          onPress={() => navigation.navigate("MemberAttendance")}
+        >
+          <Text style={styles.quickIcon}>📅</Text>
 
-        {dashboard?.recentProgress?.length > 0 ? (
-          dashboard.recentProgress.map((item) => (
-            <View
-              key={item._id}
-              style={styles.listItem}
-            >
-              <View>
-                <Text style={styles.itemTitle}>
-                  Weight: {item.weight} kg
-                </Text>
+          <Text style={styles.quickTitle}>Attendance</Text>
 
-                <Text style={styles.itemSubtitle}>
-                  {item.recordedAt
-                    ? new Date(
-                        item.recordedAt
-                      ).toLocaleDateString()
-                    : "N/A"}
-                </Text>
-              </View>
-
-              {item.bodyFat !== undefined &&
-                item.bodyFat !== null && (
-                  <Text style={styles.value}>
-                    Body Fat: {item.bodyFat}%
-                  </Text>
-                )}
-            </View>
-          ))
-        ) : (
-          <Text style={styles.empty}>
-            No progress records
+          <Text style={styles.quickDescription}>
+            View your attendance history
           </Text>
-        )}
-      </View>
+        </TouchableOpacity>
 
-      {/* Recent Payments */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          Recent Payments
-        </Text>
+        <TouchableOpacity
+          style={styles.quickCard}
+          onPress={() => navigation.navigate("MemberPayments")}
+        >
+          <Text style={styles.quickIcon}>💳</Text>
 
-        {dashboard?.recentPayments?.length > 0 ? (
-          dashboard.recentPayments.map((payment) => (
-            <View
-              key={payment._id}
-              style={styles.listItem}
-            >
-              <View>
-                <Text style={styles.itemTitle}>
-                  {payment.receiptNumber}
-                </Text>
+          <Text style={styles.quickTitle}>Payments</Text>
 
-                <Text style={styles.itemSubtitle}>
-                  {payment.paymentMethod}
-                </Text>
-              </View>
+          <Text style={styles.quickDescription}>View payments and balance</Text>
+        </TouchableOpacity>
 
-              <Text style={styles.amount}>
-                Rs.{" "}
-                {Number(
-                  payment.amount || 0
-                ).toLocaleString()}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.empty}>
-            No payment history
+        <TouchableOpacity
+          style={styles.quickCard}
+          onPress={() => navigation.navigate("MemberProgress")}
+        >
+          <Text style={styles.quickIcon}>📈</Text>
+
+          <Text style={styles.quickTitle}>Progress</Text>
+
+          <Text style={styles.quickDescription}>
+            Track your fitness progress
           </Text>
-        )}
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
-const StatCard = ({ title, value }) => {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statTitle}>
-        {title}
-      </Text>
-
-      <Text style={styles.statValue}>
-        {value}
-      </Text>
-    </View>
-  );
-};
-
-export default MemberDashboardScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6f8",
+    backgroundColor: "#f3f4f6",
   },
 
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 16,
+    paddingBottom: 30,
   },
 
-  center: {
+  centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 24,
+    backgroundColor: "#f3f4f6",
   },
 
   loadingText: {
-    marginTop: 10,
-    color: "#666",
+    marginTop: 12,
+    fontSize: 15,
+    color: "#6b7280",
   },
 
-  error: {
-    color: "#d00",
-    fontSize: 16,
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 8,
+  },
+
+  errorText: {
+    fontSize: 14,
+    color: "#ef4444",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 20,
   },
 
   retryButton: {
-    backgroundColor: "#111",
-    paddingHorizontal: 25,
+    backgroundColor: "#2563eb",
+    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
 
-  retryText: {
+  retryButtonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
   },
 
   header: {
-    marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
   },
 
-  title: {
-    fontSize: 25,
-    fontWeight: "bold",
-  },
-
-  email: {
-    color: "#777",
-    marginTop: 5,
+  welcomeText: {
     fontSize: 14,
+    color: "#6b7280",
+  },
+
+  memberName: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 3,
+  },
+
+  profileButton: {
+    backgroundColor: "#111827",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+
+  profileButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  warningBox: {
+    backgroundColor: "#fef3c7",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 15,
+  },
+
+  warningText: {
+    color: "#92400e",
+    fontSize: 13,
   },
 
   membershipCard: {
-    backgroundColor: "#111",
+    backgroundColor: "#111827",
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    padding: 18,
+    marginBottom: 22,
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
 
   cardLabel: {
-    color: "#aaa",
-    fontSize: 13,
+    color: "#9ca3af",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
   },
 
   packageName: {
     color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 8,
-    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "800",
+    marginTop: 6,
   },
 
-  membershipRow: {
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  activeBadge: {
+    backgroundColor: "#dcfce7",
+  },
+
+  inactiveBadge: {
+    backgroundColor: "#fee2e2",
+  },
+
+  statusText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+
+  activeText: {
+    color: "#166534",
+  },
+
+  inactiveText: {
+    color: "#991b1b",
+  },
+
+  dateRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
+    marginTop: 24,
+    gap: 12,
   },
 
-  smallLabel: {
-    color: "#aaa",
+  dateBox: {
+    flex: 1,
+  },
+
+  dateLabel: {
+    color: "#9ca3af",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+
+  dateValue: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 5,
+  },
+
+  remainingBox: {
+    marginTop: 20,
+    padding: 14,
+    backgroundColor: "#1f2937",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  remainingNumber: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+
+  remainingLabel: {
+    color: "#9ca3af",
     fontSize: 12,
-    marginBottom: 4,
+    marginTop: 2,
   },
 
-  status: {
+  membershipButton: {
+    marginTop: 15,
+    backgroundColor: "#2563eb",
+    borderRadius: 9,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+
+  membershipButtonText: {
     color: "#fff",
-    fontWeight: "bold",
-    textTransform: "capitalize",
-  },
-
-  date: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-
-  amount: {
-    fontWeight: "bold",
-  },
-
-  paymentStatus: {
-    color: "#fff",
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-
-  statCard: {
-    width: "48%",
-    backgroundColor: "#fff",
-    padding: 18,
-    borderRadius: 14,
-    marginBottom: 15,
-    elevation: 2,
-  },
-
-  statTitle: {
-    color: "#777",
-    fontSize: 13,
-    marginBottom: 8,
-  },
-
-  statValue: {
-    fontSize: 26,
-    fontWeight: "bold",
-  },
-
-  section: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 20,
+    fontSize: 14,
+    fontWeight: "700",
   },
 
   sectionTitle: {
     fontSize: 19,
-    fontWeight: "bold",
-    marginBottom: 15,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 12,
   },
 
-  listItem: {
+  statsGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 22,
   },
 
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: "600",
+  statCard: {
+    width: "47%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 100,
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
   },
 
-  itemSubtitle: {
-    color: "#777",
+  statNumber: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  statLabel: {
+    fontSize: 13,
+    color: "#6b7280",
+    marginTop: 7,
+  },
+
+  quickAccess: {
+    gap: 12,
+  },
+
+  quickCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+  },
+
+  quickIcon: {
+    fontSize: 25,
+    marginBottom: 8,
+  },
+
+  quickTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  quickDescription: {
+    fontSize: 13,
+    color: "#6b7280",
     marginTop: 4,
-    fontSize: 13,
-  },
-
-  trainer: {
-    color: "#555",
-    marginTop: 5,
-    fontSize: 13,
-  },
-
-  value: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  empty: {
-    color: "#888",
-    textAlign: "center",
-    paddingVertical: 15,
   },
 });
+
+export default MemberDashboardScreen;
