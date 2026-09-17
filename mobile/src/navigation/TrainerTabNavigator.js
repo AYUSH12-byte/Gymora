@@ -16,6 +16,8 @@ import TrainerWorkoutPlanDetailsScreen from "../screens/trainer/workout plans/Tr
 // Attendance
 import TrainerAttendanceScreen from "../screens/trainer/attendance/TrainerAttendanceScreen";
 
+// Profile
+import TrainerProfileScreen from "../screens/trainer/profile/TrainerProfileScreen";
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerContent = (props) => {
@@ -167,13 +169,13 @@ const TrainerDrawerNavigator = () => {
       {/* Profile - Coming Next */}
       <Drawer.Screen
         name="TrainerProfile"
+        component={TrainerProfileScreen}
         options={{
           title: "Profile",
           drawerLabel: "Profile",
         }}
-      >
-        {() => <PlaceholderScreen title="Trainer Profile" />}
-      </Drawer.Screen>
+      />
+      
     </Drawer.Navigator>
   );
 };

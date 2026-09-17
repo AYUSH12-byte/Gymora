@@ -10,6 +10,8 @@ const {
   getTrainerMembers,
   getTrainerWorkoutPlans,
   getTrainerAttendance,
+  getTrainerProfile,
+  updateTrainerProfile,
 } = require("../controllers/trainerController");
 
 const protect = require("../middleware/authMiddleware");
@@ -47,6 +49,22 @@ router.get(
   protect,
   authorizeRoles("trainer"),
   getTrainerAttendance
+);
+
+// Get trainer profile
+router.get(
+  "/profile",
+  protect,
+  authorizeRoles("trainer"),
+  getTrainerProfile
+);
+
+// Update trainer profile
+router.put(
+  "/profile",
+  protect,
+  authorizeRoles("trainer"),
+  updateTrainerProfile
 );
 
 // Admin creates trainer

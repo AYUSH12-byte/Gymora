@@ -503,6 +503,119 @@ const getTrainerAttendance = async (req, res) => {
   }
 };
 
+// Get logged-in trainer profile
+const getTrainerProfile = async (req, res) => {
+  try {
+    const trainer = await Trainer.findOne({
+      user: req.user._id,
+    }).populate(
+      "user",
+      "name email role isActive"
+    );
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      trainer,
+    });
+  } catch (error) {
+    console.error("Get trainer profile error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Update logged-in trainer profile
+const updateTrainerProfile = async (req, res) => {
+  try {
+    const trainer = await Trainer.findOne({
+      user: req.user._id,
+    });
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found",
+      });
+    }
+
+    const {
+      name,
+      phone,
+      specialization,
+      experience,
+      bio,
+    } = req.body;
+
+    // Update User information
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (name !== undefined) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    // Update Trainer information
+    if (phone !== undefined) {
+      trainer.phone = phone;
+    }
+
+    if (specialization !== undefined) {
+      trainer.specialization = specialization;
+    }
+
+    if (experience !== undefined) {
+      trainer.experience = Number(experience);
+    }
+
+    if (bio !== undefined) {
+      trainer.bio = bio;
+    }
+
+    await trainer.save();
+
+    const updatedTrainer = await Trainer.findById(
+      trainer._id
+    ).populate(
+      "user",
+      "name email role isActive"
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Trainer profile updated successfully",
+      trainer: updatedTrainer,
+    });
+  } catch (error) {
+    console.error(
+      "Update trainer profile error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTrainer,
   getTrainers,
@@ -513,4 +626,6 @@ module.exports = {
   getTrainerMembers,
   getTrainerWorkoutPlans,
   getTrainerAttendance,
+  getTrainerProfile,
+  updateTrainerProfile,
 };
