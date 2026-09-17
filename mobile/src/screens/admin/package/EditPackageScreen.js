@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import api from "../../../services/api";
@@ -32,9 +34,13 @@ const EditPackageScreen = ({ route, navigation }) => {
 
   const loadPackage = async () => {
     try {
-      const response = await api.get(`/packages/${packageId}`);
+      const response = await api.get(
+        `/packages/${packageId}`
+      );
 
-      const data = response.data.package || response.data.data;
+      const data =
+        response.data.package ||
+        response.data.data;
 
       if (!data) {
         Alert.alert("Error", "Package not found");
@@ -44,16 +50,25 @@ const EditPackageScreen = ({ route, navigation }) => {
 
       setName(data.name || "");
       setDuration(String(data.duration || ""));
-      setDurationUnit(data.durationUnit || "months");
+      setDurationUnit(
+        data.durationUnit || "months"
+      );
       setPrice(String(data.price || ""));
       setDiscount(String(data.discount || 0));
       setDescription(data.description || "");
       setIsActive(data.isActive !== false);
     } catch (error) {
+      console.log(
+        "Load package error:",
+        error.response?.data || error.message
+      );
+
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to load package",
+        error.response?.data?.message ||
+          "Failed to load package"
       );
+
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -62,175 +77,328 @@ const EditPackageScreen = ({ route, navigation }) => {
 
   const updatePackage = async () => {
     if (!name.trim()) {
-      Alert.alert("Validation", "Package name is required");
+      Alert.alert(
+        "Validation",
+        "Package name is required"
+      );
       return;
     }
 
-    if (!duration || Number(duration) <= 0) {
-      Alert.alert("Validation", "Enter a valid duration");
+    if (
+      !duration ||
+      Number(duration) <= 0
+    ) {
+      Alert.alert(
+        "Validation",
+        "Enter a valid duration"
+      );
       return;
     }
 
-    if (!price || Number(price) < 0) {
-      Alert.alert("Validation", "Enter a valid price");
+    if (
+      !price ||
+      Number(price) < 0
+    ) {
+      Alert.alert(
+        "Validation",
+        "Enter a valid price"
+      );
       return;
     }
 
-    if (Number(discount) < 0 || Number(discount) > 100) {
-      Alert.alert("Validation", "Discount must be between 0 and 100");
+    if (
+      Number(discount) < 0 ||
+      Number(discount) > 100
+    ) {
+      Alert.alert(
+        "Validation",
+        "Discount must be between 0 and 100"
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const response = await api.put(`/packages/${packageId}`, {
-        name: name.trim(),
-        duration: Number(duration),
-        durationUnit,
-        price: Number(price),
-        discount: Number(discount),
-        description: description.trim(),
-        isActive,
-      });
+      const response = await api.put(
+        `/packages/${packageId}`,
+        {
+          name: name.trim(),
+          duration: Number(duration),
+          durationUnit,
+          price: Number(price),
+          discount: Number(discount),
+          description: description.trim(),
+          isActive,
+        }
+      );
 
       if (response.data.success) {
-        Alert.alert("Success", "Package updated successfully", [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        Alert.alert(
+          "Success",
+          "Package updated successfully",
+          [
+            {
+              text: "OK",
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
       }
     } catch (error) {
+      console.log(
+        "Update package error:",
+        error.response?.data || error.message
+      );
+
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to update package",
+        error.response?.data?.message ||
+          "Failed to update package"
       );
     } finally {
       setSaving(false);
     }
   };
 
+  // Loading screen
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Loading package...</Text>
+
+        <Text style={styles.loadingText}>
+          Loading package...
+        </Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.label}>Package Name</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardContainer}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : "height"
+      }
+      keyboardVerticalOffset={
+        Platform.OS === "ios" ? 80 : 20
+      }
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
+      >
+        {/* Package Name */}
+        <Text style={styles.label}>
+          Package Name
+        </Text>
 
-      <TextInput style={styles.input} value={name} onChangeText={setName} />
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Package name"
+          placeholderTextColor="#999"
+          editable={!saving}
+          returnKeyType="next"
+        />
 
-      <Text style={styles.label}>Duration</Text>
+        {/* Duration */}
+        <Text style={styles.label}>
+          Duration
+        </Text>
 
-      <TextInput
-        style={styles.input}
-        value={duration}
-        onChangeText={setDuration}
-        keyboardType="numeric"
-      />
+        <TextInput
+          style={styles.input}
+          value={duration}
+          onChangeText={setDuration}
+          placeholder="e.g. 1"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          editable={!saving}
+          returnKeyType="next"
+        />
 
-      <Text style={styles.label}>Duration Unit</Text>
+        {/* Duration Unit */}
+        <Text style={styles.label}>
+          Duration Unit
+        </Text>
 
-      <View style={styles.options}>
-        {["days", "months", "years"].map((unit) => (
+        <View style={styles.options}>
+          {["days", "months", "years"].map(
+            (unit) => (
+              <TouchableOpacity
+                key={unit}
+                style={[
+                  styles.option,
+                  durationUnit === unit &&
+                    styles.selectedOption,
+                ]}
+                onPress={() =>
+                  setDurationUnit(unit)
+                }
+                disabled={saving}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    durationUnit === unit &&
+                      styles.selectedOptionText,
+                  ]}
+                >
+                  {unit}
+                </Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
+
+        {/* Price */}
+        <Text style={styles.label}>
+          Price
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          value={price}
+          onChangeText={setPrice}
+          placeholder="e.g. 3000"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          editable={!saving}
+          returnKeyType="next"
+        />
+
+        {/* Discount */}
+        <Text style={styles.label}>
+          Discount (%)
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          value={discount}
+          onChangeText={setDiscount}
+          placeholder="e.g. 10"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+          editable={!saving}
+          returnKeyType="next"
+        />
+
+        {/* Description */}
+        <Text style={styles.label}>
+          Description
+        </Text>
+
+        <TextInput
+          style={[
+            styles.input,
+            styles.textArea,
+          ]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Package description"
+          placeholderTextColor="#999"
+          multiline
+          editable={!saving}
+          textAlignVertical="top"
+        />
+
+        {/* Status */}
+        <Text style={styles.label}>
+          Status
+        </Text>
+
+        <View style={styles.options}>
           <TouchableOpacity
-            key={unit}
             style={[
               styles.option,
-              durationUnit === unit && styles.selectedOption,
+              isActive &&
+                styles.selectedOption,
             ]}
-            onPress={() => setDurationUnit(unit)}
+            onPress={() => setIsActive(true)}
+            disabled={saving}
+            activeOpacity={0.8}
           >
             <Text
               style={[
                 styles.optionText,
-                durationUnit === unit && styles.selectedOptionText,
+                isActive &&
+                  styles.selectedOptionText,
               ]}
             >
-              {unit}
+              Active
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      <Text style={styles.label}>Price</Text>
-
-      <TextInput
-        style={styles.input}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Discount (%)</Text>
-
-      <TextInput
-        style={styles.input}
-        value={discount}
-        onChangeText={setDiscount}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>Description</Text>
-
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-
-      <Text style={styles.label}>Status</Text>
-
-      <View style={styles.options}>
-        <TouchableOpacity
-          style={[styles.option, isActive && styles.selectedOption]}
-          onPress={() => setIsActive(true)}
-        >
-          <Text
-            style={[styles.optionText, isActive && styles.selectedOptionText]}
+          <TouchableOpacity
+            style={[
+              styles.option,
+              !isActive &&
+                styles.selectedOption,
+            ]}
+            onPress={() => setIsActive(false)}
+            disabled={saving}
+            activeOpacity={0.8}
           >
-            Active
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.optionText,
+                !isActive &&
+                  styles.selectedOptionText,
+              ]}
+            >
+              Inactive
+            </Text>
+          </TouchableOpacity>
+        </View>
 
+        {/* Update Button */}
         <TouchableOpacity
-          style={[styles.option, !isActive && styles.selectedOption]}
-          onPress={() => setIsActive(false)}
+          style={[
+            styles.button,
+            saving &&
+              styles.disabledButton,
+          ]}
+          onPress={updatePackage}
+          disabled={saving}
+          activeOpacity={0.8}
         >
-          <Text
-            style={[styles.optionText, !isActive && styles.selectedOptionText]}
-          >
-            Inactive
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {saving ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator
+                size="small"
+                color="#fff"
+              />
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={updatePackage}
-        disabled={saving}
-      >
-        {saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Update Package</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+              <Text style={styles.buttonText}>
+                Updating...
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.buttonText}>
+              Update Package
+            </Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 export default EditPackageScreen;
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f6f8",
@@ -238,13 +406,14 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f5f6f8",
   },
 
   loadingText: {
@@ -255,6 +424,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
+    color: "#222",
     marginBottom: 7,
     marginTop: 12,
   },
@@ -267,6 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     fontSize: 15,
+    color: "#111",
   },
 
   textArea: {
@@ -297,6 +468,7 @@ const styles = StyleSheet.create({
   optionText: {
     textTransform: "capitalize",
     color: "#555",
+    fontSize: 14,
   },
 
   selectedOptionText: {
@@ -305,11 +477,23 @@ const styles = StyleSheet.create({
   },
 
   button: {
+    height: 52,
     backgroundColor: "#111",
-    paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 25,
+    marginBottom: 20,
+  },
+
+  disabledButton: {
+    opacity: 0.6,
+  },
+
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 
   buttonText: {
