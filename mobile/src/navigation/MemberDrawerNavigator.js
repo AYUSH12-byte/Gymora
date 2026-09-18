@@ -13,6 +13,10 @@ import MemberMembershipScreen from "../screens/member/membership/MemberMembershi
 // Workout Plans
 import MemberWorkoutPlansScreen from "../screens/member/workout/MemberWorkoutPlansScreen";
 import MemberWorkoutPlanDetailsScreen from "../screens/member/workout/MemberWorkoutPlanDetailsScreen";
+
+// Attendance
+import MemberAttendanceScreen from "../screens/member/attendance/MemberAttendanceScreen";
+
 const Drawer = createDrawerNavigator();
 
 const PlaceholderScreen = ({ title }) => {
@@ -159,16 +163,15 @@ const MemberDrawerNavigator = () => {
           },
         }}
       />
-      
+
       <Drawer.Screen
         name="MemberAttendance"
+        component={MemberAttendanceScreen}
         options={{
           title: "Attendance",
           drawerLabel: "Attendance",
         }}
-      >
-        {() => <PlaceholderScreen title="Attendance" />}
-      </Drawer.Screen>
+      />
 
       <Drawer.Screen
         name="MemberPayments"
