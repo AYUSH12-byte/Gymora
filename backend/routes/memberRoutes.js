@@ -1,5 +1,7 @@
 const express = require("express");
 
+const router = express.Router();
+
 const {
   createMember,
   getMembers,
@@ -10,23 +12,36 @@ const {
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 
-const router = express.Router();
+// Create member
+router.post(
+  "/",
+  protect,
+  authorizeRoles("admin"),
+  createMember,
+);
 
-// Admin only
-router.post("/", protect, authorizeRoles("admin"), createMember);
+// Get all members
+router.get(
+  "/",
+  protect,
+  authorizeRoles("admin"),
+  getMembers,
+);
 
-// Admin and trainer
-router.get("/", protect, authorizeRoles("admin", "trainer"), getMembers);
-
-// Admin and trainer
+// Get member QR
 router.get(
   "/:id/qr",
   protect,
-  authorizeRoles("admin", "trainer"),
+  authorizeRoles("admin"),
   getMemberQR,
 );
 
-// Admin and trainer
-router.get("/:id", protect, authorizeRoles("admin", "trainer"), getMemberById);
+// Get single member
+router.get(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  getMemberById,
+);
 
 module.exports = router;

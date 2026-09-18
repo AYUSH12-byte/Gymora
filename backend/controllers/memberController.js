@@ -3,7 +3,9 @@ const Member = require("../models/Member");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 
-// Create member
+// ======================================================
+// CREATE MEMBER
+// ======================================================
 const createMember = async (req, res) => {
   try {
     const {
@@ -41,8 +43,10 @@ const createMember = async (req, res) => {
       role: "member",
     });
 
-    // Create member profile
+    // Generate QR token
     const qrToken = crypto.randomBytes(16).toString("hex");
+
+    // Create member profile
     const member = await Member.create({
       user: user._id,
       phone,
@@ -53,40 +57,48 @@ const createMember = async (req, res) => {
       qrToken,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Member created successfully",
       member,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Create member error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get all members
+// ======================================================
+// GET ALL MEMBERS
+// ======================================================
 const getMembers = async (req, res) => {
   try {
     const members = await Member.find()
       .populate("user", "name email role isActive")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: members.length,
       members,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get members error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get single member
+// ======================================================
+// GET SINGLE MEMBER
+// ======================================================
 const getMemberById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -112,26 +124,38 @@ const getMemberById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       member,
     });
   } catch (error) {
     console.error("Get member by ID error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
+
+// ======================================================
+// GET MEMBER QR
+// ADMIN ONLY
+// ======================================================
 const getMemberQR = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Member ID is required",
+      });
+    }
+
     const member = await Member.findById(id).populate(
       "user",
-      "name email",
+      "name email role isActive",
     );
 
     if (!member) {
@@ -141,34 +165,41 @@ const getMemberQR = async (req, res) => {
       });
     }
 
+    // Generate QR token if missing
     if (!member.qrToken) {
       member.qrToken = crypto.randomBytes(32).toString("hex");
 
       await member.save();
     }
 
+    // Data stored inside QR
     const qrData = JSON.stringify({
       type: "GYM_MEMBER",
       memberId: member._id.toString(),
       token: member.qrToken,
     });
 
+    // Generate QR image
     const qrCode = await QRCode.toDataURL(qrData);
 
     return res.status(200).json({
       success: true,
       message: "Member QR generated successfully",
+
       qr: {
         type: "GYM_MEMBER",
-        memberId: member._id,
+        memberId: member._id.toString(),
         token: member.qrToken,
         data: qrData,
         image: qrCode,
       },
+
       member: {
         id: member._id,
         name: member.user?.name || "Member",
         email: member.user?.email || "",
+        phone: member.phone || "",
+        status: member.status || "active",
       },
     });
   } catch (error) {
@@ -181,6 +212,9 @@ const getMemberQR = async (req, res) => {
   }
 };
 
+// ======================================================
+// EXPORTS
+// ======================================================
 module.exports = {
   createMember,
   getMembers,
