@@ -125,10 +125,11 @@ const getMemberById = async (req, res) => {
     });
   }
 };
-
-const getMemberQRCode = async (req, res) => {
+const getMemberQR = async (req, res) => {
   try {
-    const member = await Member.findById(req.params.id).populate(
+    const { id } = req.params;
+
+    const member = await Member.findById(id).populate(
       "user",
       "name email",
     );
@@ -141,32 +142,41 @@ const getMemberQRCode = async (req, res) => {
     }
 
     if (!member.qrToken) {
-      member.qrToken = crypto.randomBytes(16).toString("hex");
+      member.qrToken = crypto.randomBytes(32).toString("hex");
+
       await member.save();
     }
 
     const qrData = JSON.stringify({
       type: "GYM_MEMBER",
-      memberId: member._id,
+      memberId: member._id.toString(),
       token: member.qrToken,
     });
 
     const qrCode = await QRCode.toDataURL(qrData);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
+      message: "Member QR generated successfully",
+      qr: {
+        type: "GYM_MEMBER",
+        memberId: member._id,
+        token: member.qrToken,
+        data: qrData,
+        image: qrCode,
+      },
       member: {
         id: member._id,
-        name: member.user.name,
-        email: member.user.email,
+        name: member.user?.name || "Member",
+        email: member.user?.email || "",
       },
-      qrToken: member.qrToken,
-      qrCode,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get member QR error:", error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Failed to generate member QR",
     });
   }
 };
@@ -175,5 +185,5 @@ module.exports = {
   createMember,
   getMembers,
   getMemberById,
-  getMemberQRCode,
+  getMemberQR,
 };

@@ -4,7 +4,7 @@ const {
   createMember,
   getMembers,
   getMemberById,
-  getMemberQRCode,
+  getMemberQR,
 } = require("../controllers/memberController");
 
 const protect = require("../middleware/authMiddleware");
@@ -23,7 +23,7 @@ router.get(
   "/:id/qr",
   protect,
   authorizeRoles("admin", "trainer"),
-  getMemberQRCode,
+  getMemberQR,
 );
 
 // Admin and trainer

@@ -1,5 +1,7 @@
 const express = require("express");
 
+const router = express.Router();
+
 const {
   checkIn,
   checkInByQR,
@@ -13,63 +15,42 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
-const checkMemberOwnership = require("../middleware/memberOwnership");
 
-const router = express.Router();
+// ======================================================
+// ADMIN ATTENDANCE
+// ======================================================
 
-// Today's attendance
-router.get(
-  "/today",
-  protect,
-  authorizeRoles("admin", "trainer"),
-  getTodayAttendance,
-);
+// Get all attendance
+router.get("/", protect, authorizeRoles("admin"), getAttendance);
 
-// Check in
-router.post("/check-in", protect, authorizeRoles("admin", "trainer"), checkIn);
+// Get today's attendance
+router.get("/today", protect, authorizeRoles("admin"), getTodayAttendance);
 
-// Check in by QR
-router.post(
-  "/qr-check-in",
-  protect,
-  authorizeRoles("admin", "trainer"),
-  checkInByQR,
-);
-
-// Check out by QR
-router.post(
-  "/qr-check-out",
-  protect,
-  authorizeRoles("admin", "trainer"),
-  checkOutByQR,
-);
-
-// Check out
-router.post(
-  "/check-out",
-  protect,
-  authorizeRoles("admin", "trainer"),
-  checkOut,
-);
-
-// All attendance
-router.get("/", protect, authorizeRoles("admin", "trainer"), getAttendance);
-
-// Member attendance history
+// Get attendance by member
 router.get(
   "/member/:memberId",
   protect,
-  authorizeRoles("admin", "trainer", "member"),
-  checkMemberOwnership,
+  authorizeRoles("admin"),
   getMemberAttendance,
 );
 
-// Single attendance
-router.get(
-  "/:id",
-  protect,
-  authorizeRoles("admin", "trainer", "member"),
-  getAttendanceById,
-);
+// Get attendance by ID
+router.get("/:id", protect, authorizeRoles("admin"), getAttendanceById);
+
+// Manual check-in
+router.post("/check-in", protect, authorizeRoles("admin"), checkIn);
+
+// Manual check-out
+router.post("/check-out", protect, authorizeRoles("admin"), checkOut);
+
+// ======================================================
+// MEMBER QR ATTENDANCE
+// ======================================================
+
+// Member scans QR to check-in
+router.post("/qr-check-in", protect, authorizeRoles("member"), checkInByQR);
+
+// Member scans QR to check-out
+router.post("/qr-check-out", protect, authorizeRoles("member"), checkOutByQR);
 
 module.exports = router;
