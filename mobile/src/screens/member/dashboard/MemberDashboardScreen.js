@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import {
   View,
@@ -32,6 +32,11 @@ const MemberDashboardScreen = ({ navigation }) => {
 
       const response = await api.get("/member-portal/dashboard");
 
+      console.log(
+        "MEMBER DASHBOARD RESPONSE:",
+        JSON.stringify(response.data, null, 2),
+      );
+
       const data =
         response.data?.dashboard || response.data?.data || response.data;
 
@@ -56,7 +61,9 @@ const MemberDashboardScreen = ({ navigation }) => {
   );
 
   const formatDate = (date) => {
-    if (!date) return "Not available";
+    if (!date) {
+      return "Not available";
+    }
 
     const parsedDate = new Date(date);
 
@@ -77,11 +84,21 @@ const MemberDashboardScreen = ({ navigation }) => {
   };
 
   const getAttendance = () => {
-    return dashboard?.attendance || dashboard?.attendanceSummary || {};
+    return (
+      dashboard?.attendance ||
+      dashboard?.attendanceSummary ||
+      dashboard?.attendanceStats ||
+      {}
+    );
   };
 
   const getPayments = () => {
-    return dashboard?.payments || dashboard?.paymentSummary || {};
+    return (
+      dashboard?.payments ||
+      dashboard?.paymentSummary ||
+      dashboard?.paymentStats ||
+      {}
+    );
   };
 
   const getWorkoutPlans = () => {
@@ -119,24 +136,67 @@ const MemberDashboardScreen = ({ navigation }) => {
   const daysRemaining =
     membership?.daysRemaining ?? membership?.remainingDays ?? null;
 
+  /*
+   * ATTENDANCE
+   *
+   * Supports multiple possible backend field names.
+   */
   const attendanceCount =
     attendance?.total ??
     attendance?.count ??
     attendance?.totalAttendance ??
+    attendance?.totalVisits ??
+    attendance?.visits ??
+    attendance?.present ??
+    attendance?.completed ??
+    attendance?.totalPresent ??
+    dashboard?.totalAttendance ??
+    dashboard?.totalVisits ??
     (Array.isArray(attendance) ? attendance.length : 0);
 
+  /*
+   * TOTAL PAID
+   *
+   * Supports multiple possible backend field names.
+   */
+  const totalPaid =
+    payments?.totalPaid ??
+    payments?.paid ??
+    payments?.totalAmountPaid ??
+    payments?.totalPaidAmount ??
+    payments?.amountPaid ??
+    payments?.totalPayment ??
+    payments?.totalPayments ??
+    payments?.total ??
+    dashboard?.totalPaid ??
+    dashboard?.totalAmountPaid ??
+    dashboard?.amountPaid ??
+    0;
+
+  /*
+   * PAYMENT BALANCE
+   */
   const paymentBalance =
     payments?.balance ??
     payments?.pending ??
     payments?.pendingAmount ??
     payments?.remaining ??
+    payments?.remainingBalance ??
+    payments?.pendingBalance ??
+    dashboard?.balance ??
+    dashboard?.pendingAmount ??
+    dashboard?.remainingBalance ??
     0;
 
-  const totalPaid = payments?.totalPaid ?? payments?.paid ?? 0;
-
+  /*
+   * WORKOUT PLANS
+   */
   const planCount = Array.isArray(workoutPlans)
     ? workoutPlans.length
-    : (workoutPlans?.total ?? workoutPlans?.count ?? 0);
+    : (workoutPlans?.total ??
+      workoutPlans?.count ??
+      workoutPlans?.totalPlans ??
+      0);
 
   if (loading && !dashboard) {
     return (
@@ -177,6 +237,7 @@ const MemberDashboardScreen = ({ navigation }) => {
       }
       showsVerticalScrollIndicator={false}
     >
+      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.welcomeText}>Welcome back</Text>
@@ -197,12 +258,14 @@ const MemberDashboardScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* ERROR WARNING */}
       {error ? (
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>{error}</Text>
         </View>
       ) : null}
 
+      {/* MEMBERSHIP */}
       <View style={styles.membershipCard}>
         <View style={styles.cardHeader}>
           <View>
@@ -214,7 +277,7 @@ const MemberDashboardScreen = ({ navigation }) => {
           <View
             style={[
               styles.statusBadge,
-              membershipStatus?.toLowerCase() === "active"
+              String(membershipStatus).toLowerCase() === "active"
                 ? styles.activeBadge
                 : styles.inactiveBadge,
             ]}
@@ -222,7 +285,7 @@ const MemberDashboardScreen = ({ navigation }) => {
             <Text
               style={[
                 styles.statusText,
-                membershipStatus?.toLowerCase() === "active"
+                String(membershipStatus).toLowerCase() === "active"
                   ? styles.activeText
                   : styles.inactiveText,
               ]}
@@ -262,22 +325,36 @@ const MemberDashboardScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* OVERVIEW */}
       <Text style={styles.sectionTitle}>Overview</Text>
 
       <View style={styles.statsGrid}>
+        {/* ATTENDANCE */}
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{attendanceCount}</Text>
+          <Text style={styles.statIcon}>📅</Text>
+
+          <Text style={styles.statNumber}>
+            {Number(attendanceCount || 0).toLocaleString()}
+          </Text>
 
           <Text style={styles.statLabel}>Attendance</Text>
         </View>
 
+        {/* WORKOUT PLANS */}
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{planCount}</Text>
+          <Text style={styles.statIcon}>💪</Text>
+
+          <Text style={styles.statNumber}>
+            {Number(planCount || 0).toLocaleString()}
+          </Text>
 
           <Text style={styles.statLabel}>Workout Plans</Text>
         </View>
 
+        {/* TOTAL PAID */}
         <View style={styles.statCard}>
+          <Text style={styles.statIcon}>💰</Text>
+
           <Text style={styles.statNumber}>
             Rs. {Number(totalPaid || 0).toLocaleString()}
           </Text>
@@ -285,7 +362,10 @@ const MemberDashboardScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Total Paid</Text>
         </View>
 
+        {/* BALANCE */}
         <View style={styles.statCard}>
+          <Text style={styles.statIcon}>💳</Text>
+
           <Text style={styles.statNumber}>
             Rs. {Number(paymentBalance || 0).toLocaleString()}
           </Text>
@@ -294,6 +374,7 @@ const MemberDashboardScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* QUICK ACCESS */}
       <Text style={styles.sectionTitle}>Quick Access</Text>
 
       <View style={styles.quickAccess}>
@@ -577,7 +658,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    minHeight: 100,
+    minHeight: 120,
     justifyContent: "center",
     elevation: 2,
     shadowColor: "#000",
@@ -587,6 +668,11 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
+  },
+
+  statIcon: {
+    fontSize: 22,
+    marginBottom: 6,
   },
 
   statNumber: {
