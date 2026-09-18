@@ -20,6 +20,9 @@ import MemberAttendanceScreen from "../screens/member/attendance/MemberAttendanc
 // payments
 import MemberPaymentsScreen from "../screens/member/payment/MemberPaymentsScreen";
 
+// Progress
+import MemberProgressScreen from "../screens/member/progess/MemberProgressScreen";
+
 const Drawer = createDrawerNavigator();
 
 const PlaceholderScreen = ({ title }) => {
@@ -187,13 +190,12 @@ const MemberDrawerNavigator = () => {
 
       <Drawer.Screen
         name="MemberProgress"
+        component={MemberProgressScreen}
         options={{
           title: "Progress",
           drawerLabel: "Progress",
         }}
-      >
-        {() => <PlaceholderScreen title="Progress" />}
-      </Drawer.Screen>
+      />
 
       <Drawer.Screen
         name="MemberProfile"
