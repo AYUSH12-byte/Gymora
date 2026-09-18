@@ -13,7 +13,7 @@ import {
 
 import { useFocusEffect } from "@react-navigation/native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const MemberMembershipScreen = () => {
   const [membership, setMembership] = useState(null);

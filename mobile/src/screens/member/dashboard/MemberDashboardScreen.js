@@ -12,7 +12,7 @@ import {
 
 import { useFocusEffect } from "@react-navigation/native";
 
-import api from "../../services/api";
+import api from "../../../services/api";
 
 const MemberDashboardScreen = ({ navigation }) => {
   const [dashboard, setDashboard] = useState(null);

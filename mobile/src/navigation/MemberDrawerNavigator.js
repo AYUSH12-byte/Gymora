@@ -4,8 +4,15 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 import { createDrawerNavigator } from "@react-navigation/drawer";
 
-import MemberDashboardScreen from "../screens/member/MemberDashboardScreen";
-import MemberMembershipScreen from "../screens/member/MemberMembershipScreen";
+// Dashboard
+import MemberDashboardScreen from "../screens/member/dashboard/MemberDashboardScreen";
+
+// Membership
+import MemberMembershipScreen from "../screens/member/membership/MemberMembershipScreen";
+
+// Workout Plans
+import MemberWorkoutPlansScreen from "../screens/member/workout/MemberWorkoutPlansScreen";
+import MemberWorkoutPlanDetailsScreen from "../screens/member/workout/MemberWorkoutPlanDetailsScreen";
 const Drawer = createDrawerNavigator();
 
 const PlaceholderScreen = ({ title }) => {
@@ -136,14 +143,23 @@ const MemberDrawerNavigator = () => {
 
       <Drawer.Screen
         name="MemberWorkoutPlans"
+        component={MemberWorkoutPlansScreen}
         options={{
           title: "Workout Plans",
           drawerLabel: "Workout Plans",
         }}
-      >
-        {() => <PlaceholderScreen title="Workout Plans" />}
-      </Drawer.Screen>
-
+      />
+      <Drawer.Screen
+        name="MemberWorkoutPlanDetails"
+        component={MemberWorkoutPlanDetailsScreen}
+        options={{
+          title: "Workout Details",
+          drawerItemStyle: {
+            display: "none",
+          },
+        }}
+      />
+      
       <Drawer.Screen
         name="MemberAttendance"
         options={{
