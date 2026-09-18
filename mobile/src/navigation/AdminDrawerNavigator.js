@@ -211,14 +211,7 @@ const AttendanceStackScreen = () => {
         }}
       />
 
-      <AttendanceStack.Screen
-        name="QRScanner"
-        component={QRScannerScreen}
-        options={{
-          title: "QR Scanner",
-          headerShown: false,
-        }}
-      />
+   
     </AttendanceStack.Navigator>
   );
 };
@@ -403,7 +396,15 @@ const AdminTabNavigator = () => {
           drawerLabel: "Attendance",
         }}
       />
-
+      <Drawer.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{
+          title: "QR Scanner",
+          drawerLabel: "QR Scanner",
+          headerShown: false,
+        }}
+      />
       <Drawer.Screen
         name="Progress"
         component={ProgressStackScreen}
@@ -429,13 +430,13 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      <Drawer.Screen 
-      name="Profile" 
-      component={AdminProfileScreen} 
-      options={{
-        title:"Profile",
-        drawerLabel:"Profile"    }}
-      
+      <Drawer.Screen
+        name="Profile"
+        component={AdminProfileScreen}
+        options={{
+          title: "Profile",
+          drawerLabel: "Profile",
+        }}
       />
     </Drawer.Navigator>
   );
