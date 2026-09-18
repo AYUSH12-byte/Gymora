@@ -1,62 +1,100 @@
 import React from "react";
+
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
   DrawerItemList,
-  DrawerItem,
 } from "@react-navigation/drawer";
 
 import { View, Text, StyleSheet } from "react-native";
-// Dashboard
+
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+// ======================================================
+// DASHBOARD
+// ======================================================
+
 import AdminDashboardScreen from "../screens/admin/dashboard/AdminDashboardScreen";
 
-// Member screens
+// ======================================================
+// MEMBER SCREENS
+// ======================================================
+
 import MembersScreen from "../screens/admin/member/MembersScreen";
 import AddMemberScreen from "../screens/admin/member/AddMemberScreen";
 import MemberDetailsScreen from "../screens/admin/member/MemberDetailsScreen";
+import MemberQRScreen from "../screens/admin/member/MemberQRScreen";
 
-// Membership screens
+// ======================================================
+// MEMBERSHIP SCREENS
+// ======================================================
+
 import MembershipsScreen from "../screens/admin/membership/MembershipsScreen";
 import MembershipDetailsScreen from "../screens/admin/membership/MembershipDetailsScreen";
 import RenewMembershipScreen from "../screens/admin/membership/RenewMembershipScreen";
 
-// Package screens
+// ======================================================
+// PACKAGE SCREENS
+// ======================================================
+
 import PackagesScreen from "../screens/admin/package/PackagesScreen";
 import AddPackageScreen from "../screens/admin/package/AddPackageScreen";
 import EditPackageScreen from "../screens/admin/package/EditPackageScreen";
 
-// Trainer screens
+// ======================================================
+// TRAINER SCREENS
+// ======================================================
+
 import TrainersScreen from "../screens/admin/trainer/TrainersScreen";
 import AddTrainerScreen from "../screens/admin/trainer/AddTrainerScreen";
 import TrainerDetailsScreen from "../screens/admin/trainer/TrainerDetailsScreen";
 import EditTrainerScreen from "../screens/admin/trainer/EditTrainerScreen";
 
-// Workout screens
+// ======================================================
+// WORKOUT SCREENS
+// ======================================================
+
 import WorkoutPlansScreen from "../screens/admin/workout/WorkoutPlansScreen";
 import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen";
 import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
 import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScreen";
 
-// Attendance screens
-import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
-import QRScannerScreen from "../screens/admin/qr/QRScannerScreen";
+// ======================================================
+// ATTENDANCE
+// ======================================================
 
-// Progress screens
+import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
+
+// ======================================================
+// PROGRESS
+// ======================================================
+
 import ProgressScreen from "../screens/admin/progress/ProgressScreen";
 import AddProgressScreen from "../screens/admin/progress/AddProgressScreen";
 import ProgressDetailsScreen from "../screens/admin/progress/ProgressDetailsScreen";
 import EditProgressScreen from "../screens/admin/progress/EditProgressScreen";
 
-// Notification screens
+// ======================================================
+// NOTIFICATIONS
+// ======================================================
+
 import NotificationsScreen from "../screens/admin/notification/NotificationsScreen";
 
-// Report screens
+// ======================================================
+// REPORTS
+// ======================================================
+
 import ReportsScreen from "../screens/admin/report/ReportsScreen";
 
-// Profile screens
+// ======================================================
+// PROFILE
+// ======================================================
+
 import AdminProfileScreen from "../screens/admin/profile/AdminProfileScreen";
 
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+// ======================================================
+// NAVIGATORS
+// ======================================================
 
 const Drawer = createDrawerNavigator();
 
@@ -65,6 +103,13 @@ const PackageStack = createNativeStackNavigator();
 const MembershipStack = createNativeStackNavigator();
 const TrainerStack = createNativeStackNavigator();
 const WorkoutPlanStack = createNativeStackNavigator();
+const AttendanceStack = createNativeStackNavigator();
+const ProgressStack = createNativeStackNavigator();
+const NotificationStack = createNativeStackNavigator();
+
+// ======================================================
+// MEMBERS STACK
+// ======================================================
 
 const MembersStack = () => {
   return (
@@ -72,23 +117,33 @@ const MembersStack = () => {
       <MemberStack.Screen
         name="MembersList"
         component={MembersScreen}
-        options={{ title: "Members" }}
+        options={{
+          title: "Members",
+        }}
       />
 
       <MemberStack.Screen
         name="MemberDetails"
         component={MemberDetailsScreen}
-        options={{ title: "Member Details" }}
+        options={{
+          title: "Member Details",
+        }}
       />
 
       <MemberStack.Screen
         name="AddMember"
         component={AddMemberScreen}
-        options={{ title: "Add Member" }}
+        options={{
+          title: "Add Member",
+        }}
       />
     </MemberStack.Navigator>
   );
 };
+
+// ======================================================
+// PACKAGES STACK
+// ======================================================
 
 const PackagesStack = () => {
   return (
@@ -96,23 +151,33 @@ const PackagesStack = () => {
       <PackageStack.Screen
         name="PackagesList"
         component={PackagesScreen}
-        options={{ title: "Membership Packages" }}
+        options={{
+          title: "Membership Packages",
+        }}
       />
 
       <PackageStack.Screen
         name="AddPackage"
         component={AddPackageScreen}
-        options={{ title: "Add Package" }}
+        options={{
+          title: "Add Package",
+        }}
       />
 
       <PackageStack.Screen
         name="EditPackage"
         component={EditPackageScreen}
-        options={{ title: "Edit Package" }}
+        options={{
+          title: "Edit Package",
+        }}
       />
     </PackageStack.Navigator>
   );
 };
+
+// ======================================================
+// MEMBERSHIPS STACK
+// ======================================================
 
 const MembershipsStack = () => {
   return (
@@ -120,23 +185,33 @@ const MembershipsStack = () => {
       <MembershipStack.Screen
         name="MembershipsList"
         component={MembershipsScreen}
-        options={{ title: "Memberships" }}
+        options={{
+          title: "Memberships",
+        }}
       />
 
       <MembershipStack.Screen
         name="RenewMembership"
         component={RenewMembershipScreen}
-        options={{ title: "Renew Membership" }}
+        options={{
+          title: "Renew Membership",
+        }}
       />
 
       <MembershipStack.Screen
         name="MembershipDetails"
         component={MembershipDetailsScreen}
-        options={{ title: "Membership Details" }}
+        options={{
+          title: "Membership Details",
+        }}
       />
     </MembershipStack.Navigator>
   );
 };
+
+// ======================================================
+// TRAINERS STACK
+// ======================================================
 
 const TrainersStack = () => {
   return (
@@ -144,29 +219,41 @@ const TrainersStack = () => {
       <TrainerStack.Screen
         name="TrainersList"
         component={TrainersScreen}
-        options={{ title: "Trainers" }}
+        options={{
+          title: "Trainers",
+        }}
       />
 
       <TrainerStack.Screen
         name="AddTrainer"
         component={AddTrainerScreen}
-        options={{ title: "Add Trainer" }}
+        options={{
+          title: "Add Trainer",
+        }}
       />
 
       <TrainerStack.Screen
         name="TrainerDetails"
         component={TrainerDetailsScreen}
-        options={{ title: "Trainer Details" }}
+        options={{
+          title: "Trainer Details",
+        }}
       />
 
       <TrainerStack.Screen
         name="EditTrainer"
         component={EditTrainerScreen}
-        options={{ title: "Edit Trainer" }}
+        options={{
+          title: "Edit Trainer",
+        }}
       />
     </TrainerStack.Navigator>
   );
 };
+
+// ======================================================
+// WORKOUT PLANS STACK
+// ======================================================
 
 const WorkoutPlansStack = () => {
   return (
@@ -174,31 +261,41 @@ const WorkoutPlansStack = () => {
       <WorkoutPlanStack.Screen
         name="WorkoutPlansList"
         component={WorkoutPlansScreen}
-        options={{ title: "Workout Plans" }}
+        options={{
+          title: "Workout Plans",
+        }}
       />
 
       <WorkoutPlanStack.Screen
         name="AddWorkoutPlan"
         component={AddWorkoutPlanScreen}
-        options={{ title: "Add Workout Plan" }}
+        options={{
+          title: "Add Workout Plan",
+        }}
       />
 
       <WorkoutPlanStack.Screen
         name="WorkoutPlanDetails"
         component={WorkoutPlanDetailsScreen}
-        options={{ title: "Workout Plan Details" }}
+        options={{
+          title: "Workout Plan Details",
+        }}
       />
 
       <WorkoutPlanStack.Screen
         name="EditWorkoutPlan"
         component={EditWorkoutPlanScreen}
-        options={{ title: "Edit Workout Plan" }}
+        options={{
+          title: "Edit Workout Plan",
+        }}
       />
     </WorkoutPlanStack.Navigator>
   );
 };
 
-const AttendanceStack = createNativeStackNavigator();
+// ======================================================
+// ATTENDANCE STACK
+// ======================================================
 
 const AttendanceStackScreen = () => {
   return (
@@ -210,13 +307,13 @@ const AttendanceStackScreen = () => {
           title: "Attendance",
         }}
       />
-
-   
     </AttendanceStack.Navigator>
   );
 };
 
-const ProgressStack = createNativeStackNavigator();
+// ======================================================
+// PROGRESS STACK
+// ======================================================
 
 const ProgressStackScreen = () => {
   return (
@@ -236,6 +333,7 @@ const ProgressStackScreen = () => {
           title: "Add Progress",
         }}
       />
+
       <ProgressStack.Screen
         name="ProgressDetails"
         component={ProgressDetailsScreen}
@@ -255,7 +353,9 @@ const ProgressStackScreen = () => {
   );
 };
 
-const NotificationStack = createNativeStackNavigator();
+// ======================================================
+// NOTIFICATION STACK
+// ======================================================
 
 const NotificationsStack = () => {
   return (
@@ -271,38 +371,64 @@ const NotificationsStack = () => {
   );
 };
 
+// ======================================================
+// CUSTOM DRAWER
+// ======================================================
+
 const CustomDrawerContent = (props) => {
   return (
     <DrawerContentScrollView
       {...props}
       contentContainerStyle={styles.drawerContainer}
     >
+      {/* HEADER */}
+
       <View style={styles.header}>
         <View style={styles.logo}>
           <Text style={styles.logoText}>G</Text>
         </View>
 
-        <Text style={styles.appName}>GYM MANAGEMENT</Text>
-        <Text style={styles.adminText}>Admin Panel</Text>
+        <Text style={styles.appName}>
+          GYM MANAGEMENT
+        </Text>
+
+        <Text style={styles.adminText}>
+          Admin Panel
+        </Text>
       </View>
+
+      {/* MENU */}
 
       <View style={styles.menuContainer}>
         <DrawerItemList {...props} />
       </View>
 
+      {/* FOOTER */}
+
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Gym Management System</Text>
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>
+          Gym Management System
+        </Text>
+
+        <Text style={styles.versionText}>
+          Version 1.0.0
+        </Text>
       </View>
     </DrawerContentScrollView>
   );
 };
 
+// ======================================================
+// ADMIN DRAWER NAVIGATOR
+// ======================================================
+
 const AdminTabNavigator = () => {
   return (
     <Drawer.Navigator
       initialRouteName="Dashboard"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
         headerShown: true,
 
@@ -313,6 +439,7 @@ const AdminTabNavigator = () => {
         },
 
         drawerActiveTintColor: "#111",
+
         drawerInactiveTintColor: "#666",
 
         drawerActiveBackgroundColor: "#f0f0f0",
@@ -334,6 +461,10 @@ const AdminTabNavigator = () => {
         },
       }}
     >
+      {/* ==================================================
+          DASHBOARD
+      ================================================== */}
+
       <Drawer.Screen
         name="Dashboard"
         component={AdminDashboardScreen}
@@ -342,6 +473,10 @@ const AdminTabNavigator = () => {
           drawerLabel: "Dashboard",
         }}
       />
+
+      {/* ==================================================
+          MEMBERS
+      ================================================== */}
 
       <Drawer.Screen
         name="Members"
@@ -352,6 +487,27 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      {/* ==================================================
+          MEMBER QR
+          Hidden from drawer.
+          Admin opens this from Member Details.
+      ================================================== */}
+
+      <Drawer.Screen
+        name="MemberQR"
+        component={MemberQRScreen}
+        options={{
+          title: "Member QR",
+          drawerItemStyle: {
+            display: "none",
+          },
+        }}
+      />
+
+      {/* ==================================================
+          PACKAGES
+      ================================================== */}
+
       <Drawer.Screen
         name="Packages"
         component={PackagesStack}
@@ -360,6 +516,10 @@ const AdminTabNavigator = () => {
           drawerLabel: "Membership Packages",
         }}
       />
+
+      {/* ==================================================
+          MEMBERSHIPS
+      ================================================== */}
 
       <Drawer.Screen
         name="Memberships"
@@ -370,6 +530,10 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      {/* ==================================================
+          TRAINERS
+      ================================================== */}
+
       <Drawer.Screen
         name="Trainers"
         component={TrainersStack}
@@ -378,6 +542,10 @@ const AdminTabNavigator = () => {
           drawerLabel: "Trainers",
         }}
       />
+
+      {/* ==================================================
+          WORKOUT PLANS
+      ================================================== */}
 
       <Drawer.Screen
         name="WorkoutPlans"
@@ -388,6 +556,10 @@ const AdminTabNavigator = () => {
         }}
       />
 
+      {/* ==================================================
+          ATTENDANCE
+      ================================================== */}
+
       <Drawer.Screen
         name="Attendance"
         component={AttendanceStackScreen}
@@ -396,15 +568,11 @@ const AdminTabNavigator = () => {
           drawerLabel: "Attendance",
         }}
       />
-      <Drawer.Screen
-        name="QRScanner"
-        component={QRScannerScreen}
-        options={{
-          title: "QR Scanner",
-          drawerLabel: "QR Scanner",
-          headerShown: false,
-        }}
-      />
+
+      {/* ==================================================
+          PROGRESS
+      ================================================== */}
+
       <Drawer.Screen
         name="Progress"
         component={ProgressStackScreen}
@@ -413,6 +581,11 @@ const AdminTabNavigator = () => {
           drawerLabel: "Progress",
         }}
       />
+
+      {/* ==================================================
+          NOTIFICATIONS
+      ================================================== */}
+
       <Drawer.Screen
         name="Notifications"
         component={NotificationsStack}
@@ -421,6 +594,11 @@ const AdminTabNavigator = () => {
           drawerLabel: "Notification",
         }}
       />
+
+      {/* ==================================================
+          REPORTS
+      ================================================== */}
+
       <Drawer.Screen
         name="Reports"
         component={ReportsScreen}
@@ -429,6 +607,10 @@ const AdminTabNavigator = () => {
           drawerLabel: "Reports",
         }}
       />
+
+      {/* ==================================================
+          PROFILE
+      ================================================== */}
 
       <Drawer.Screen
         name="Profile"
@@ -441,6 +623,10 @@ const AdminTabNavigator = () => {
     </Drawer.Navigator>
   );
 };
+
+// ======================================================
+// STYLES
+// ======================================================
 
 const styles = StyleSheet.create({
   drawerContainer: {

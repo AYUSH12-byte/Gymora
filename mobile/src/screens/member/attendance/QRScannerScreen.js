@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   View,
   Text,
@@ -22,6 +23,10 @@ const QRScannerScreen = ({ navigation }) => {
   const [scanned, setScanned] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [mode, setMode] = useState("check-in");
+
+  // ======================================================
+  // CAMERA PERMISSION
+  // ======================================================
 
   if (!permission) {
     return (
@@ -58,6 +63,10 @@ const QRScannerScreen = ({ navigation }) => {
     );
   }
 
+  // ======================================================
+  // QR SCAN
+  // ======================================================
+
   const handleBarcodeScanned = async ({ data }) => {
     if (scanned || processing) {
       return;
@@ -67,6 +76,8 @@ const QRScannerScreen = ({ navigation }) => {
     setProcessing(true);
 
     try {
+      console.log("QR DATA:", data);
+
       let qrData;
 
       try {
@@ -75,6 +86,7 @@ const QRScannerScreen = ({ navigation }) => {
         throw new Error("Invalid gym QR code");
       }
 
+      // Validate gym QR
       if (
         qrData?.type !== "GYM_MEMBER" ||
         !qrData?.memberId ||
@@ -83,39 +95,49 @@ const QRScannerScreen = ({ navigation }) => {
         throw new Error("Invalid gym member QR code");
       }
 
+      console.log("QR MEMBER ID:", qrData.memberId);
+
       const endpoint =
         mode === "check-in"
           ? "/attendance/qr-check-in"
           : "/attendance/qr-check-out";
+
+      console.log("ATTENDANCE ENDPOINT:", endpoint);
 
       const response = await api.post(endpoint, {
         memberId: qrData.memberId,
         token: qrData.token,
       });
 
-      if (!response.data.success) {
+      console.log(
+        "QR ATTENDANCE RESPONSE:",
+        response.data,
+      );
+
+      if (!response.data?.success) {
         throw new Error(
-          response.data.message ||
-            "Attendance operation failed"
+          response.data?.message ||
+            "Attendance operation failed",
         );
       }
 
-      const member = response.data.member || {};
-
-      const memberName =
-        member.name ||
-        member.user?.name ||
-        "Member";
+      const duration =
+        response.data?.durationMinutes ??
+        response.data?.attendance?.durationMinutes;
 
       Alert.alert(
         mode === "check-in"
           ? "Check-in Successful"
           : "Check-out Successful",
-        `${memberName} ${
-          mode === "check-in"
-            ? "has checked in."
-            : "has checked out."
-        }`,
+
+        mode === "check-in"
+          ? "Your attendance has been recorded successfully."
+          : `Your attendance has been completed.${
+              duration !== undefined
+                ? `\nDuration: ${duration} minutes`
+                : ""
+            }`,
+
         [
           {
             text: "OK",
@@ -124,19 +146,20 @@ const QRScannerScreen = ({ navigation }) => {
               setProcessing(false);
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.log(
-        "QR error:",
-        error.response?.data || error.message
+        "QR ATTENDANCE ERROR:",
+        error?.response?.data || error?.message,
       );
 
       Alert.alert(
         "QR Scan Failed",
-        error.response?.data?.message ||
-          error.message ||
-          "Unable to process QR code",
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to process QR code.",
+
         [
           {
             text: "Try Again",
@@ -145,15 +168,32 @@ const QRScannerScreen = ({ navigation }) => {
               setProcessing(false);
             },
           },
-        ]
+        ],
       );
     }
   };
 
+  // ======================================================
+  // SWITCH MODE
+  // ======================================================
+
+  const handleModeChange = (newMode) => {
+    if (processing) {
+      return;
+    }
+
+    setMode(newMode);
+    setScanned(false);
+  };
+
+  // ======================================================
+  // UI
+  // ======================================================
+
   return (
     <View style={styles.container}>
+      {/* CAMERA */}
 
-      {/* CAMERA ONLY */}
       <CameraView
         style={styles.camera}
         facing="back"
@@ -167,18 +207,20 @@ const QRScannerScreen = ({ navigation }) => {
         }
       />
 
-      {/* SIMPLE UI */}
+      {/* HEADER */}
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
           QR Attendance
         </Text>
 
         <Text style={styles.headerSubtitle}>
-          Point the camera at member QR
+          Scan the QR displayed by gym admin
         </Text>
       </View>
 
-      {/* SCAN BOX */}
+      {/* SCAN FRAME */}
+
       <View style={styles.scanBox}>
         <View style={styles.lineTopLeft} />
         <View style={styles.lineTopRight} />
@@ -186,10 +228,11 @@ const QRScannerScreen = ({ navigation }) => {
         <View style={styles.lineBottomRight} />
       </View>
 
-      {/* BOTTOM */}
-      <View style={styles.bottom}>
+      {/* BOTTOM CONTROLS */}
 
+      <View style={styles.bottom}>
         {/* MODE */}
+
         <View style={styles.modeContainer}>
           <TouchableOpacity
             style={[
@@ -197,12 +240,10 @@ const QRScannerScreen = ({ navigation }) => {
               mode === "check-in" &&
                 styles.activeButton,
             ]}
-            onPress={() => {
-              if (processing) return;
-
-              setMode("check-in");
-              setScanned(false);
-            }}
+            onPress={() =>
+              handleModeChange("check-in")
+            }
+            disabled={processing}
           >
             <Text
               style={[
@@ -221,12 +262,10 @@ const QRScannerScreen = ({ navigation }) => {
               mode === "check-out" &&
                 styles.activeButton,
             ]}
-            onPress={() => {
-              if (processing) return;
-
-              setMode("check-out");
-              setScanned(false);
-            }}
+            onPress={() =>
+              handleModeChange("check-out")
+            }
+            disabled={processing}
           >
             <Text
               style={[
@@ -240,6 +279,8 @@ const QRScannerScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* INSTRUCTION */}
+
         <Text style={styles.instruction}>
           {processing
             ? "Processing..."
@@ -250,6 +291,8 @@ const QRScannerScreen = ({ navigation }) => {
               }`}
         </Text>
 
+        {/* PROCESSING */}
+
         {processing && (
           <ActivityIndicator
             size="small"
@@ -257,6 +300,8 @@ const QRScannerScreen = ({ navigation }) => {
             style={{ marginTop: 10 }}
           />
         )}
+
+        {/* SCAN AGAIN */}
 
         {!processing && scanned && (
           <TouchableOpacity
@@ -269,9 +314,12 @@ const QRScannerScreen = ({ navigation }) => {
           </TouchableOpacity>
         )}
 
+        {/* CLOSE */}
+
         <TouchableOpacity
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
+          disabled={processing}
         >
           <Text style={styles.closeText}>
             Close
@@ -288,18 +336,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
 
-  /*
-   * IMPORTANT
-   * Camera is the base layer.
-   */
   camera: {
     flex: 1,
   },
 
-  /*
-   * Header is positioned independently.
-   * It does NOT have a full-screen background.
-   */
   header: {
     position: "absolute",
     top: 60,
@@ -320,9 +360,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  /*
-   * QR FRAME
-   */
   scanBox: {
     position: "absolute",
     width: 270,
@@ -330,7 +367,6 @@ const styles = StyleSheet.create({
     top: "32%",
     left: "50%",
     marginLeft: -135,
-    borderWidth: 0,
   },
 
   lineTopLeft: {
@@ -377,9 +413,6 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  /*
-   * BOTTOM CONTROLS
-   */
   bottom: {
     position: "absolute",
     left: 0,
@@ -444,9 +477,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  /*
-   * PERMISSION
-   */
   center: {
     flex: 1,
     justifyContent: "center",

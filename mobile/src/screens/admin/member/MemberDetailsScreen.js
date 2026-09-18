@@ -6,13 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
-  Alert,
+  TouchableOpacity,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
 import api from "../../../services/api";
 
-const MemberDetailsScreen = ({ route }) => {
+const MemberDetailsScreen = ({ route, navigation }) => {
   const { memberId } = route.params || {};
 
   const [member, setMember] = useState(null);
@@ -34,18 +34,13 @@ const MemberDetailsScreen = ({ route }) => {
 
       setError("");
 
-      console.log(
-        "Loading member details:",
-        memberId
-      );
+      console.log("Loading member details:", memberId);
 
-      const response = await api.get(
-        `/members/${memberId}`
-      );
+      const response = await api.get(`/members/${memberId}`);
 
       console.log(
         "MEMBER DETAILS RESPONSE:",
-        response.data
+        response.data,
       );
 
       const data =
@@ -62,14 +57,14 @@ const MemberDetailsScreen = ({ route }) => {
     } catch (error) {
       console.log(
         "MEMBER DETAILS ERROR:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       setMember(null);
 
       setError(
         error.response?.data?.message ||
-          "Member not found."
+          "Member not found.",
       );
     } finally {
       setLoading(false);
@@ -80,12 +75,25 @@ const MemberDetailsScreen = ({ route }) => {
   useFocusEffect(
     useCallback(() => {
       loadMember();
-    }, [memberId])
+    }, [memberId]),
   );
 
   const handleRefresh = () => {
     setRefreshing(true);
     loadMember(false);
+  };
+
+  // ======================================================
+  // OPEN MEMBER QR
+  // ======================================================
+  const handleShowQR = () => {
+    if (!memberId) {
+      return;
+    }
+
+    navigation.navigate("MemberQR", {
+      memberId,
+    });
   };
 
   if (loading) {
@@ -142,6 +150,7 @@ const MemberDetailsScreen = ({ route }) => {
         />
       }
     >
+      {/* Profile Card */}
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -178,6 +187,38 @@ const MemberDetailsScreen = ({ route }) => {
         </View>
       </View>
 
+      {/* ==================================================
+          ATTENDANCE QR
+      ================================================== */}
+      <View style={styles.qrSection}>
+        <View style={styles.qrHeader}>
+          <View style={styles.qrIcon}>
+            <Text style={styles.qrIconText}>QR</Text>
+          </View>
+
+          <View style={styles.qrHeaderContent}>
+            <Text style={styles.qrTitle}>
+              Attendance QR
+            </Text>
+
+            <Text style={styles.qrSubtitle}>
+              Display this QR for the member to scan
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.qrButton}
+          onPress={handleShowQR}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.qrButtonText}>
+            Show Attendance QR
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Personal Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Personal Information
@@ -203,7 +244,7 @@ const MemberDetailsScreen = ({ route }) => {
           value={
             member.dateOfBirth
               ? new Date(
-                  member.dateOfBirth
+                  member.dateOfBirth,
                 ).toLocaleDateString()
               : "N/A"
           }
@@ -214,13 +255,14 @@ const MemberDetailsScreen = ({ route }) => {
           value={
             member.joinDate
               ? new Date(
-                  member.joinDate
+                  member.joinDate,
                 ).toLocaleDateString()
               : "N/A"
           }
         />
       </View>
 
+      {/* Emergency Contact */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Emergency Contact
@@ -373,6 +415,72 @@ const styles = StyleSheet.create({
   inactiveText: {
     color: "#dc2626",
   },
+
+  // ======================================================
+  // QR SECTION
+  // ======================================================
+
+  qrSection: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 16,
+    marginBottom: 15,
+  },
+
+  qrHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+
+  qrIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#111",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  qrIconText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+
+  qrHeaderContent: {
+    flex: 1,
+  },
+
+  qrTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  qrSubtitle: {
+    marginTop: 3,
+    fontSize: 13,
+    color: "#777",
+  },
+
+  qrButton: {
+    backgroundColor: "#111",
+    borderRadius: 11,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+
+  qrButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  // ======================================================
+  // INFORMATION
+  // ======================================================
 
   section: {
     backgroundColor: "#fff",

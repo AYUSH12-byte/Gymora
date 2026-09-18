@@ -16,8 +16,9 @@ import MemberWorkoutPlanDetailsScreen from "../screens/member/workout/MemberWork
 
 // Attendance
 import MemberAttendanceScreen from "../screens/member/attendance/MemberAttendanceScreen";
+import QRScannerScreen from "../screens/member/attendance/QRScannerScreen";
 
-// payments
+// Payments
 import MemberPaymentsScreen from "../screens/member/payment/MemberPaymentsScreen";
 
 // Progress
@@ -27,18 +28,6 @@ import MemberProgressScreen from "../screens/member/progess/MemberProgressScreen
 import MemberProfileScreen from "../screens/member/profile/MemberProfileScreen";
 
 const Drawer = createDrawerNavigator();
-
-const PlaceholderScreen = ({ title }) => {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderTitle}>{title}</Text>
-
-      <Text style={styles.placeholderText}>
-        This screen will be implemented next.
-      </Text>
-    </View>
-  );
-};
 
 const CustomDrawerContent = (props) => {
   const { navigation, state } = props;
@@ -61,6 +50,10 @@ const CustomDrawerContent = (props) => {
     {
       name: "MemberAttendance",
       label: "Attendance",
+    },
+    {
+      name: "MemberQRScanner",
+      label: "Scan Attendance QR",
     },
     {
       name: "MemberPayments",
@@ -97,9 +90,13 @@ const CustomDrawerContent = (props) => {
               key={item.name}
               style={[styles.menuItem, isActive && styles.activeMenuItem]}
               onPress={() => navigation.navigate(item.name)}
+              activeOpacity={0.7}
             >
               <Text
-                style={[styles.menuLabel, isActive && styles.activeMenuLabel]}
+                style={[
+                  styles.menuLabel,
+                  isActive && styles.activeMenuLabel,
+                ]}
               >
                 {item.label}
               </Text>
@@ -111,7 +108,9 @@ const CustomDrawerContent = (props) => {
       <View style={styles.drawerFooter}>
         <Text style={styles.footerTitle}>Member Account</Text>
 
-        <Text style={styles.footerText}>Manage your gym activity</Text>
+        <Text style={styles.footerText}>
+          Manage your gym activity
+        </Text>
       </View>
     </View>
   );
@@ -120,22 +119,30 @@ const CustomDrawerContent = (props) => {
 const MemberDrawerNavigator = () => {
   return (
     <Drawer.Navigator
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
         headerShown: true,
+
         headerStyle: {
           backgroundColor: "#111827",
         },
+
         headerTintColor: "#fff",
+
         headerTitleStyle: {
           fontWeight: "700",
         },
+
         drawerType: "front",
+
         drawerStyle: {
           width: 285,
         },
       }}
     >
+      {/* Dashboard */}
       <Drawer.Screen
         name="MemberDashboard"
         component={MemberDashboardScreen}
@@ -145,6 +152,7 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* Membership */}
       <Drawer.Screen
         name="MemberMembership"
         component={MemberMembershipScreen}
@@ -154,6 +162,7 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* Workout Plans */}
       <Drawer.Screen
         name="MemberWorkoutPlans"
         component={MemberWorkoutPlansScreen}
@@ -162,6 +171,8 @@ const MemberDrawerNavigator = () => {
           drawerLabel: "Workout Plans",
         }}
       />
+
+      {/* Workout Plan Details */}
       <Drawer.Screen
         name="MemberWorkoutPlanDetails"
         component={MemberWorkoutPlanDetailsScreen}
@@ -173,6 +184,7 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* Attendance */}
       <Drawer.Screen
         name="MemberAttendance"
         component={MemberAttendanceScreen}
@@ -182,6 +194,17 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* QR Scanner */}
+      <Drawer.Screen
+        name="MemberQRScanner"
+        component={QRScannerScreen}
+        options={{
+          title: "Scan Attendance QR",
+          drawerLabel: "Scan Attendance QR",
+        }}
+      />
+
+      {/* Payments */}
       <Drawer.Screen
         name="MemberPayments"
         component={MemberPaymentsScreen}
@@ -191,6 +214,7 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* Progress */}
       <Drawer.Screen
         name="MemberProgress"
         component={MemberProgressScreen}
@@ -200,6 +224,7 @@ const MemberDrawerNavigator = () => {
         }}
       />
 
+      {/* Profile */}
       <Drawer.Screen
         name="MemberProfile"
         component={MemberProfileScreen}
@@ -297,26 +322,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     marginTop: 4,
-  },
-
-  placeholderContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#f3f4f6",
-  },
-
-  placeholderTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#111827",
-  },
-
-  placeholderText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#6b7280",
   },
 });
 
