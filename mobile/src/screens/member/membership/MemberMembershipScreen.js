@@ -33,6 +33,10 @@ const MemberMembershipScreen = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
+  // --------------------------------------------------
+  // LOAD MEMBERSHIP DATA
+  // --------------------------------------------------
+
   const loadMembershipData = async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -48,17 +52,30 @@ const MemberMembershipScreen = () => {
         api.get("/member-portal/packages"),
       ]);
 
-      const membershipData =
-        membershipResponse.data?.membership ||
-        membershipResponse.data?.data ||
-        null;
+      console.log(
+        "MEMBERSHIP API RESPONSE:",
+        JSON.stringify(membershipResponse.data, null, 2),
+      );
+
+      // Backend returns:
+      // {
+      //   success: true,
+      //   memberships: [...]
+      // }
+
+      const membershipList = membershipResponse.data?.memberships || [];
+
+      // Find active membership
+      const activeMembership = Array.isArray(membershipList)
+        ? membershipList.find(
+            (item) => String(item?.status).toLowerCase() === "active",
+          ) || null
+        : null;
 
       const packageData =
-        packagesResponse.data?.packages ||
-        packagesResponse.data?.data ||
-        [];
+        packagesResponse.data?.packages || packagesResponse.data?.data || [];
 
-      setMembership(membershipData);
+      setMembership(activeMembership);
 
       setPackages(Array.isArray(packageData) ? packageData : []);
     } catch (err) {
@@ -68,8 +85,7 @@ const MemberMembershipScreen = () => {
       );
 
       setError(
-        err?.response?.data?.message ||
-          "Failed to load membership information",
+        err?.response?.data?.message || "Failed to load membership information",
       );
     } finally {
       setLoading(false);
@@ -83,8 +99,14 @@ const MemberMembershipScreen = () => {
     }, []),
   );
 
+  // --------------------------------------------------
+  // HELPERS
+  // --------------------------------------------------
+
   const formatDate = (date) => {
-    if (!date) return "Not available";
+    if (!date) {
+      return "Not available";
+    }
 
     const parsedDate = new Date(date);
 
@@ -105,7 +127,7 @@ const MemberMembershipScreen = () => {
   };
 
   const getPrice = (pkg) => {
-    return pkg?.price ?? pkg?.amount ?? pkg?.fee ?? 0;
+    return Number(pkg?.price ?? pkg?.amount ?? pkg?.fee ?? 0);
   };
 
   const getDiscount = (pkg) => {
@@ -113,7 +135,7 @@ const MemberMembershipScreen = () => {
   };
 
   const getFinalPrice = (pkg) => {
-    const price = Number(getPrice(pkg));
+    const price = getPrice(pkg);
     const discount = getDiscount(pkg);
 
     return price - (price * discount) / 100;
@@ -160,107 +182,9 @@ const MemberMembershipScreen = () => {
   const daysRemaining =
     membership?.daysRemaining ?? membership?.remainingDays ?? null;
 
-  // Open payment modal
-  const openPaymentModal = (pkg) => {
-    const finalPrice = getFinalPrice(pkg);
-
-    setSelectedPackage(pkg);
-    setPaymentAmount(String(finalPrice));
-    setPaymentMethod("cash");
-    setPaymentModalVisible(true);
-  };
-
-  // Validate and confirm payment
-  const handleConfirmPayment = () => {
-    if (!selectedPackage) {
-      Alert.alert("Error", "Please select a membership package.");
-      return;
-    }
-
-    const finalPrice = getFinalPrice(selectedPackage);
-    const amount = Number(paymentAmount);
-
-    if (!paymentAmount || Number.isNaN(amount) || amount <= 0) {
-      Alert.alert(
-        "Invalid Amount",
-        "Please enter a valid payment amount.",
-      );
-      return;
-    }
-
-    if (amount > finalPrice) {
-      Alert.alert(
-        "Invalid Amount",
-        `Payment cannot exceed Rs. ${finalPrice.toLocaleString()}.`,
-      );
-      return;
-    }
-
-    Alert.alert(
-      "Confirm Purchase",
-      `Package: ${selectedPackage.name}\nPayment: Rs. ${amount.toLocaleString()}\nMethod: ${getPaymentMethodLabel(
-        paymentMethod,
-      )}`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Confirm",
-          onPress: purchaseMembership,
-        },
-      ],
-    );
-  };
-
-  // Purchase membership
-  const purchaseMembership = async () => {
-    if (!selectedPackage) return;
-
-    try {
-      setPurchasing(true);
-
-      const amount = Number(paymentAmount);
-
-      const response = await api.post("/member-purchase/purchase", {
-        packageId: selectedPackage._id,
-        paymentAmount: amount,
-        paymentMethod,
-      });
-
-      setPaymentModalVisible(false);
-
-      Alert.alert(
-        "Success",
-        response.data?.message ||
-          "Membership purchased successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              setSelectedPackage(null);
-              setPaymentAmount("");
-              loadMembershipData(true);
-            },
-          },
-        ],
-      );
-    } catch (err) {
-      console.error(
-        "Purchase membership error:",
-        err?.response?.data || err.message,
-      );
-
-      Alert.alert(
-        "Purchase Failed",
-        err?.response?.data?.message ||
-          "Unable to purchase membership",
-      );
-    } finally {
-      setPurchasing(false);
-    }
-  };
+  // --------------------------------------------------
+  // PAYMENT METHODS
+  // --------------------------------------------------
 
   const getPaymentMethodLabel = (method) => {
     switch (method) {
@@ -281,17 +205,166 @@ const MemberMembershipScreen = () => {
     }
   };
 
+  // --------------------------------------------------
+  // OPEN PAYMENT MODAL
+  // --------------------------------------------------
+
+  const openPaymentModal = (pkg) => {
+    // Backend does not allow another purchase
+    // while an active membership exists.
+    if (isActive) {
+      Alert.alert(
+        "Active Membership",
+        "You already have an active membership. You can purchase a new package after your current membership expires.",
+      );
+
+      return;
+    }
+
+    const finalPrice = getFinalPrice(pkg);
+
+    setSelectedPackage(pkg);
+
+    setPaymentAmount(String(Math.round(finalPrice)));
+
+    setPaymentMethod("cash");
+
+    setPaymentModalVisible(true);
+  };
+
+  // --------------------------------------------------
+  // CLOSE PAYMENT MODAL
+  // --------------------------------------------------
+
+  const closePaymentModal = () => {
+    if (purchasing) {
+      return;
+    }
+
+    setPaymentModalVisible(false);
+    setSelectedPackage(null);
+    setPaymentAmount("");
+    setPaymentMethod("cash");
+  };
+
+  // --------------------------------------------------
+  // CONFIRM PAYMENT
+  // --------------------------------------------------
+
+  const handleConfirmPayment = () => {
+    if (!selectedPackage) {
+      Alert.alert("Error", "Please select a membership package.");
+
+      return;
+    }
+
+    const finalPrice = getFinalPrice(selectedPackage);
+
+    const amount = Number(paymentAmount);
+
+    if (!paymentAmount || Number.isNaN(amount) || amount <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid payment amount.");
+
+      return;
+    }
+
+    if (amount > finalPrice) {
+      Alert.alert(
+        "Invalid Amount",
+        `Payment cannot exceed Rs. ${finalPrice.toLocaleString()}.`,
+      );
+
+      return;
+    }
+
+    Alert.alert(
+      "Confirm Purchase",
+      `Package: ${selectedPackage.name}\n\nPayment: Rs. ${amount.toLocaleString()}\nMethod: ${getPaymentMethodLabel(
+        paymentMethod,
+      )}`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: purchaseMembership,
+        },
+      ],
+    );
+  };
+
+  // --------------------------------------------------
+  // PURCHASE MEMBERSHIP
+  // --------------------------------------------------
+
+  const purchaseMembership = async () => {
+    if (!selectedPackage) {
+      return;
+    }
+
+    try {
+      setPurchasing(true);
+
+      const amount = Number(paymentAmount);
+
+      const response = await api.post("/member-purchase/purchase", {
+        packageId: selectedPackage._id,
+        paymentAmount: amount,
+        paymentMethod: paymentMethod,
+      });
+
+      setPaymentModalVisible(false);
+
+      Alert.alert(
+        "Success",
+        response.data?.message || "Membership purchased successfully",
+        [
+          {
+            text: "OK",
+            onPress: async () => {
+              setSelectedPackage(null);
+              setPaymentAmount("");
+              setPaymentMethod("cash");
+
+              await loadMembershipData(true);
+            },
+          },
+        ],
+      );
+    } catch (err) {
+      console.error(
+        "Purchase membership error:",
+        err?.response?.data || err.message,
+      );
+
+      Alert.alert(
+        "Purchase Failed",
+        err?.response?.data?.message || "Unable to purchase membership",
+      );
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  // --------------------------------------------------
+  // LOADING
+  // --------------------------------------------------
+
   if (loading && !membership) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
 
-        <Text style={styles.loadingText}>
-          Loading membership...
-        </Text>
+        <Text style={styles.loadingText}>Loading membership...</Text>
       </View>
     );
   }
+
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
 
   return (
     <>
@@ -306,11 +379,15 @@ const MemberMembershipScreen = () => {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* PAGE HEADER */}
+
         <Text style={styles.pageTitle}>My Membership</Text>
 
         <Text style={styles.pageSubtitle}>
           Manage your membership and choose a package
         </Text>
+
+        {/* ERROR */}
 
         {error ? (
           <View style={styles.errorBox}>
@@ -324,37 +401,27 @@ const MemberMembershipScreen = () => {
 
         {/* CURRENT MEMBERSHIP */}
 
-        <Text style={styles.sectionTitle}>
-          Current Membership
-        </Text>
+        <Text style={styles.sectionTitle}>Current Membership</Text>
 
         {membership ? (
           <View style={styles.membershipCard}>
             <View style={styles.membershipTop}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.smallLabel}>
-                  PACKAGE
-                </Text>
+                <Text style={styles.smallLabel}>PACKAGE</Text>
 
-                <Text style={styles.packageName}>
-                  {getPackageName()}
-                </Text>
+                <Text style={styles.packageName}>{getPackageName()}</Text>
               </View>
 
               <View
                 style={[
                   styles.statusBadge,
-                  isActive
-                    ? styles.activeBadge
-                    : styles.expiredBadge,
+                  isActive ? styles.activeBadge : styles.expiredBadge,
                 ]}
               >
                 <Text
                   style={[
                     styles.statusText,
-                    isActive
-                      ? styles.activeText
-                      : styles.expiredText,
+                    isActive ? styles.activeText : styles.expiredText,
                   ]}
                 >
                   {String(getStatus()).toUpperCase()}
@@ -366,9 +433,7 @@ const MemberMembershipScreen = () => {
 
             <View style={styles.infoRow}>
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>
-                  Start Date
-                </Text>
+                <Text style={styles.infoLabel}>Start Date</Text>
 
                 <Text style={styles.infoValue}>
                   {formatDate(membership.startDate)}
@@ -376,28 +441,19 @@ const MemberMembershipScreen = () => {
               </View>
 
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>
-                  Expiry Date
-                </Text>
+                <Text style={styles.infoLabel}>Expiry Date</Text>
 
                 <Text style={styles.infoValue}>
-                  {formatDate(
-                    membership.endDate ||
-                      membership.expiryDate,
-                  )}
+                  {formatDate(membership.endDate || membership.expiryDate)}
                 </Text>
               </View>
             </View>
 
             {daysRemaining !== null ? (
               <View style={styles.remainingContainer}>
-                <Text style={styles.remainingNumber}>
-                  {daysRemaining}
-                </Text>
+                <Text style={styles.remainingNumber}>{daysRemaining}</Text>
 
-                <Text style={styles.remainingText}>
-                  days remaining
-                </Text>
+                <Text style={styles.remainingText}>days remaining</Text>
               </View>
             ) : null}
 
@@ -408,64 +464,54 @@ const MemberMembershipScreen = () => {
                 </Text>
 
                 <Text style={styles.expiredNoticeText}>
-                  Choose a new package below to continue
-                  your membership.
+                  Choose a new package below to continue your membership.
                 </Text>
               </View>
             ) : null}
           </View>
         ) : (
           <View style={styles.emptyMembership}>
-            <Text style={styles.emptyTitle}>
-              No Active Membership
-            </Text>
+            <Text style={styles.emptyTitle}>No Active Membership</Text>
 
             <Text style={styles.emptyText}>
-              You do not have an active membership. Choose
-              a package below to get started.
+              You do not have an active membership. Choose a package below to
+              get started.
             </Text>
           </View>
         )}
 
         {/* AVAILABLE PACKAGES */}
 
-        <Text style={styles.sectionTitle}>
-          Available Packages
-        </Text>
+        <Text style={styles.sectionTitle}>Available Packages</Text>
 
         {packages.length === 0 ? (
           <View style={styles.emptyMembership}>
-            <Text style={styles.emptyTitle}>
-              No Packages Available
-            </Text>
+            <Text style={styles.emptyTitle}>No Packages Available</Text>
 
             <Text style={styles.emptyText}>
-              There are currently no membership packages
-              available.
+              There are currently no membership packages available.
             </Text>
           </View>
         ) : (
           packages.map((pkg) => {
             const price = getPrice(pkg);
+
             const discount = getDiscount(pkg);
+
             const finalPrice = getFinalPrice(pkg);
+
             const packageDuration = getDurationLabel(pkg);
 
             return (
-              <View
-                key={pkg._id}
-                style={styles.packageCard}
-              >
+              <View key={pkg._id} style={styles.packageCard}>
+                {/* PACKAGE HEADER */}
+
                 <View style={styles.packageHeader}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.packageCardName}>
-                      {pkg.name}
-                    </Text>
+                    <Text style={styles.packageCardName}>{pkg.name}</Text>
 
                     {pkg.description ? (
-                      <Text
-                        style={styles.packageDescription}
-                      >
+                      <Text style={styles.packageDescription}>
                         {pkg.description}
                       </Text>
                     ) : null}
@@ -474,56 +520,51 @@ const MemberMembershipScreen = () => {
                   <View style={styles.priceContainer}>
                     {discount > 0 ? (
                       <Text style={styles.originalPrice}>
-                        Rs.{" "}
-                        {Number(price).toLocaleString()}
+                        Rs. {Number(price).toLocaleString()}
                       </Text>
                     ) : null}
 
                     <Text style={styles.packagePrice}>
-                      Rs.{" "}
-                      {Number(finalPrice).toLocaleString()}
+                      Rs. {Number(finalPrice).toLocaleString()}
                     </Text>
                   </View>
                 </View>
 
+                {/* PACKAGE DETAILS */}
+
                 <View style={styles.packageDetails}>
                   <View style={styles.detailBox}>
-                    <Text style={styles.detailLabel}>
-                      Duration
-                    </Text>
+                    <Text style={styles.detailLabel}>Duration</Text>
 
-                    <Text style={styles.detailValue}>
-                      {packageDuration}
-                    </Text>
+                    <Text style={styles.detailValue}>{packageDuration}</Text>
                   </View>
 
                   {pkg.discount !== undefined ? (
                     <View style={styles.detailBox}>
-                      <Text style={styles.detailLabel}>
-                        Discount
-                      </Text>
+                      <Text style={styles.detailLabel}>Discount</Text>
 
-                      <Text style={styles.detailValue}>
-                        {discount}%
-                      </Text>
+                      <Text style={styles.detailValue}>{discount}%</Text>
                     </View>
                   ) : null}
                 </View>
 
+                {/* PURCHASE BUTTON */}
+
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    purchasing &&
-                      styles.disabledButton,
+                    purchasing && styles.disabledButton,
                   ]}
                   disabled={purchasing}
                   onPress={() => openPaymentModal(pkg)}
                 >
-                  <Text style={styles.actionButtonText}>
-                    {isActive
-                      ? "Choose & Renew"
-                      : "Purchase Membership"}
-                  </Text>
+                  {purchasing ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.actionButtonText}>
+                      {isActive ? "Choose & Renew" : "Purchase Membership"}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             );
@@ -531,85 +572,70 @@ const MemberMembershipScreen = () => {
         )}
       </ScrollView>
 
-      {/* PAYMENT MODAL */}
+      {/* ==================================================
+          PAYMENT MODAL
+      ================================================== */}
 
       <Modal
         visible={paymentModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => {
-          if (!purchasing) {
-            setPaymentModalVisible(false);
-          }
-        }}
+        onRequestClose={closePaymentModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-            >
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* MODAL HEADER */}
+
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  Membership Payment
-                </Text>
+                <Text style={styles.modalTitle}>Membership Payment</Text>
 
                 <TouchableOpacity
                   disabled={purchasing}
-                  onPress={() =>
-                    setPaymentModalVisible(false)
-                  }
+                  onPress={closePaymentModal}
                 >
-                  <Text style={styles.closeText}>
-                    ✕
-                  </Text>
+                  <Text style={styles.closeText}>✕</Text>
                 </TouchableOpacity>
               </View>
 
               {selectedPackage ? (
                 <>
-                  <View style={styles.selectedPackageBox}>
-                    <Text style={styles.modalLabel}>
-                      PACKAGE
-                    </Text>
+                  {/* SELECTED PACKAGE */}
 
-                    <Text
-                      style={styles.selectedPackageName}
-                    >
+                  <View style={styles.selectedPackageBox}>
+                    <Text style={styles.modalLabel}>PACKAGE</Text>
+
+                    <Text style={styles.selectedPackageName}>
                       {selectedPackage.name}
                     </Text>
 
                     <Text style={styles.modalPrice}>
                       Final Price: Rs.{" "}
-                      {Number(
-                        getFinalPrice(selectedPackage),
-                      ).toLocaleString()}
+                      {Number(getFinalPrice(selectedPackage)).toLocaleString()}
                     </Text>
                   </View>
 
                   {/* PAYMENT AMOUNT */}
 
-                  <Text style={styles.modalSectionTitle}>
-                    Payment Amount
-                  </Text>
+                  <Text style={styles.modalSectionTitle}>Payment Amount</Text>
 
                   <TextInput
                     value={paymentAmount}
                     onChangeText={setPaymentAmount}
                     placeholder="Enter payment amount"
+                    placeholderTextColor="#9ca3af"
                     keyboardType="numeric"
                     style={styles.paymentInput}
+                    editable={!purchasing}
                   />
 
                   <Text style={styles.paymentHint}>
-                    You can pay the full amount or make a
-                    partial payment.
+                    You can pay the full amount or make a partial payment.
                   </Text>
 
                   {/* PAYMENT METHOD */}
 
-                  <Text style={styles.modalSectionTitle}>
-                    Payment Method
-                  </Text>
+                  <Text style={styles.modalSectionTitle}>Payment Method</Text>
 
                   <View style={styles.methodContainer}>
                     {[
@@ -630,45 +656,31 @@ const MemberMembershipScreen = () => {
                         label: "Bank Transfer",
                       },
                     ].map((method) => {
-                      const selected =
-                        paymentMethod === method.value;
+                      const selected = paymentMethod === method.value;
 
                       return (
                         <TouchableOpacity
                           key={method.value}
                           style={[
                             styles.methodButton,
-                            selected &&
-                              styles.selectedMethodButton,
+                            selected && styles.selectedMethodButton,
                           ]}
-                          onPress={() =>
-                            setPaymentMethod(
-                              method.value,
-                            )
-                          }
+                          onPress={() => setPaymentMethod(method.value)}
                           disabled={purchasing}
                         >
                           <View
                             style={[
                               styles.radioCircle,
-                              selected &&
-                                styles.selectedRadioCircle,
+                              selected && styles.selectedRadioCircle,
                             ]}
                           >
-                            {selected ? (
-                              <View
-                                style={
-                                  styles.radioDot
-                                }
-                              />
-                            ) : null}
+                            {selected ? <View style={styles.radioDot} /> : null}
                           </View>
 
                           <Text
                             style={[
                               styles.methodText,
-                              selected &&
-                                styles.selectedMethodText,
+                              selected && styles.selectedMethodText,
                             ]}
                           >
                             {method.label}
@@ -683,8 +695,7 @@ const MemberMembershipScreen = () => {
                   <TouchableOpacity
                     style={[
                       styles.confirmButton,
-                      purchasing &&
-                        styles.disabledButton,
+                      purchasing && styles.disabledButton,
                     ]}
                     onPress={handleConfirmPayment}
                     disabled={purchasing}
@@ -692,26 +703,20 @@ const MemberMembershipScreen = () => {
                     {purchasing ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text
-                        style={
-                          styles.confirmButtonText
-                        }
-                      >
+                      <Text style={styles.confirmButtonText}>
                         Confirm Purchase
                       </Text>
                     )}
                   </TouchableOpacity>
 
+                  {/* CANCEL */}
+
                   <TouchableOpacity
                     style={styles.cancelButton}
-                    onPress={() =>
-                      setPaymentModalVisible(false)
-                    }
+                    onPress={closePaymentModal}
                     disabled={purchasing}
                   >
-                    <Text style={styles.cancelButtonText}>
-                      Cancel
-                    </Text>
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                 </>
               ) : null}
@@ -722,6 +727,10 @@ const MemberMembershipScreen = () => {
     </>
   );
 };
+
+// ======================================================
+// STYLES
+// ======================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -1023,7 +1032,9 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
 
-  /* PAYMENT MODAL */
+  // ====================================================
+  // PAYMENT MODAL
+  // ====================================================
 
   modalOverlay: {
     flex: 1,
