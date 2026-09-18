@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import api from "../../../services/api";
@@ -26,6 +28,10 @@ const MemberProfileScreen = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,9 +55,7 @@ const MemberProfileScreen = () => {
       setProfile(data);
 
       setName(data?.name || data?.user?.name || "");
-
       setPhone(data?.phone || data?.user?.phone || "");
-
       setAddress(data?.address || data?.user?.address || "");
     } catch (err) {
       console.log("Member profile error:", err.response?.data || err.message);
@@ -144,6 +148,10 @@ const MemberProfileScreen = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (err) {
       console.log("Change password error:", err.response?.data || err.message);
 
@@ -195,164 +203,253 @@ const MemberProfileScreen = () => {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+    <KeyboardAvoidingView
+      style={styles.keyboardContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
     >
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {name ? name.charAt(0).toUpperCase() : "M"}
-          </Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {name ? name.charAt(0).toUpperCase() : "M"}
+            </Text>
+          </View>
+
+          <Text style={styles.title}>My Profile</Text>
+
+          <Text style={styles.subtitle}>Manage your personal information</Text>
         </View>
 
-        <Text style={styles.title}>My Profile</Text>
+        {/* Error */}
 
-        <Text style={styles.subtitle}>Manage your personal information</Text>
-      </View>
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
 
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
-          <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
-            <Text style={styles.retryText}>Retry</Text>
+        {/* Account Information */}
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
+
+          <View style={styles.readOnlyRow}>
+            <Text style={styles.readOnlyLabel}>Email</Text>
+
+            <Text style={styles.readOnlyValue}>{getEmail()}</Text>
+          </View>
+
+          <View style={styles.readOnlyRow}>
+            <Text style={styles.readOnlyLabel}>Role</Text>
+
+            <Text style={styles.readOnlyValue}>
+              {getRole().toString().toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Personal Information */}
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+
+          <Text style={styles.label}>Full Name</Text>
+
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your name"
+            placeholderTextColor="#9ca3af"
+            style={[styles.input, saving && styles.disabledInput]}
+            editable={!saving}
+            returnKeyType="next"
+          />
+
+          <Text style={styles.label}>Phone</Text>
+
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter your phone"
+            placeholderTextColor="#9ca3af"
+            keyboardType="phone-pad"
+            style={[styles.input, saving && styles.disabledInput]}
+            editable={!saving}
+            returnKeyType="next"
+          />
+
+          <Text style={styles.label}>Address</Text>
+
+          <TextInput
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter your address"
+            placeholderTextColor="#9ca3af"
+            style={[
+              styles.input,
+              styles.textArea,
+              saving && styles.disabledInput,
+            ]}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            editable={!saving}
+          />
+
+          <TouchableOpacity
+            style={[styles.primaryButton, saving && styles.disabledButton]}
+            onPress={handleUpdateProfile}
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <ActivityIndicator color="#fff" size="small" />
+
+                <Text style={styles.buttonLoadingText}>Saving...</Text>
+              </>
+            ) : (
+              <Text style={styles.primaryButtonText}>Save Changes</Text>
+            )}
           </TouchableOpacity>
         </View>
-      ) : null}
 
-      {/* Account Information */}
+        {/* Change Password */}
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Change Password</Text>
 
-        <View style={styles.readOnlyRow}>
-          <Text style={styles.readOnlyLabel}>Email</Text>
+          {/* Current Password */}
 
-          <Text style={styles.readOnlyValue}>{getEmail()}</Text>
+          <Text style={styles.label}>Current Password</Text>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              placeholder="Enter current password"
+              placeholderTextColor="#9ca3af"
+              secureTextEntry={!showCurrentPassword}
+              style={styles.passwordInput}
+              editable={!changingPassword}
+              returnKeyType="next"
+            />
+
+            <TouchableOpacity
+              style={styles.showButton}
+              onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+              disabled={changingPassword}
+            >
+              <Text style={styles.showButtonText}>
+                {showCurrentPassword ? "Hide" : "Show"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* New Password */}
+
+          <Text style={styles.label}>New Password</Text>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              value={newPassword}
+              onChangeText={setNewPassword}
+              placeholder="Enter new password"
+              placeholderTextColor="#9ca3af"
+              secureTextEntry={!showNewPassword}
+              style={styles.passwordInput}
+              editable={!changingPassword}
+              returnKeyType="next"
+            />
+
+            <TouchableOpacity
+              style={styles.showButton}
+              onPress={() => setShowNewPassword(!showNewPassword)}
+              disabled={changingPassword}
+            >
+              <Text style={styles.showButtonText}>
+                {showNewPassword ? "Hide" : "Show"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password */}
+
+          <Text style={styles.label}>Confirm New Password</Text>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm new password"
+              placeholderTextColor="#9ca3af"
+              secureTextEntry={!showConfirmPassword}
+              style={styles.passwordInput}
+              editable={!changingPassword}
+              returnKeyType="done"
+            />
+
+            <TouchableOpacity
+              style={styles.showButton}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              disabled={changingPassword}
+            >
+              <Text style={styles.showButtonText}>
+                {showConfirmPassword ? "Hide" : "Show"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              changingPassword && styles.disabledButton,
+            ]}
+            onPress={handleChangePassword}
+            disabled={changingPassword}
+          >
+            {changingPassword ? (
+              <>
+                <ActivityIndicator color="#111827" />
+
+                <Text style={styles.secondaryLoadingText}>Changing...</Text>
+              </>
+            ) : (
+              <Text style={styles.secondaryButtonText}>Change Password</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.readOnlyRow}>
-          <Text style={styles.readOnlyLabel}>Role</Text>
+        {/* Logout */}
 
-          <Text style={styles.readOnlyValue}>
-            {getRole().toString().toUpperCase()}
-          </Text>
-        </View>
-      </View>
-
-      {/* Personal Information */}
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-
-        <Text style={styles.label}>Full Name</Text>
-
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter your name"
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Phone</Text>
-
-        <TextInput
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Enter your phone"
-          keyboardType="phone-pad"
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Address</Text>
-
-        <TextInput
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Enter your address"
-          style={[styles.input, styles.textArea]}
-          multiline
-          numberOfLines={3}
-        />
-
-        <TouchableOpacity
-          style={[styles.primaryButton, saving && styles.disabledButton]}
-          onPress={handleUpdateProfile}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Save Changes</Text>
-          )}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Change Password */}
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Change Password</Text>
-
-        <Text style={styles.label}>Current Password</Text>
-
-        <TextInput
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-          placeholder="Enter current password"
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>New Password</Text>
-
-        <TextInput
-          value={newPassword}
-          onChangeText={setNewPassword}
-          placeholder="Enter new password"
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Confirm New Password</Text>
-
-        <TextInput
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          placeholder="Confirm new password"
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <TouchableOpacity
-          style={[
-            styles.secondaryButton,
-            changingPassword && styles.disabledButton,
-          ]}
-          onPress={handleChangePassword}
-          disabled={changingPassword}
-        >
-          {changingPassword ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.secondaryButtonText}>Change Password</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Logout */}
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+    flex: 1,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f7fb",
@@ -360,7 +457,7 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     padding: 16,
-    paddingBottom: 35,
+    paddingBottom: 120,
   },
 
   centerContainer: {
@@ -464,6 +561,43 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+  passwordContainer: {
+    height: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginBottom: 14,
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: "100%",
+    paddingHorizontal: 14,
+    fontSize: 15,
+    color: "#111827",
+  },
+
+  showButton: {
+    paddingHorizontal: 14,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  showButtonText: {
+    color: "#111827",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  disabledInput: {
+    backgroundColor: "#f3f4f6",
+    opacity: 0.7,
+  },
+
   textArea: {
     height: 90,
     paddingTop: 12,
@@ -476,6 +610,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
     justifyContent: "center",
     alignItems: "center",
+    flexDirection: "row",
     marginTop: 3,
   },
 
@@ -485,6 +620,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
+  buttonLoadingText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+
   secondaryButton: {
     height: 50,
     borderRadius: 10,
@@ -492,6 +634,7 @@ const styles = StyleSheet.create({
     borderColor: "#111827",
     justifyContent: "center",
     alignItems: "center",
+    flexDirection: "row",
     marginTop: 2,
   },
 
@@ -499,6 +642,13 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  secondaryLoadingText: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
   },
 
   disabledButton: {
@@ -512,6 +662,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 2,
+    marginBottom: 20,
   },
 
   logoutText: {
