@@ -2,9 +2,7 @@ const Membership = require("../models/Membership");
 const Attendance = require("../models/Attendance");
 const Member = require("../models/Member");
 
-// ======================================================
-// CHECK IN MEMBER - MANUAL
-// ======================================================
+// Check in member - manual
 const checkIn = async (req, res) => {
   try {
     const { memberId, method, notes } = req.body;
@@ -114,9 +112,7 @@ const checkIn = async (req, res) => {
   }
 };
 
-// ======================================================
-// CHECK OUT MEMBER - MANUAL
-// ======================================================
+// Check out member - manual
 const checkOut = async (req, res) => {
   try {
     const { attendanceId } = req.body;
@@ -184,9 +180,7 @@ const checkOut = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET ALL ATTENDANCE
-// ======================================================
+// Get all attendance
 const getAttendance = async (req, res) => {
   try {
     const attendance = await Attendance.find()
@@ -214,9 +208,7 @@ const getAttendance = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET TODAY'S ATTENDANCE
-// ======================================================
+// Get today's attendance
 const getTodayAttendance = async (req, res) => {
   try {
     const now = new Date();
@@ -262,9 +254,7 @@ const getTodayAttendance = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET MEMBER ATTENDANCE HISTORY
-// ======================================================
+// Get member attendance history
 const getMemberAttendance = async (req, res) => {
   try {
     const { memberId } = req.params;
@@ -310,9 +300,7 @@ const getMemberAttendance = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET ATTENDANCE BY ID
-// ======================================================
+// Get attendance by ID
 const getAttendanceById = async (req, res) => {
   try {
     const attendance = await Attendance.findById(
@@ -349,10 +337,8 @@ const getAttendanceById = async (req, res) => {
   }
 };
 
-// ======================================================
-// QR CHECK IN
-// MEMBER SCANS ADMIN-DISPLAYED QR
-// ======================================================
+// QR check in
+// Member scans admin-displayed QR
 const checkInByQR = async (req, res) => {
   try {
     const { memberId, token } = req.body;
@@ -364,9 +350,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Find logged-in member
-    // --------------------------------------------------
     const loggedInUserId = req.user?._id || req.user?.id;
 
     if (!loggedInUserId) {
@@ -387,11 +371,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
-    // IMPORTANT SECURITY CHECK
-    //
-    // Member can only scan QR belonging to themselves.
-    // --------------------------------------------------
+    // Member can only scan QR belonging to themselves
     if (
       loggedInMember._id.toString() !==
       memberId.toString()
@@ -403,9 +383,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Find member
-    // --------------------------------------------------
     const member = await Member.findById(memberId).populate(
       "user",
       "name email",
@@ -418,9 +396,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Validate QR token
-    // --------------------------------------------------
     if (
       !member.qrToken ||
       member.qrToken !== token
@@ -431,9 +407,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Check member status
-    // --------------------------------------------------
     if (member.status !== "active") {
       return res.status(400).json({
         success: false,
@@ -441,9 +415,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Check active membership
-    // --------------------------------------------------
     const now = new Date();
 
     const activeMembership =
@@ -465,18 +437,14 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Today date range
-    // --------------------------------------------------
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // --------------------------------------------------
     // Check existing active attendance
-    // --------------------------------------------------
     const existingAttendance =
       await Attendance.findOne({
         member: member._id,
@@ -499,9 +467,7 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Create attendance
-    // --------------------------------------------------
     const attendance = await Attendance.create({
       member: member._id,
       date: new Date(),
@@ -511,9 +477,7 @@ const checkInByQR = async (req, res) => {
       notes: "",
     });
 
-    // --------------------------------------------------
     // Populate attendance
-    // --------------------------------------------------
     const populatedAttendance =
       await Attendance.findById(
         attendance._id,
@@ -555,10 +519,8 @@ const checkInByQR = async (req, res) => {
   }
 };
 
-// ======================================================
-// QR CHECK OUT
-// MEMBER SCANS ADMIN-DISPLAYED QR
-// ======================================================
+// QR check out
+// Member scans admin-displayed QR
 const checkOutByQR = async (req, res) => {
   try {
     const { memberId, token } = req.body;
@@ -570,9 +532,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Find logged-in member
-    // --------------------------------------------------
     const loggedInUserId = req.user?._id || req.user?.id;
 
     if (!loggedInUserId) {
@@ -593,9 +553,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Security check
-    // --------------------------------------------------
     if (
       loggedInMember._id.toString() !==
       memberId.toString()
@@ -607,9 +565,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Find member
-    // --------------------------------------------------
     const member = await Member.findById(memberId).populate(
       "user",
       "name email",
@@ -622,9 +578,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Validate QR token
-    // --------------------------------------------------
     if (
       !member.qrToken ||
       member.qrToken !== token
@@ -635,9 +589,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Check member status
-    // --------------------------------------------------
     if (member.status !== "active") {
       return res.status(400).json({
         success: false,
@@ -645,9 +597,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Find today's active attendance
-    // --------------------------------------------------
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -675,9 +625,7 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
     // Check out
-    // --------------------------------------------------
     const checkOutTime = new Date();
 
     attendance.checkOut = checkOutTime;
@@ -685,9 +633,7 @@ const checkOutByQR = async (req, res) => {
 
     await attendance.save();
 
-    // --------------------------------------------------
     // Calculate duration
-    // --------------------------------------------------
     const durationMs =
       attendance.checkOut.getTime() -
       attendance.checkIn.getTime();
@@ -697,9 +643,7 @@ const checkOutByQR = async (req, res) => {
       Math.floor(durationMs / (1000 * 60)),
     );
 
-    // --------------------------------------------------
     // Populate updated attendance
-    // --------------------------------------------------
     const populatedAttendance =
       await Attendance.findById(
         attendance._id,
@@ -735,9 +679,6 @@ const checkOutByQR = async (req, res) => {
   }
 };
 
-// ======================================================
-// EXPORTS
-// ======================================================
 module.exports = {
   checkIn,
   checkInByQR,
