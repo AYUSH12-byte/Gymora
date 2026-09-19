@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Gym Management System",
+    "slug": "Gym Management System",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
