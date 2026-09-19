@@ -3,9 +3,7 @@ const Member = require("../models/Member");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 
-// ======================================================
-// CREATE MEMBER
-// ======================================================
+// Create member
 const createMember = async (req, res) => {
   try {
     const {
@@ -72,9 +70,7 @@ const createMember = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET ALL MEMBERS
-// ======================================================
+// Get all members
 const getMembers = async (req, res) => {
   try {
     const members = await Member.find()
@@ -96,9 +92,7 @@ const getMembers = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET SINGLE MEMBER
-// ======================================================
+// Get single member
 const getMemberById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -138,10 +132,7 @@ const getMemberById = async (req, res) => {
   }
 };
 
-// ======================================================
-// GET MEMBER QR
-// ADMIN ONLY
-// ======================================================
+// Get member QR
 const getMemberQR = async (req, res) => {
   try {
     const { id } = req.params;
@@ -212,9 +203,6 @@ const getMemberQR = async (req, res) => {
   }
 };
 
-// ======================================================
-// EXPORTS
-// ======================================================
 module.exports = {
   createMember,
   getMembers,
