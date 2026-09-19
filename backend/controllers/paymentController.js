@@ -1,5 +1,6 @@
 const Payment = require("../models/Payment");
 const Membership = require("../models/Membership");
+const Notification = require("../models/Notification");
 
 // Generate receipt number
 const generateReceiptNumber = async () => {
@@ -48,7 +49,12 @@ const createPayment = async (req, res) => {
     }
 
     // Validate payment method
-    const allowedPaymentMethods = ["cash", "card", "online", "bank_transfer"];
+    const allowedPaymentMethods = [
+      "cash",
+      "card",
+      "online",
+      "bank_transfer",
+    ];
 
     if (!allowedPaymentMethods.includes(paymentMethod)) {
       return res.status(400).json({
@@ -181,6 +187,20 @@ const createPayment = async (req, res) => {
         },
       });
 
+    // Create payment received notification
+    if (req.user?._id) {
+      const memberName =
+        populatedPayment?.member?.user?.name || "Member";
+
+      await Notification.create({
+        user: req.user._id,
+        type: "payment_received",
+        title: "Payment Received",
+        message: `Rs. ${paymentAmount.toLocaleString()} payment received from ${memberName}.`,
+        relatedId: payment._id,
+      });
+    }
+
     return res.status(201).json({
       success: true,
       message: "Payment recorded successfully",
@@ -279,7 +299,10 @@ const getMembershipPayments = async (req, res) => {
     );
 
     // Calculate remaining amount
-    const remainingAmount = Math.max(membership.finalAmount - totalPaid, 0);
+    const remainingAmount = Math.max(
+      membership.finalAmount - totalPaid,
+      0,
+    );
 
     // Calculate correct status
     let paymentStatus = "pending";
