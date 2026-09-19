@@ -1,5 +1,6 @@
 const Notification = require("../models/Notification");
 
+// Get all notifications
 const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({
@@ -21,6 +22,7 @@ const getNotifications = async (req, res) => {
   }
 };
 
+// Get unread notifications
 const getUnreadNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({
@@ -43,6 +45,7 @@ const getUnreadNotifications = async (req, res) => {
   }
 };
 
+// Mark notification as read
 const markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findOneAndUpdate(
@@ -55,7 +58,7 @@ const markAsRead = async (req, res) => {
       },
       {
         new: true,
-      },
+      }
     );
 
     if (!notification) {
@@ -78,6 +81,7 @@ const markAsRead = async (req, res) => {
   }
 };
 
+// Mark all notifications as read
 const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
@@ -89,7 +93,7 @@ const markAllAsRead = async (req, res) => {
         $set: {
           isRead: true,
         },
-      },
+      }
     );
 
     res.status(200).json({
@@ -104,6 +108,7 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
+// Delete notification
 const deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findOneAndDelete({
