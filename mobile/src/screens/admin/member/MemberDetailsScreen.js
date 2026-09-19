@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -40,7 +41,7 @@ const MemberDetailsScreen = ({ route, navigation }) => {
 
       console.log(
         "MEMBER DETAILS RESPONSE:",
-        response.data,
+        response.data
       );
 
       const data =
@@ -57,14 +58,14 @@ const MemberDetailsScreen = ({ route, navigation }) => {
     } catch (error) {
       console.log(
         "MEMBER DETAILS ERROR:",
-        error.response?.data || error.message,
+        error.response?.data || error.message
       );
 
       setMember(null);
 
       setError(
         error.response?.data?.message ||
-          "Member not found.",
+          "Member not found."
       );
     } finally {
       setLoading(false);
@@ -75,7 +76,7 @@ const MemberDetailsScreen = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       loadMember();
-    }, [memberId]),
+    }, [memberId])
   );
 
   const handleRefresh = () => {
@@ -83,9 +84,7 @@ const MemberDetailsScreen = ({ route, navigation }) => {
     loadMember(false);
   };
 
-  // ======================================================
-  // OPEN MEMBER QR
-  // ======================================================
+  // Open member QR
   const handleShowQR = () => {
     if (!memberId) {
       return;
@@ -94,6 +93,78 @@ const MemberDetailsScreen = ({ route, navigation }) => {
     navigation.navigate("MemberQR", {
       memberId,
     });
+  };
+
+  // Show delete confirmation
+  const handleDeleteMember = () => {
+    if (!memberId || !member) {
+      return;
+    }
+
+    const memberName =
+      member.user?.name ||
+      member.name ||
+      "this member";
+
+    Alert.alert(
+      "Delete Member",
+      `Are you sure you want to permanently delete ${memberName}? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: confirmDeleteMember,
+        },
+      ]
+    );
+  };
+
+  // Delete member
+  const confirmDeleteMember = async () => {
+    try {
+      setLoading(true);
+
+      const response = await api.delete(
+        `/members/${memberId}`
+      );
+
+      if (response.data?.success) {
+        Alert.alert(
+          "Member Deleted",
+          "Member has been deleted successfully.",
+          [
+            {
+              text: "OK",
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Delete Failed",
+          response.data?.message ||
+            "Failed to delete member."
+        );
+      }
+    } catch (error) {
+      console.log(
+        "DELETE MEMBER ERROR:",
+        error.response?.data ||
+          error.message
+      );
+
+      Alert.alert(
+        "Delete Failed",
+        error.response?.data?.message ||
+          "Failed to delete member."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -150,7 +221,6 @@ const MemberDetailsScreen = ({ route, navigation }) => {
         />
       }
     >
-      {/* Profile Card */}
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -187,9 +257,6 @@ const MemberDetailsScreen = ({ route, navigation }) => {
         </View>
       </View>
 
-      {/* ==================================================
-          ATTENDANCE QR
-      ================================================== */}
       <View style={styles.qrSection}>
         <View style={styles.qrHeader}>
           <View style={styles.qrIcon}>
@@ -218,7 +285,6 @@ const MemberDetailsScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Personal Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Personal Information
@@ -244,7 +310,7 @@ const MemberDetailsScreen = ({ route, navigation }) => {
           value={
             member.dateOfBirth
               ? new Date(
-                  member.dateOfBirth,
+                  member.dateOfBirth
                 ).toLocaleDateString()
               : "N/A"
           }
@@ -255,14 +321,13 @@ const MemberDetailsScreen = ({ route, navigation }) => {
           value={
             member.joinDate
               ? new Date(
-                  member.joinDate,
+                  member.joinDate
                 ).toLocaleDateString()
               : "N/A"
           }
         />
       </View>
 
-      {/* Emergency Contact */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Emergency Contact
@@ -292,6 +357,17 @@ const MemberDetailsScreen = ({ route, navigation }) => {
           }
         />
       </View>
+
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={handleDeleteMember}
+        disabled={loading}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.deleteButtonText}>
+          Delete Member
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -416,10 +492,6 @@ const styles = StyleSheet.create({
     color: "#dc2626",
   },
 
-  // ======================================================
-  // QR SECTION
-  // ======================================================
-
   qrSection: {
     backgroundColor: "#fff",
     borderRadius: 15,
@@ -478,10 +550,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // ======================================================
-  // INFORMATION
-  // ======================================================
-
   section: {
     backgroundColor: "#fff",
     borderRadius: 15,
@@ -515,6 +583,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     maxWidth: "60%",
     textAlign: "right",
+  },
+
+  deleteButton: {
+    backgroundColor: "#dc2626",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 5,
+    marginBottom: 20,
+  },
+
+  deleteButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });
 

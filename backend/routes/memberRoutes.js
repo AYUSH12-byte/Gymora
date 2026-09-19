@@ -7,6 +7,7 @@ const {
   getMembers,
   getMemberById,
   getMemberQR,
+  deleteMember,
 } = require("../controllers/memberController");
 
 const protect = require("../middleware/authMiddleware");
@@ -42,6 +43,14 @@ router.get(
   protect,
   authorizeRoles("admin"),
   getMemberById,
+);
+
+// Delete member
+router.delete(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  deleteMember
 );
 
 module.exports = router;

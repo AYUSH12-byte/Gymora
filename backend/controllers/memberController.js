@@ -215,9 +215,54 @@ const getMemberQR = async (req, res) => {
   }
 };
 
+// Delete member
+const deleteMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Member ID is required",
+      });
+    }
+
+    // Find member
+    const member = await Member.findById(id);
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found",
+      });
+    }
+
+    // Delete member profile
+    await Member.findByIdAndDelete(id);
+
+    // Delete associated user account
+    if (member.user) {
+      await User.findByIdAndDelete(member.user);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Member deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete member error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createMember,
   getMembers,
   getMemberById,
   getMemberQR,
+  deleteMember,
 };
