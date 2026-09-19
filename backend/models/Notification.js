@@ -11,9 +11,13 @@ const notificationSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: [
+        "new_member",
         "membership_expiring",
         "membership_expired",
         "payment_pending",
+        "payment_received",
+        "membership_renewed",
+        "attendance",
         "general",
       ],
       default: "general",

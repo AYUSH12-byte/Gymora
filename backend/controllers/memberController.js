@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Member = require("../models/Member");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
+const Notification = require("../models/Notification");
 
 // Create member
 const createMember = async (req, res) => {
@@ -54,6 +55,17 @@ const createMember = async (req, res) => {
       emergencyContact,
       qrToken,
     });
+
+    // Create admin notification
+    if (req.user?._id) {
+      await Notification.create({
+        user: req.user._id,
+        type: "new_member",
+        title: "New Member Added",
+        message: `${name} has been added as a new member.`,
+        relatedId: member._id,
+      });
+    }
 
     return res.status(201).json({
       success: true,

@@ -29,7 +29,8 @@ const NotificationsScreen = () => {
 
       const response = await api.get("/notifications");
 
-      const data = response.data.notifications || response.data.data || [];
+      const data =
+        response.data.notifications || response.data.data || [];
 
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -38,7 +39,10 @@ const NotificationsScreen = () => {
         error.response?.data || error.message,
       );
 
-      setError(error.response?.data?.message || "Failed to load notifications");
+      setError(
+        error.response?.data?.message ||
+          "Failed to load notifications",
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,7 +62,9 @@ const NotificationsScreen = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await api.put(`/notifications/${notificationId}/read`);
+      await api.put(
+        `/notifications/${notificationId}/read`,
+      );
 
       setNotifications((current) =>
         current.map((notification) =>
@@ -73,14 +79,17 @@ const NotificationsScreen = () => {
     } catch (error) {
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to mark notification as read",
+        error.response?.data?.message ||
+          "Failed to mark notification as read",
       );
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      const response = await api.put("/notifications/read-all");
+      const response = await api.put(
+        "/notifications/read-all",
+      );
 
       if (response.data.success) {
         setNotifications((current) =>
@@ -90,12 +99,16 @@ const NotificationsScreen = () => {
           })),
         );
 
-        Alert.alert("Success", "All notifications marked as read");
+        Alert.alert(
+          "Success",
+          "All notifications marked as read",
+        );
       }
     } catch (error) {
       Alert.alert(
         "Error",
-        error.response?.data?.message || "Failed to mark notifications as read",
+        error.response?.data?.message ||
+          "Failed to mark notifications as read",
       );
     }
   };
@@ -114,11 +127,14 @@ const NotificationsScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              await api.delete(`/notifications/${notificationId}`);
+              await api.delete(
+                `/notifications/${notificationId}`,
+              );
 
               setNotifications((current) =>
                 current.filter(
-                  (notification) => notification._id !== notificationId,
+                  (notification) =>
+                    notification._id !== notificationId,
                 ),
               );
             } catch (error) {
@@ -135,13 +151,18 @@ const NotificationsScreen = () => {
   };
 
   const formatDate = (date) => {
-    if (!date) return "Unknown date";
+    if (!date) {
+      return "Unknown date";
+    }
 
     return new Date(date).toLocaleString();
   };
 
   const getTypeLabel = (type) => {
     switch (type) {
+      case "new_member":
+        return "New Member";
+
       case "membership_expiring":
         return "Membership Expiring";
 
@@ -150,6 +171,15 @@ const NotificationsScreen = () => {
 
       case "payment_pending":
         return "Payment Pending";
+
+      case "payment_received":
+        return "Payment Received";
+
+      case "membership_renewed":
+        return "Membership Renewed";
+
+      case "attendance":
+        return "Attendance";
 
       case "general":
         return "General";
@@ -161,41 +191,64 @@ const NotificationsScreen = () => {
 
   const renderNotification = ({ item }) => {
     return (
-      <View style={[styles.card, !item.isRead && styles.unreadCard]}>
+      <View
+        style={[
+          styles.card,
+          !item.isRead && styles.unreadCard,
+        ]}
+      >
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>{item.title || "Notification"}</Text>
+            <Text style={styles.title}>
+              {item.title || "Notification"}
+            </Text>
 
             {!item.isRead && (
               <View style={styles.unreadBadge}>
-                <Text style={styles.unreadBadgeText}>NEW</Text>
+                <Text style={styles.unreadBadgeText}>
+                  NEW
+                </Text>
               </View>
             )}
           </View>
 
-          <TouchableOpacity onPress={() => handleDelete(item._id)}>
-            <Text style={styles.deleteText}>Delete</Text>
+          <TouchableOpacity
+            onPress={() => handleDelete(item._id)}
+          >
+            <Text style={styles.deleteText}>
+              Delete
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.type}>{getTypeLabel(item.type)}</Text>
+        <Text style={styles.type}>
+          {getTypeLabel(item.type)}
+        </Text>
 
         <Text style={styles.message}>
           {item.message || "No message available"}
         </Text>
 
-        <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+        <Text style={styles.date}>
+          {formatDate(item.createdAt)}
+        </Text>
 
         {!item.isRead && (
           <TouchableOpacity
             style={styles.readButton}
             onPress={() => markAsRead(item._id)}
           >
-            <Text style={styles.readButtonText}>Mark as Read</Text>
+            <Text style={styles.readButtonText}>
+              Mark as Read
+            </Text>
           </TouchableOpacity>
         )}
 
-        {item.isRead && <Text style={styles.readText}>✓ Read</Text>}
+        {item.isRead && (
+          <Text style={styles.readText}>
+            ✓ Read
+          </Text>
+        )}
       </View>
     );
   };
@@ -204,7 +257,10 @@ const NotificationsScreen = () => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
+
+        <Text style={styles.loadingText}>
+          Loading notifications...
+        </Text>
       </View>
     );
   }
@@ -212,13 +268,17 @@ const NotificationsScreen = () => {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>
+          {error}
+        </Text>
 
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => loadNotifications()}
         >
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={styles.retryText}>
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -232,7 +292,9 @@ const NotificationsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.heading}>Notifications</Text>
+          <Text style={styles.heading}>
+            Notifications
+          </Text>
 
           <Text style={styles.subHeading}>
             {unreadCount} unread notification
@@ -245,7 +307,9 @@ const NotificationsScreen = () => {
             style={styles.markAllButton}
             onPress={markAllAsRead}
           >
-            <Text style={styles.markAllText}>Mark All Read</Text>
+            <Text style={styles.markAllText}>
+              Mark All Read
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -260,13 +324,20 @@ const NotificationsScreen = () => {
             : styles.listContainer
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🔔</Text>
+            <Text style={styles.emptyIcon}>
+              🔔
+            </Text>
 
-            <Text style={styles.emptyTitle}>No Notifications</Text>
+            <Text style={styles.emptyTitle}>
+              No Notifications
+            </Text>
 
             <Text style={styles.emptyText}>
               You don't have any notifications yet.
