@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
   View,
   Text,
@@ -12,7 +13,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { useAuth } from "../../context/AuthContext";
+
+const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -23,37 +28,114 @@ const LoginScreen = ({ navigation }) => {
 
   const { login } = useAuth();
 
+  // Load remembered email
+  useEffect(() => {
+    const loadRememberedEmail = async () => {
+      try {
+        const savedEmail = await AsyncStorage.getItem(
+          REMEMBERED_EMAIL_KEY
+        );
+
+        if (savedEmail) {
+          setEmail(savedEmail);
+          setRememberMe(true);
+        }
+      } catch (error) {
+        console.log(
+          "Load remembered email error:",
+          error?.message
+        );
+      }
+    };
+
+    loadRememberedEmail();
+  }, []);
+
+  // Handle login
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter email and password");
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password.trim()) {
+      Alert.alert(
+        "Error",
+        "Please enter email and password"
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      const data = await login(email.trim(), password, rememberMe);
+      await login(
+        trimmedEmail,
+        password,
+        rememberMe
+      );
 
-      console.log("Logged in user:", data.user);
-      console.log("Remember Me:", rememberMe);
+      // Save email when remember me is enabled
+      if (rememberMe) {
+        await AsyncStorage.setItem(
+          REMEMBERED_EMAIL_KEY,
+          trimmedEmail
+        );
+      } else {
+        await AsyncStorage.removeItem(
+          REMEMBERED_EMAIL_KEY
+        );
+      }
     } catch (error) {
-      console.log("Login error:", error.response?.data || error.message);
+      console.log(
+        "Login error:",
+        error?.response?.data ||
+          error?.message ||
+          error
+      );
 
       Alert.alert(
         "Login Failed",
-        error.response?.data?.message ||
-          "Something went wrong. Please try again.",
+        error?.response?.data?.message ||
+          "Something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle remember me
+  const handleRememberMe = async () => {
+    if (loading) {
+      return;
+    }
+
+    const newValue = !rememberMe;
+
+    setRememberMe(newValue);
+
+    if (!newValue) {
+      try {
+        await AsyncStorage.removeItem(
+          REMEMBERED_EMAIL_KEY
+        );
+      } catch (error) {
+        console.log(
+          "Clear remembered email error:",
+          error?.message
+        );
+      }
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 20}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : "height"
+      }
+      keyboardVerticalOffset={
+        Platform.OS === "ios" ? 80 : 20
+      }
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -61,13 +143,17 @@ const LoginScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.formContainer}>
-          {/* Title */}
-          <Text style={styles.title}>Gym Management</Text>
+          <Text style={styles.title}>
+            Gym Management
+          </Text>
 
-          <Text style={styles.subtitle}>Login to your account</Text>
+          <Text style={styles.subtitle}>
+            Login to your account
+          </Text>
 
-          {/* Email */}
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>
+            Email
+          </Text>
 
           <TextInput
             style={styles.input}
@@ -82,8 +168,9 @@ const LoginScreen = ({ navigation }) => {
             returnKeyType="next"
           />
 
-          {/* Password */}
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>
+            Password
+          </Text>
 
           <View style={styles.passwordContainer}>
             <TextInput
@@ -102,7 +189,9 @@ const LoginScreen = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.showButton}
-              onPress={() => setShowPassword(!showPassword)}
+              onPress={() =>
+                setShowPassword(!showPassword)
+              }
               disabled={loading}
             >
               <Text style={styles.showButtonText}>
@@ -111,49 +200,71 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Remember Me */}
           <TouchableOpacity
             style={styles.rememberContainer}
-            onPress={() => setRememberMe(!rememberMe)}
+            onPress={handleRememberMe}
             disabled={loading}
             activeOpacity={0.7}
           >
             <View
-              style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+              style={[
+                styles.checkbox,
+                rememberMe &&
+                  styles.checkboxChecked,
+              ]}
             >
-              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+              {rememberMe && (
+                <Text style={styles.checkmark}>
+                  ✓
+                </Text>
+              )}
             </View>
 
-            <Text style={styles.rememberText}>Remember me</Text>
+            <Text style={styles.rememberText}>
+              Remember me
+            </Text>
           </TouchableOpacity>
 
-          {/* Login Button */}
           <TouchableOpacity
-            style={[styles.button, loading && styles.disabledButton]}
+            style={[
+              styles.button,
+              loading &&
+                styles.disabledButton,
+            ]}
             onPress={handleLogin}
             disabled={loading}
             activeOpacity={0.8}
           >
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator
+                  size="small"
+                  color="#fff"
+                />
 
-                <Text style={styles.buttonText}>Logging in...</Text>
+                <Text style={styles.buttonText}>
+                  Logging in...
+                </Text>
               </View>
             ) : (
-              <Text style={styles.buttonText}>Login</Text>
+              <Text style={styles.buttonText}>
+                Login
+              </Text>
             )}
           </TouchableOpacity>
 
-          {/* Register */}
           <TouchableOpacity
-            onPress={() => navigation.navigate("Register")}
+            onPress={() =>
+              navigation.navigate("Register")
+            }
             disabled={loading}
             activeOpacity={0.7}
           >
             <Text style={styles.registerText}>
               Don't have an account?{" "}
-              <Text style={styles.registerLink}>Register</Text>
+              <Text style={styles.registerLink}>
+                Register
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>
