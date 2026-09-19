@@ -1,8 +1,14 @@
 const User = require("../models/User");
 const Member = require("../models/Member");
+const Membership = require("../models/Membership");
+const Payment = require("../models/Payment");
+const Attendance = require("../models/Attendance");
+const Progress = require("../models/Progress");
+const WorkoutPlan = require("../models/WorkoutPlan");
+const Notification = require("../models/Notification");
+
 const crypto = require("crypto");
 const QRCode = require("qrcode");
-const Notification = require("../models/Notification");
 
 // Create member
 const createMember = async (req, res) => {
@@ -215,7 +221,7 @@ const getMemberQR = async (req, res) => {
   }
 };
 
-// Delete member
+// Delete member and related records
 const deleteMember = async (req, res) => {
   try {
     const { id } = req.params;
@@ -237,17 +243,72 @@ const deleteMember = async (req, res) => {
       });
     }
 
+    // Store user ID before deleting member
+    const userId = member.user;
+
+    // Find memberships for this member
+    const memberships = await Membership.find({
+      member: id,
+    }).select("_id");
+
+    const membershipIds = memberships.map(
+      (membership) => membership._id
+    );
+
+    // Delete payments
+    await Payment.deleteMany({
+      member: id,
+    });
+
+    // Delete memberships
+    await Membership.deleteMany({
+      member: id,
+    });
+
+    // Delete attendance records
+    await Attendance.deleteMany({
+      member: id,
+    });
+
+    // Delete progress records
+    await Progress.deleteMany({
+      member: id,
+    });
+
+    // Delete workout plans assigned to this member
+    await WorkoutPlan.deleteMany({
+      member: id,
+    });
+
+    // Delete notifications related to this member
+    await Notification.deleteMany({
+      $or: [
+        {
+          user: userId,
+        },
+        {
+          relatedId: id,
+        },
+        {
+          relatedId: {
+            $in: membershipIds,
+          },
+        },
+      ],
+    });
+
     // Delete member profile
     await Member.findByIdAndDelete(id);
 
     // Delete associated user account
-    if (member.user) {
-      await User.findByIdAndDelete(member.user);
+    if (userId) {
+      await User.findByIdAndDelete(userId);
     }
 
     return res.status(200).json({
       success: true,
-      message: "Member deleted successfully",
+      message:
+        "Member and all related records deleted successfully",
     });
   } catch (error) {
     console.error("Delete member error:", error);
