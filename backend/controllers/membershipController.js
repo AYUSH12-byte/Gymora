@@ -1,6 +1,7 @@
 const Membership = require("../models/Membership");
 const Member = require("../models/Member");
 const MembershipPackage = require("../models/MembershipPackage");
+const Notification = require("../models/Notification");
 
 // Calculate end date
 const calculateEndDate = (startDate, duration, durationUnit) => {
@@ -77,11 +78,8 @@ const createMembership = async (req, res) => {
 
     // Calculate discount
     const originalAmount = membershipPackage.price;
-
     const discountPercentage = membershipPackage.discount || 0;
-
     const discountAmount = (originalAmount * discountPercentage) / 100;
-
     const finalAmount = originalAmount - discountAmount;
 
     // Calculate end date
@@ -223,6 +221,7 @@ const getMembershipById = async (req, res) => {
   }
 };
 
+// Update expired memberships
 const updateExpiredMemberships = async () => {
   try {
     const now = new Date();
@@ -245,6 +244,7 @@ const updateExpiredMemberships = async () => {
   }
 };
 
+// Renew membership
 const renewMembership = async (req, res) => {
   try {
     const { membershipId, startDate } = req.body;
@@ -293,28 +293,20 @@ const renewMembership = async (req, res) => {
 
     const start = startDate ? new Date(startDate) : new Date();
 
-    const endDate = new Date(start);
+    // Calculate end date
+    const endDate = calculateEndDate(
+      start,
+      membershipPackage.duration,
+      membershipPackage.durationUnit,
+    );
 
-    if (membershipPackage.durationUnit === "days") {
-      endDate.setDate(endDate.getDate() + membershipPackage.duration);
-    }
-
-    if (membershipPackage.durationUnit === "months") {
-      endDate.setMonth(endDate.getMonth() + membershipPackage.duration);
-    }
-
-    if (membershipPackage.durationUnit === "years") {
-      endDate.setFullYear(endDate.getFullYear() + membershipPackage.duration);
-    }
-
+    // Calculate amount
     const originalAmount = membershipPackage.price;
-
     const discountPercentage = membershipPackage.discount || 0;
-
     const discountAmount = (originalAmount * discountPercentage) / 100;
-
     const finalAmount = originalAmount - discountAmount;
 
+    // Determine status
     const today = new Date();
 
     let status = "upcoming";
@@ -327,22 +319,21 @@ const renewMembership = async (req, res) => {
       status = "expired";
     }
 
+    // Create renewed membership
     const renewedMembership = await Membership.create({
       member: oldMembership.member,
       package: membershipPackage._id,
-
       startDate: start,
       endDate,
-
       originalAmount,
       discountPercentage,
       discountAmount,
       finalAmount,
-
       status,
       paymentStatus: "pending",
     });
 
+    // Populate renewed membership
     const populatedMembership = await Membership.findById(renewedMembership._id)
       .populate({
         path: "member",
@@ -353,12 +344,27 @@ const renewMembership = async (req, res) => {
       })
       .populate("package");
 
+    // Create membership renewed notification
+    if (req.user?._id) {
+      const memberName = populatedMembership?.member?.user?.name || "Member";
+
+      await Notification.create({
+        user: req.user._id,
+        type: "membership_renewed",
+        title: "Membership Renewed",
+        message: `${memberName} renewed his membership.`,
+        relatedId: renewedMembership._id,
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "Membership renewed successfully",
       membership: populatedMembership,
     });
   } catch (error) {
+    console.error("Renew Membership Error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -366,6 +372,7 @@ const renewMembership = async (req, res) => {
   }
 };
 
+// Get expiring memberships
 const getExpiringMemberships = async (req, res) => {
   try {
     const now = new Date();
