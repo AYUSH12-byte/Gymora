@@ -93,7 +93,10 @@ const CustomDrawerContent = (props) => {
               activeOpacity={0.7}
             >
               <Text
-                style={[styles.menuLabel, isActive && styles.activeMenuLabel]}
+                style={[
+                  styles.menuLabel,
+                  isActive && styles.activeMenuLabel,
+                ]}
               >
                 {item.label}
               </Text>
@@ -102,12 +105,12 @@ const CustomDrawerContent = (props) => {
         })}
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Gym Management System</Text>
+      <View style={styles.drawerFooter}>
+        <Text style={styles.footerTitle}>Gym Management System</Text>
 
-        <Text style={styles.authorText}>Developed by Ayush Chaudhari</Text>
-
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>
+          Developed by Ayush Chaudhari
+        </Text>
       </View>
     </View>
   );
@@ -116,7 +119,9 @@ const CustomDrawerContent = (props) => {
 const MemberDrawerNavigator = () => {
   return (
     <Drawer.Navigator
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
         headerShown: true,
 
@@ -318,20 +323,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginTop: 4,
   },
-
-  authorText: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#777",
-    fontWeight: "500",
-  },
-
-  versionText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#999",
-  },
-  
 });
 
 export default MemberDrawerNavigator;

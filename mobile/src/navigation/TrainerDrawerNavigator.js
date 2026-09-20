@@ -83,12 +83,10 @@ const CustomDrawerContent = (props) => {
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Gym Management System</Text>
+      <View style={styles.drawerFooter}>
+        <Text style={styles.footerTitle}>Gym Management System</Text>
 
-        <Text style={styles.authorText}>Developed by Ayush Chaudhari</Text>
-
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.footerText}>Developed by Ayush Chaudhari</Text>
       </View>
     </View>
   );
