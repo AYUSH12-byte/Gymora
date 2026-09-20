@@ -83,8 +83,12 @@ const CustomDrawerContent = (props) => {
       </View>
 
       {/* Footer */}
-      <View style={styles.drawerFooter}>
-        <Text style={styles.footerText}>Trainer Account</Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Gym Management System</Text>
+
+        <Text style={styles.authorText}>Developed by Ayush Chaudhari</Text>
+
+        <Text style={styles.versionText}>Version 1.0.0</Text>
       </View>
     </View>
   );
@@ -175,7 +179,6 @@ const TrainerDrawerNavigator = () => {
           drawerLabel: "Profile",
         }}
       />
-      
     </Drawer.Navigator>
   );
 };
@@ -289,6 +292,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     color: "#6b7280",
+  },
+  authorText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#777",
+    fontWeight: "500",
+  },
+
+  versionText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#999",
   },
 });
 

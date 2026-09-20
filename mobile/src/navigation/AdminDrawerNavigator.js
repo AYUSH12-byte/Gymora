@@ -10,91 +10,54 @@ import { View, Text, StyleSheet } from "react-native";
 
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// ======================================================
-// DASHBOARD
-// ======================================================
-
+// Dashboard
 import AdminDashboardScreen from "../screens/admin/dashboard/AdminDashboardScreen";
 
-// ======================================================
-// MEMBER SCREENS
-// ======================================================
-
+// Member Screens
 import MembersScreen from "../screens/admin/member/MembersScreen";
 import AddMemberScreen from "../screens/admin/member/AddMemberScreen";
 import MemberDetailsScreen from "../screens/admin/member/MemberDetailsScreen";
 import MemberQRScreen from "../screens/admin/member/MemberQRScreen";
 
-// ======================================================
-// MEMBERSHIP SCREENS
-// ======================================================
-
+// Membership Screens
 import MembershipsScreen from "../screens/admin/membership/MembershipsScreen";
 import MembershipDetailsScreen from "../screens/admin/membership/MembershipDetailsScreen";
 import RenewMembershipScreen from "../screens/admin/membership/RenewMembershipScreen";
 
-// ======================================================
-// PACKAGE SCREENS
-// ======================================================
-
+// Package Screens
 import PackagesScreen from "../screens/admin/package/PackagesScreen";
 import AddPackageScreen from "../screens/admin/package/AddPackageScreen";
 import EditPackageScreen from "../screens/admin/package/EditPackageScreen";
 
-// ======================================================
-// TRAINER SCREENS
-// ======================================================
-
+// Trainer Screens
 import TrainersScreen from "../screens/admin/trainer/TrainersScreen";
 import AddTrainerScreen from "../screens/admin/trainer/AddTrainerScreen";
 import TrainerDetailsScreen from "../screens/admin/trainer/TrainerDetailsScreen";
 import EditTrainerScreen from "../screens/admin/trainer/EditTrainerScreen";
 
-// ======================================================
-// WORKOUT SCREENS
-// ======================================================
-
+// Workout Screens
 import WorkoutPlansScreen from "../screens/admin/workout/WorkoutPlansScreen";
 import AddWorkoutPlanScreen from "../screens/admin/workout/AddWorkoutPlanScreen";
 import WorkoutPlanDetailsScreen from "../screens/admin/workout/WorkoutPlanDetailsScreen";
 import EditWorkoutPlanScreen from "../screens/admin/workout/EditWorkoutPlanScreen";
 
-// ======================================================
-// ATTENDANCE
-// ======================================================
-
+// Attendance
 import AttendanceScreen from "../screens/admin/attendance/AttendanceScreen";
 
-// ======================================================
-// PROGRESS
-// ======================================================
-
+// Progress
 import ProgressScreen from "../screens/admin/progress/ProgressScreen";
 import AddProgressScreen from "../screens/admin/progress/AddProgressScreen";
 import ProgressDetailsScreen from "../screens/admin/progress/ProgressDetailsScreen";
 import EditProgressScreen from "../screens/admin/progress/EditProgressScreen";
 
-// ======================================================
-// NOTIFICATIONS
-// ======================================================
-
+// Notifications
 import NotificationsScreen from "../screens/admin/notification/NotificationsScreen";
 
-// ======================================================
-// REPORTS
-// ======================================================
-
+// Reports
 import ReportsScreen from "../screens/admin/report/ReportsScreen";
 
-// ======================================================
-// PROFILE
-// ======================================================
-
+// Profile
 import AdminProfileScreen from "../screens/admin/profile/AdminProfileScreen";
-
-// ======================================================
-// NAVIGATORS
-// ======================================================
 
 const Drawer = createDrawerNavigator();
 
@@ -106,10 +69,6 @@ const WorkoutPlanStack = createNativeStackNavigator();
 const AttendanceStack = createNativeStackNavigator();
 const ProgressStack = createNativeStackNavigator();
 const NotificationStack = createNativeStackNavigator();
-
-// ======================================================
-// MEMBERS STACK
-// ======================================================
 
 const MembersStack = () => {
   return (
@@ -141,10 +100,6 @@ const MembersStack = () => {
   );
 };
 
-// ======================================================
-// PACKAGES STACK
-// ======================================================
-
 const PackagesStack = () => {
   return (
     <PackageStack.Navigator>
@@ -175,10 +130,6 @@ const PackagesStack = () => {
   );
 };
 
-// ======================================================
-// MEMBERSHIPS STACK
-// ======================================================
-
 const MembershipsStack = () => {
   return (
     <MembershipStack.Navigator>
@@ -208,10 +159,6 @@ const MembershipsStack = () => {
     </MembershipStack.Navigator>
   );
 };
-
-// ======================================================
-// TRAINERS STACK
-// ======================================================
 
 const TrainersStack = () => {
   return (
@@ -251,10 +198,6 @@ const TrainersStack = () => {
   );
 };
 
-// ======================================================
-// WORKOUT PLANS STACK
-// ======================================================
-
 const WorkoutPlansStack = () => {
   return (
     <WorkoutPlanStack.Navigator>
@@ -293,10 +236,6 @@ const WorkoutPlansStack = () => {
   );
 };
 
-// ======================================================
-// ATTENDANCE STACK
-// ======================================================
-
 const AttendanceStackScreen = () => {
   return (
     <AttendanceStack.Navigator>
@@ -310,10 +249,6 @@ const AttendanceStackScreen = () => {
     </AttendanceStack.Navigator>
   );
 };
-
-// ======================================================
-// PROGRESS STACK
-// ======================================================
 
 const ProgressStackScreen = () => {
   return (
@@ -353,10 +288,6 @@ const ProgressStackScreen = () => {
   );
 };
 
-// ======================================================
-// NOTIFICATION STACK
-// ======================================================
-
 const NotificationsStack = () => {
   return (
     <NotificationStack.Navigator>
@@ -371,64 +302,42 @@ const NotificationsStack = () => {
   );
 };
 
-// ======================================================
-// CUSTOM DRAWER
-// ======================================================
-
 const CustomDrawerContent = (props) => {
   return (
     <DrawerContentScrollView
       {...props}
       contentContainerStyle={styles.drawerContainer}
     >
-      {/* HEADER */}
-
       <View style={styles.header}>
         <View style={styles.logo}>
           <Text style={styles.logoText}>G</Text>
         </View>
 
-        <Text style={styles.appName}>
-          GYM MANAGEMENT
-        </Text>
+        <Text style={styles.appName}>GYM MANAGEMENT</Text>
 
-        <Text style={styles.adminText}>
-          Admin Panel
-        </Text>
+        <Text style={styles.adminText}>Admin Panel</Text>
       </View>
-
-      {/* MENU */}
 
       <View style={styles.menuContainer}>
         <DrawerItemList {...props} />
       </View>
 
-      {/* FOOTER */}
-
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Gym Management System
-        </Text>
+        <Text style={styles.footerText}>Gym Management System</Text>
 
-        <Text style={styles.versionText}>
-          Version 1.0.0
-        </Text>
+        <Text style={styles.authorText}>Developed by Ayush Chaudhari</Text>
+
+        <Text style={styles.versionText}>Version 1.0.0</Text>
       </View>
     </DrawerContentScrollView>
   );
 };
 
-// ======================================================
-// ADMIN DRAWER NAVIGATOR
-// ======================================================
-
 const AdminTabNavigator = () => {
   return (
     <Drawer.Navigator
       initialRouteName="Dashboard"
-      drawerContent={(props) => (
-        <CustomDrawerContent {...props} />
-      )}
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
 
@@ -461,10 +370,6 @@ const AdminTabNavigator = () => {
         },
       }}
     >
-      {/* ==================================================
-          DASHBOARD
-      ================================================== */}
-
       <Drawer.Screen
         name="Dashboard"
         component={AdminDashboardScreen}
@@ -474,10 +379,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          MEMBERS
-      ================================================== */}
-
       <Drawer.Screen
         name="Members"
         component={MembersStack}
@@ -486,12 +387,6 @@ const AdminTabNavigator = () => {
           drawerLabel: "Members",
         }}
       />
-
-      {/* ==================================================
-          MEMBER QR
-          Hidden from drawer.
-          Admin opens this from Member Details.
-      ================================================== */}
 
       <Drawer.Screen
         name="MemberQR"
@@ -504,10 +399,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          PACKAGES
-      ================================================== */}
-
       <Drawer.Screen
         name="Packages"
         component={PackagesStack}
@@ -516,10 +407,6 @@ const AdminTabNavigator = () => {
           drawerLabel: "Membership Packages",
         }}
       />
-
-      {/* ==================================================
-          MEMBERSHIPS
-      ================================================== */}
 
       <Drawer.Screen
         name="Memberships"
@@ -530,10 +417,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          TRAINERS
-      ================================================== */}
-
       <Drawer.Screen
         name="Trainers"
         component={TrainersStack}
@@ -542,10 +425,6 @@ const AdminTabNavigator = () => {
           drawerLabel: "Trainers",
         }}
       />
-
-      {/* ==================================================
-          WORKOUT PLANS
-      ================================================== */}
 
       <Drawer.Screen
         name="WorkoutPlans"
@@ -556,10 +435,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          ATTENDANCE
-      ================================================== */}
-
       <Drawer.Screen
         name="Attendance"
         component={AttendanceStackScreen}
@@ -568,10 +443,6 @@ const AdminTabNavigator = () => {
           drawerLabel: "Attendance",
         }}
       />
-
-      {/* ==================================================
-          PROGRESS
-      ================================================== */}
 
       <Drawer.Screen
         name="Progress"
@@ -582,10 +453,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          NOTIFICATIONS
-      ================================================== */}
-
       <Drawer.Screen
         name="Notifications"
         component={NotificationsStack}
@@ -595,10 +462,6 @@ const AdminTabNavigator = () => {
         }}
       />
 
-      {/* ==================================================
-          REPORTS
-      ================================================== */}
-
       <Drawer.Screen
         name="Reports"
         component={ReportsScreen}
@@ -607,10 +470,6 @@ const AdminTabNavigator = () => {
           drawerLabel: "Reports",
         }}
       />
-
-      {/* ==================================================
-          PROFILE
-      ================================================== */}
 
       <Drawer.Screen
         name="Profile"
@@ -623,10 +482,6 @@ const AdminTabNavigator = () => {
     </Drawer.Navigator>
   );
 };
-
-// ======================================================
-// STYLES
-// ======================================================
 
 const styles = StyleSheet.create({
   drawerContainer: {
@@ -690,6 +545,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#999",
     marginTop: 4,
+  },
+
+  authorText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#777",
+    fontWeight: "500",
+  },
+
+  versionText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#999",
   },
 });
 
