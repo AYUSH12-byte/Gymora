@@ -7,10 +7,6 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  TouchableOpacity,
-  Alert,
-  TextInput,
-  Modal,
 } from "react-native";
 
 import { useFocusEffect } from "@react-navigation/native";
@@ -18,24 +14,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import api from "../../../services/api";
 
 const MemberMembershipScreen = () => {
-  const [membership, setMembership] = useState(null);
+  const [memberships, setMemberships] = useState([]);
   const [packages, setPackages] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [purchasing, setPurchasing] = useState(false);
 
   const [error, setError] = useState("");
-
-  // Payment modal
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-
-  // --------------------------------------------------
-  // LOAD MEMBERSHIP DATA
-  // --------------------------------------------------
 
   const loadMembershipData = async (isRefresh = false) => {
     try {
@@ -47,46 +32,62 @@ const MemberMembershipScreen = () => {
 
       setError("");
 
-      const [membershipResponse, packagesResponse] = await Promise.all([
-        api.get("/member-portal/membership"),
-        api.get("/member-portal/packages"),
-      ]);
+      const [membershipResponse, packagesResponse] =
+        await Promise.all([
+          api.get("/member-portal/membership"),
+          api.get("/member-portal/packages"),
+        ]);
 
       console.log(
         "MEMBERSHIP API RESPONSE:",
-        JSON.stringify(membershipResponse.data, null, 2),
+        JSON.stringify(
+          membershipResponse.data,
+          null,
+          2
+        )
       );
 
-      // Backend returns:
-      // {
-      //   success: true,
-      //   memberships: [...]
-      // }
+      console.log(
+        "PACKAGES API RESPONSE:",
+        JSON.stringify(
+          packagesResponse.data,
+          null,
+          2
+        )
+      );
 
-      const membershipList = membershipResponse.data?.memberships || [];
-
-      // Find active membership
-      const activeMembership = Array.isArray(membershipList)
-        ? membershipList.find(
-            (item) => String(item?.status).toLowerCase() === "active",
-          ) || null
-        : null;
+      const membershipList =
+        membershipResponse.data?.memberships || [];
 
       const packageData =
-        packagesResponse.data?.packages || packagesResponse.data?.data || [];
+        packagesResponse.data?.packages ||
+        packagesResponse.data?.data ||
+        [];
 
-      setMembership(activeMembership);
+      setMemberships(
+        Array.isArray(membershipList)
+          ? membershipList
+          : []
+      );
 
-      setPackages(Array.isArray(packageData) ? packageData : []);
+      setPackages(
+        Array.isArray(packageData)
+          ? packageData
+          : []
+      );
     } catch (err) {
       console.error(
         "Member membership error:",
-        err?.response?.data || err.message,
+        err?.response?.data || err.message
       );
 
       setError(
-        err?.response?.data?.message || "Failed to load membership information",
+        err?.response?.data?.message ||
+          "Failed to load membership information"
       );
+
+      setMemberships([]);
+      setPackages([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -96,12 +97,8 @@ const MemberMembershipScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadMembershipData();
-    }, []),
+    }, [])
   );
-
-  // --------------------------------------------------
-  // HELPERS
-  // --------------------------------------------------
 
   const formatDate = (date) => {
     if (!date) {
@@ -117,7 +114,7 @@ const MemberMembershipScreen = () => {
     return parsedDate.toLocaleDateString();
   };
 
-  const getPackageName = () => {
+  const getPackageName = (membership) => {
     return (
       membership?.package?.name ||
       membership?.packageName ||
@@ -126,8 +123,80 @@ const MemberMembershipScreen = () => {
     );
   };
 
+  const getStatus = (membership) => {
+    return (
+      membership?.status ||
+      membership?.membershipStatus ||
+      "inactive"
+    );
+  };
+
+  const getDaysRemaining = (membership) => {
+    if (
+      membership?.daysRemaining !== undefined &&
+      membership?.daysRemaining !== null
+    ) {
+      return membership.daysRemaining;
+    }
+
+    if (
+      membership?.remainingDays !== undefined &&
+      membership?.remainingDays !== null
+    ) {
+      return membership.remainingDays;
+    }
+
+    const expiryDate = new Date(
+      membership?.endDate ||
+        membership?.expiryDate
+    );
+
+    if (Number.isNaN(expiryDate.getTime())) {
+      return null;
+    }
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+
+    return Math.max(
+      0,
+      Math.ceil(
+        (expiryDate.getTime() -
+          today.getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+  };
+
+  const getAmount = (membership) => {
+    const amount =
+      membership?.finalAmount ??
+      membership?.amount ??
+      membership?.price ??
+      membership?.originalAmount ??
+      0;
+
+    return `Rs. ${Number(
+      amount
+    ).toLocaleString()}`;
+  };
+
+  const getPaymentStatus = (membership) => {
+    return (
+      membership?.paymentStatus ||
+      "pending"
+    );
+  };
+
   const getPrice = (pkg) => {
-    return Number(pkg?.price ?? pkg?.amount ?? pkg?.fee ?? 0);
+    return Number(
+      pkg?.price ??
+        pkg?.amount ??
+        pkg?.fee ??
+        0
+    );
   };
 
   const getDiscount = (pkg) => {
@@ -138,20 +207,32 @@ const MemberMembershipScreen = () => {
     const price = getPrice(pkg);
     const discount = getDiscount(pkg);
 
-    return price - (price * discount) / 100;
+    return (
+      price -
+      (price * discount) / 100
+    );
   };
 
   const getDuration = (pkg) => {
-    return pkg?.duration ?? pkg?.durationInDays ?? pkg?.days ?? 0;
+    return (
+      pkg?.duration ??
+      pkg?.durationInDays ??
+      pkg?.days ??
+      0
+    );
   };
 
   const getDurationLabel = (pkg) => {
     if (pkg?.durationType) {
-      return `${getDuration(pkg)} ${pkg.durationType}`;
+      return `${getDuration(pkg)} ${
+        pkg.durationType
+      }`;
     }
 
     if (pkg?.durationUnit) {
-      return `${getDuration(pkg)} ${pkg.durationUnit}`;
+      return `${getDuration(pkg)} ${
+        pkg.durationUnit
+      }`;
     }
 
     if (getDuration(pkg) === 30) {
@@ -173,564 +254,467 @@ const MemberMembershipScreen = () => {
     return `${getDuration(pkg)} days`;
   };
 
-  const getStatus = () => {
-    return membership?.status || membership?.membershipStatus || "inactive";
-  };
+  const renderStatusBadge = (membership) => {
+    const status = String(
+      getStatus(membership)
+    ).toLowerCase();
 
-  const isActive = String(getStatus()).toLowerCase() === "active";
+    let badgeStyle = styles.expiredBadge;
+    let textStyle = styles.expiredText;
 
-  const daysRemaining =
-    membership?.daysRemaining ?? membership?.remainingDays ?? null;
-
-  // --------------------------------------------------
-  // PAYMENT METHODS
-  // --------------------------------------------------
-
-  const getPaymentMethodLabel = (method) => {
-    switch (method) {
-      case "cash":
-        return "Cash";
-
-      case "card":
-        return "Card";
-
-      case "online":
-        return "Online";
-
-      case "bank_transfer":
-        return "Bank Transfer";
-
-      default:
-        return method;
-    }
-  };
-
-  // --------------------------------------------------
-  // OPEN PAYMENT MODAL
-  // --------------------------------------------------
-
-  const openPaymentModal = (pkg) => {
-    // Backend does not allow another purchase
-    // while an active membership exists.
-    if (isActive) {
-      Alert.alert(
-        "Active Membership",
-        "You already have an active membership. You can purchase a new package after your current membership expires.",
-      );
-
-      return;
+    if (status === "active") {
+      badgeStyle = styles.activeBadge;
+      textStyle = styles.activeText;
+    } else if (status === "upcoming") {
+      badgeStyle = styles.upcomingBadge;
+      textStyle = styles.upcomingText;
+    } else if (status === "cancelled") {
+      badgeStyle = styles.cancelledBadge;
+      textStyle = styles.cancelledText;
     }
 
-    const finalPrice = getFinalPrice(pkg);
-
-    setSelectedPackage(pkg);
-
-    setPaymentAmount(String(Math.round(finalPrice)));
-
-    setPaymentMethod("cash");
-
-    setPaymentModalVisible(true);
-  };
-
-  // --------------------------------------------------
-  // CLOSE PAYMENT MODAL
-  // --------------------------------------------------
-
-  const closePaymentModal = () => {
-    if (purchasing) {
-      return;
-    }
-
-    setPaymentModalVisible(false);
-    setSelectedPackage(null);
-    setPaymentAmount("");
-    setPaymentMethod("cash");
-  };
-
-  // --------------------------------------------------
-  // CONFIRM PAYMENT
-  // --------------------------------------------------
-
-  const handleConfirmPayment = () => {
-    if (!selectedPackage) {
-      Alert.alert("Error", "Please select a membership package.");
-
-      return;
-    }
-
-    const finalPrice = getFinalPrice(selectedPackage);
-
-    const amount = Number(paymentAmount);
-
-    if (!paymentAmount || Number.isNaN(amount) || amount <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid payment amount.");
-
-      return;
-    }
-
-    if (amount > finalPrice) {
-      Alert.alert(
-        "Invalid Amount",
-        `Payment cannot exceed Rs. ${finalPrice.toLocaleString()}.`,
-      );
-
-      return;
-    }
-
-    Alert.alert(
-      "Confirm Purchase",
-      `Package: ${selectedPackage.name}\n\nPayment: Rs. ${amount.toLocaleString()}\nMethod: ${getPaymentMethodLabel(
-        paymentMethod,
-      )}`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Confirm",
-          onPress: purchaseMembership,
-        },
-      ],
+    return (
+      <View
+        style={[
+          styles.statusBadge,
+          badgeStyle,
+        ]}
+      >
+        <Text
+          style={[
+            styles.statusText,
+            textStyle,
+          ]}
+        >
+          {status.toUpperCase()}
+        </Text>
+      </View>
     );
   };
 
-  // --------------------------------------------------
-  // PURCHASE MEMBERSHIP
-  // --------------------------------------------------
+  const renderMembershipCard = (
+    membership,
+    isActive = false
+  ) => {
+    const daysRemaining =
+      getDaysRemaining(membership);
 
-  const purchaseMembership = async () => {
-    if (!selectedPackage) {
-      return;
-    }
+    const paymentStatus = String(
+      getPaymentStatus(membership)
+    ).toLowerCase();
 
-    try {
-      setPurchasing(true);
+    return (
+      <View
+        style={[
+          styles.membershipCard,
+          isActive &&
+            styles.activeMembershipCard,
+        ]}
+      >
+        <View style={styles.membershipTop}>
+          <View style={styles.packageContainer}>
+            <Text style={styles.smallLabel}>
+              PACKAGE
+            </Text>
 
-      const amount = Number(paymentAmount);
+            <Text style={styles.packageName}>
+              {getPackageName(membership)}
+            </Text>
+          </View>
 
-      const response = await api.post("/member-purchase/purchase", {
-        packageId: selectedPackage._id,
-        paymentAmount: amount,
-        paymentMethod: paymentMethod,
-      });
+          {renderStatusBadge(membership)}
+        </View>
 
-      setPaymentModalVisible(false);
+        <View style={styles.divider} />
 
-      Alert.alert(
-        "Success",
-        response.data?.message || "Membership purchased successfully",
-        [
-          {
-            text: "OK",
-            onPress: async () => {
-              setSelectedPackage(null);
-              setPaymentAmount("");
-              setPaymentMethod("cash");
+        <View style={styles.infoRow}>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>
+              Start Date
+            </Text>
 
-              await loadMembershipData(true);
-            },
-          },
-        ],
-      );
-    } catch (err) {
-      console.error(
-        "Purchase membership error:",
-        err?.response?.data || err.message,
-      );
+            <Text style={styles.infoValue}>
+              {formatDate(
+                membership.startDate
+              )}
+            </Text>
+          </View>
 
-      Alert.alert(
-        "Purchase Failed",
-        err?.response?.data?.message || "Unable to purchase membership",
-      );
-    } finally {
-      setPurchasing(false);
-    }
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>
+              Expiry Date
+            </Text>
+
+            <Text style={styles.infoValue}>
+              {formatDate(
+                membership.endDate ||
+                  membership.expiryDate
+              )}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.infoRow}>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>
+              Amount
+            </Text>
+
+            <Text style={styles.infoValue}>
+              {getAmount(membership)}
+            </Text>
+          </View>
+
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>
+              Payment
+            </Text>
+
+            <Text
+              style={[
+                styles.infoValue,
+                paymentStatus === "paid"
+                  ? styles.paidText
+                  : paymentStatus ===
+                    "partial"
+                  ? styles.partialText
+                  : styles.pendingText,
+              ]}
+            >
+              {paymentStatus.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        {isActive &&
+        daysRemaining !== null ? (
+          <View
+            style={styles.remainingContainer}
+          >
+            <Text
+              style={styles.remainingNumber}
+            >
+              {daysRemaining}
+            </Text>
+
+            <Text
+              style={styles.remainingText}
+            >
+              days remaining
+            </Text>
+          </View>
+        ) : null}
+
+        {isActive ? (
+          <View style={styles.activeNotice}>
+            <Text
+              style={styles.activeNoticeTitle}
+            >
+              Current Membership
+            </Text>
+
+            <Text
+              style={styles.activeNoticeText}
+            >
+              This is your currently active
+              membership.
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
   };
 
-  // --------------------------------------------------
-  // LOADING
-  // --------------------------------------------------
+  const activeMembership =
+    memberships.find(
+      (item) =>
+        String(
+          getStatus(item)
+        ).toLowerCase() === "active"
+    ) || null;
 
-  if (loading && !membership) {
+  const membershipHistory =
+    memberships.filter(
+      (item) =>
+        String(
+          getStatus(item)
+        ).toLowerCase() !== "active"
+    );
+
+  if (loading && memberships.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View
+        style={styles.centerContainer}
+      >
+        <ActivityIndicator
+          size="large"
+          color="#2563eb"
+        />
 
-        <Text style={styles.loadingText}>Loading membership...</Text>
+        <Text style={styles.loadingText}>
+          Loading memberships...
+        </Text>
       </View>
     );
   }
 
-  // --------------------------------------------------
-  // UI
-  // --------------------------------------------------
-
   return (
-    <>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => loadMembershipData(true)}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* PAGE HEADER */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() =>
+            loadMembershipData(true)
+          }
+        />
+      }
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.pageTitle}>
+        My Memberships
+      </Text>
 
-        <Text style={styles.pageTitle}>My Membership</Text>
+      <Text style={styles.pageSubtitle}>
+        View your current membership,
+        membership history and available
+        packages
+      </Text>
 
-        <Text style={styles.pageSubtitle}>
-          Manage your membership and choose a package
-        </Text>
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>
+            {error}
+          </Text>
+        </View>
+      ) : null}
 
-        {/* ERROR */}
+      <Text style={styles.sectionTitle}>
+        Active Membership
+      </Text>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+      {activeMembership ? (
+        renderMembershipCard(
+          activeMembership,
+          true
+        )
+      ) : (
+        <View
+          style={styles.emptyMembership}
+        >
+          <Text style={styles.emptyTitle}>
+            No Active Membership
+          </Text>
 
-            <TouchableOpacity onPress={() => loadMembershipData()}>
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
+          <Text style={styles.emptyText}>
+            You currently do not have an
+            active membership. Please contact
+            the gym admin for membership
+            assignment or renewal.
+          </Text>
+        </View>
+      )}
 
-        {/* CURRENT MEMBERSHIP */}
+      <Text style={styles.sectionTitle}>
+        Membership History
+      </Text>
 
-        <Text style={styles.sectionTitle}>Current Membership</Text>
+      {membershipHistory.length > 0 ? (
+        membershipHistory.map(
+          (membership, index) => (
+            <View
+              key={
+                membership._id ||
+                index
+              }
+            >
+              {renderMembershipCard(
+                membership
+              )}
+            </View>
+          )
+        )
+      ) : (
+        <View
+          style={styles.emptyHistory}
+        >
+          <Text
+            style={styles.emptyHistoryTitle}
+          >
+            No Membership History
+          </Text>
 
-        {membership ? (
-          <View style={styles.membershipCard}>
-            <View style={styles.membershipTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.smallLabel}>PACKAGE</Text>
+          <Text
+            style={styles.emptyHistoryText}
+          >
+            Previous memberships will appear
+            here.
+          </Text>
+        </View>
+      )}
 
-                <Text style={styles.packageName}>{getPackageName()}</Text>
-              </View>
+      <Text style={styles.sectionTitle}>
+        Available Packages
+      </Text>
 
+      {packages.length === 0 ? (
+        <View
+          style={styles.emptyMembership}
+        >
+          <Text style={styles.emptyTitle}>
+            No Packages Available
+          </Text>
+
+          <Text style={styles.emptyText}>
+            There are currently no active
+            membership packages.
+          </Text>
+        </View>
+      ) : (
+        packages.map((pkg) => {
+          const price = getPrice(pkg);
+          const discount = getDiscount(pkg);
+          const finalPrice =
+            getFinalPrice(pkg);
+          const packageDuration =
+            getDurationLabel(pkg);
+
+          return (
+            <View
+              key={pkg._id}
+              style={styles.packageCard}
+            >
               <View
-                style={[
-                  styles.statusBadge,
-                  isActive ? styles.activeBadge : styles.expiredBadge,
-                ]}
+                style={styles.packageHeader}
               >
-                <Text
-                  style={[
-                    styles.statusText,
-                    isActive ? styles.activeText : styles.expiredText,
-                  ]}
+                <View
+                  style={
+                    styles.packageInfo
+                  }
                 >
-                  {String(getStatus()).toUpperCase()}
-                </Text>
-              </View>
-            </View>
+                  <Text
+                    style={
+                      styles.packageCardName
+                    }
+                  >
+                    {pkg.name}
+                  </Text>
 
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Start Date</Text>
-
-                <Text style={styles.infoValue}>
-                  {formatDate(membership.startDate)}
-                </Text>
-              </View>
-
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Expiry Date</Text>
-
-                <Text style={styles.infoValue}>
-                  {formatDate(membership.endDate || membership.expiryDate)}
-                </Text>
-              </View>
-            </View>
-
-            {daysRemaining !== null ? (
-              <View style={styles.remainingContainer}>
-                <Text style={styles.remainingNumber}>{daysRemaining}</Text>
-
-                <Text style={styles.remainingText}>days remaining</Text>
-              </View>
-            ) : null}
-
-            {!isActive ? (
-              <View style={styles.expiredNotice}>
-                <Text style={styles.expiredNoticeTitle}>
-                  Membership expired
-                </Text>
-
-                <Text style={styles.expiredNoticeText}>
-                  Choose a new package below to continue your membership.
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.emptyMembership}>
-            <Text style={styles.emptyTitle}>No Active Membership</Text>
-
-            <Text style={styles.emptyText}>
-              You do not have an active membership. Choose a package below to
-              get started.
-            </Text>
-          </View>
-        )}
-
-        {/* AVAILABLE PACKAGES */}
-
-        <Text style={styles.sectionTitle}>Available Packages</Text>
-
-        {packages.length === 0 ? (
-          <View style={styles.emptyMembership}>
-            <Text style={styles.emptyTitle}>No Packages Available</Text>
-
-            <Text style={styles.emptyText}>
-              There are currently no membership packages available.
-            </Text>
-          </View>
-        ) : (
-          packages.map((pkg) => {
-            const price = getPrice(pkg);
-
-            const discount = getDiscount(pkg);
-
-            const finalPrice = getFinalPrice(pkg);
-
-            const packageDuration = getDurationLabel(pkg);
-
-            return (
-              <View key={pkg._id} style={styles.packageCard}>
-                {/* PACKAGE HEADER */}
-
-                <View style={styles.packageHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.packageCardName}>{pkg.name}</Text>
-
-                    {pkg.description ? (
-                      <Text style={styles.packageDescription}>
-                        {pkg.description}
-                      </Text>
-                    ) : null}
-                  </View>
-
-                  <View style={styles.priceContainer}>
-                    {discount > 0 ? (
-                      <Text style={styles.originalPrice}>
-                        Rs. {Number(price).toLocaleString()}
-                      </Text>
-                    ) : null}
-
-                    <Text style={styles.packagePrice}>
-                      Rs. {Number(finalPrice).toLocaleString()}
+                  {pkg.description ? (
+                    <Text
+                      style={
+                        styles.packageDescription
+                      }
+                    >
+                      {pkg.description}
                     </Text>
-                  </View>
-                </View>
-
-                {/* PACKAGE DETAILS */}
-
-                <View style={styles.packageDetails}>
-                  <View style={styles.detailBox}>
-                    <Text style={styles.detailLabel}>Duration</Text>
-
-                    <Text style={styles.detailValue}>{packageDuration}</Text>
-                  </View>
-
-                  {pkg.discount !== undefined ? (
-                    <View style={styles.detailBox}>
-                      <Text style={styles.detailLabel}>Discount</Text>
-
-                      <Text style={styles.detailValue}>{discount}%</Text>
-                    </View>
                   ) : null}
                 </View>
 
-                {/* PURCHASE BUTTON */}
-
-                <TouchableOpacity
-                  style={[
-                    styles.actionButton,
-                    purchasing && styles.disabledButton,
-                  ]}
-                  disabled={purchasing}
-                  onPress={() => openPaymentModal(pkg)}
+                <View
+                  style={
+                    styles.priceContainer
+                  }
                 >
-                  {purchasing ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.actionButtonText}>
-                      {isActive ? "Choose & Renew" : "Purchase Membership"}
+                  {discount > 0 ? (
+                    <Text
+                      style={
+                        styles.originalPrice
+                      }
+                    >
+                      Rs.{" "}
+                      {Number(
+                        price
+                      ).toLocaleString()}
                     </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+                  ) : null}
 
-      {/* ==================================================
-          PAYMENT MODAL
-      ================================================== */}
-
-      <Modal
-        visible={paymentModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closePaymentModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* MODAL HEADER */}
-
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Membership Payment</Text>
-
-                <TouchableOpacity
-                  disabled={purchasing}
-                  onPress={closePaymentModal}
-                >
-                  <Text style={styles.closeText}>✕</Text>
-                </TouchableOpacity>
+                  <Text
+                    style={
+                      styles.packagePrice
+                    }
+                  >
+                    Rs.{" "}
+                    {Number(
+                      finalPrice
+                    ).toLocaleString()}
+                  </Text>
+                </View>
               </View>
 
-              {selectedPackage ? (
-                <>
-                  {/* SELECTED PACKAGE */}
-
-                  <View style={styles.selectedPackageBox}>
-                    <Text style={styles.modalLabel}>PACKAGE</Text>
-
-                    <Text style={styles.selectedPackageName}>
-                      {selectedPackage.name}
-                    </Text>
-
-                    <Text style={styles.modalPrice}>
-                      Final Price: Rs.{" "}
-                      {Number(getFinalPrice(selectedPackage)).toLocaleString()}
-                    </Text>
-                  </View>
-
-                  {/* PAYMENT AMOUNT */}
-
-                  <Text style={styles.modalSectionTitle}>Payment Amount</Text>
-
-                  <TextInput
-                    value={paymentAmount}
-                    onChangeText={setPaymentAmount}
-                    placeholder="Enter payment amount"
-                    placeholderTextColor="#9ca3af"
-                    keyboardType="numeric"
-                    style={styles.paymentInput}
-                    editable={!purchasing}
-                  />
-
-                  <Text style={styles.paymentHint}>
-                    You can pay the full amount or make a partial payment.
+              <View
+                style={
+                  styles.packageDetails
+                }
+              >
+                <View
+                  style={styles.detailBox}
+                >
+                  <Text
+                    style={
+                      styles.detailLabel
+                    }
+                  >
+                    Duration
                   </Text>
 
-                  {/* PAYMENT METHOD */}
-
-                  <Text style={styles.modalSectionTitle}>Payment Method</Text>
-
-                  <View style={styles.methodContainer}>
-                    {[
-                      {
-                        value: "cash",
-                        label: "Cash",
-                      },
-                      {
-                        value: "card",
-                        label: "Card",
-                      },
-                      {
-                        value: "online",
-                        label: "Online",
-                      },
-                      {
-                        value: "bank_transfer",
-                        label: "Bank Transfer",
-                      },
-                    ].map((method) => {
-                      const selected = paymentMethod === method.value;
-
-                      return (
-                        <TouchableOpacity
-                          key={method.value}
-                          style={[
-                            styles.methodButton,
-                            selected && styles.selectedMethodButton,
-                          ]}
-                          onPress={() => setPaymentMethod(method.value)}
-                          disabled={purchasing}
-                        >
-                          <View
-                            style={[
-                              styles.radioCircle,
-                              selected && styles.selectedRadioCircle,
-                            ]}
-                          >
-                            {selected ? <View style={styles.radioDot} /> : null}
-                          </View>
-
-                          <Text
-                            style={[
-                              styles.methodText,
-                              selected && styles.selectedMethodText,
-                            ]}
-                          >
-                            {method.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-
-                  {/* CONFIRM */}
-
-                  <TouchableOpacity
-                    style={[
-                      styles.confirmButton,
-                      purchasing && styles.disabledButton,
-                    ]}
-                    onPress={handleConfirmPayment}
-                    disabled={purchasing}
+                  <Text
+                    style={
+                      styles.detailValue
+                    }
                   >
-                    {purchasing ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.confirmButtonText}>
-                        Confirm Purchase
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                    {packageDuration}
+                  </Text>
+                </View>
 
-                  {/* CANCEL */}
-
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={closePaymentModal}
-                    disabled={purchasing}
+                <View
+                  style={styles.detailBox}
+                >
+                  <Text
+                    style={
+                      styles.detailLabel
+                    }
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </>
-              ) : null}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    </>
+                    Discount
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.detailValue
+                    }
+                  >
+                    {discount}%
+                  </Text>
+                </View>
+              </View>
+
+              <View
+                style={styles.adminOnlyNotice}
+              >
+                <Text
+                  style={
+                    styles.adminOnlyText
+                  }
+                >
+                  Contact admin to get this
+                  package
+                </Text>
+              </View>
+            </View>
+          );
+        })
+      )}
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          Membership assignment and payment
+          are managed by the gym admin.
+        </Text>
+      </View>
+    </ScrollView>
   );
 };
-
-// ======================================================
-// STYLES
-// ======================================================
 
 const styles = StyleSheet.create({
   container: {
@@ -740,7 +724,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    paddingBottom: 30,
+    paddingBottom: 35,
   },
 
   centerContainer: {
@@ -767,7 +751,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6b7280",
     marginTop: 5,
-    marginBottom: 22,
+    marginBottom: 24,
+    lineHeight: 20,
   },
 
   sectionTitle: {
@@ -782,12 +767,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
     borderRadius: 16,
     padding: 18,
-    marginBottom: 24,
+    marginBottom: 22,
+  },
+
+  activeMembershipCard: {
+    borderWidth: 1,
+    borderColor: "#2563eb",
   },
 
   membershipTop: {
     flexDirection: "row",
     alignItems: "flex-start",
+  },
+
+  packageContainer: {
+    flex: 1,
+    paddingRight: 10,
   },
 
   smallLabel: {
@@ -818,6 +813,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fee2e2",
   },
 
+  upcomingBadge: {
+    backgroundColor: "#dbeafe",
+  },
+
+  cancelledBadge: {
+    backgroundColor: "#e5e7eb",
+  },
+
   statusText: {
     fontSize: 10,
     fontWeight: "800",
@@ -831,6 +834,14 @@ const styles = StyleSheet.create({
     color: "#991b1b",
   },
 
+  upcomingText: {
+    color: "#1d4ed8",
+  },
+
+  cancelledText: {
+    color: "#374151",
+  },
+
   divider: {
     height: 1,
     backgroundColor: "#374151",
@@ -840,6 +851,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     gap: 15,
+    marginBottom: 16,
   },
 
   infoItem: {
@@ -858,12 +870,24 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
+  paidText: {
+    color: "#86efac",
+  },
+
+  partialText: {
+    color: "#fde68a",
+  },
+
+  pendingText: {
+    color: "#fca5a5",
+  },
+
   remainingContainer: {
     backgroundColor: "#1f2937",
     borderRadius: 10,
     alignItems: "center",
     paddingVertical: 14,
-    marginTop: 18,
+    marginTop: 2,
   },
 
   remainingNumber: {
@@ -878,23 +902,24 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  expiredNotice: {
-    backgroundColor: "#3f1d1d",
+  activeNotice: {
+    backgroundColor: "#172554",
     borderRadius: 9,
     padding: 12,
     marginTop: 15,
   },
 
-  expiredNoticeTitle: {
-    color: "#fca5a5",
+  activeNoticeTitle: {
+    color: "#93c5fd",
     fontWeight: "800",
     fontSize: 13,
   },
 
-  expiredNoticeText: {
-    color: "#fecaca",
+  activeNoticeText: {
+    color: "#bfdbfe",
     fontSize: 12,
     marginTop: 4,
+    lineHeight: 18,
   },
 
   emptyMembership: {
@@ -919,6 +944,28 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
 
+  emptyHistory: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 22,
+    alignItems: "center",
+  },
+
+  emptyHistoryTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+
+  emptyHistoryText: {
+    fontSize: 13,
+    color: "#6b7280",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 19,
+  },
+
   packageCard: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -939,6 +986,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 
+  packageInfo: {
+    flex: 1,
+    paddingRight: 10,
+  },
+
   packageCardName: {
     fontSize: 18,
     fontWeight: "800",
@@ -954,7 +1006,6 @@ const styles = StyleSheet.create({
 
   priceContainer: {
     alignItems: "flex-end",
-    marginLeft: 10,
   },
 
   originalPrice: {
@@ -996,22 +1047,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  actionButton: {
-    backgroundColor: "#2563eb",
+  adminOnlyNotice: {
+    backgroundColor: "#f3f4f6",
     borderRadius: 9,
-    paddingVertical: 12,
-    alignItems: "center",
+    paddingVertical: 11,
+    paddingHorizontal: 12,
     marginTop: 16,
+    alignItems: "center",
   },
 
-  disabledButton: {
-    opacity: 0.7,
-  },
-
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
+  adminOnlyText: {
+    color: "#6b7280",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
 
   errorBox: {
@@ -1026,176 +1075,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  retryText: {
-    color: "#2563eb",
-    fontWeight: "800",
-    marginTop: 7,
-  },
-
-  // ====================================================
-  // PAYMENT MODAL
-  // ====================================================
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end",
-  },
-
-  modalContainer: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    padding: 20,
-    maxHeight: "90%",
-  },
-
-  modalHeader: {
-    flexDirection: "row",
+  footer: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-
-  modalTitle: {
-    fontSize: 21,
-    fontWeight: "800",
-    color: "#111827",
-  },
-
-  closeText: {
-    fontSize: 22,
-    color: "#6b7280",
-    padding: 4,
-  },
-
-  selectedPackageBox: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-  },
-
-  modalLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#6b7280",
-    letterSpacing: 1,
-  },
-
-  selectedPackageName: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
+    paddingVertical: 15,
     marginTop: 5,
   },
 
-  modalPrice: {
-    fontSize: 14,
-    color: "#2563eb",
-    fontWeight: "700",
-    marginTop: 6,
-  },
-
-  modalSectionTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 9,
-  },
-
-  paymentInput: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: "#111827",
-    marginBottom: 7,
-  },
-
-  paymentHint: {
+  footerText: {
+    color: "#9ca3af",
     fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 18,
-    lineHeight: 17,
-  },
-
-  methodContainer: {
-    marginBottom: 20,
-  },
-
-  methodButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    padding: 13,
-    marginBottom: 8,
-  },
-
-  selectedMethodButton: {
-    borderColor: "#2563eb",
-    backgroundColor: "#eff6ff",
-  },
-
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#9ca3af",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-
-  selectedRadioCircle: {
-    borderColor: "#2563eb",
-  },
-
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#2563eb",
-  },
-
-  methodText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-  },
-
-  selectedMethodText: {
-    color: "#2563eb",
-    fontWeight: "700",
-  },
-
-  confirmButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-
-  confirmButtonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  cancelButton: {
-    alignItems: "center",
-    paddingVertical: 14,
-  },
-
-  cancelButtonText: {
-    color: "#6b7280",
-    fontSize: 14,
-    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 18,
   },
 });
 
