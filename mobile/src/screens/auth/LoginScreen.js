@@ -260,12 +260,6 @@ const LoginScreen = ({ navigation }) => {
             disabled={loading}
             activeOpacity={0.7}
           >
-            <Text style={styles.registerText}>
-              Don't have an account?{" "}
-              <Text style={styles.registerLink}>
-                Register
-              </Text>
-            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
