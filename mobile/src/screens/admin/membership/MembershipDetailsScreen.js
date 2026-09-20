@@ -4,73 +4,71 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
-  Alert,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import api from "../../../services/api";
 
-const MembershipDetailsScreen = ({ route, navigation }) => {
-  const { membershipId } = route.params;
+const MembershipDetailsScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const { membershipId } = route.params || {};
 
   const [membership, setMembership] = useState(null);
   const [payments, setPayments] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDetails = async (showLoader = true) => {
+  const fetchMembershipDetails = async (isRefresh = false) => {
     try {
-      if (showLoader) {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
       }
 
       setError("");
 
-      const [membershipResponse, paymentsResponse] =
+      const [membershipResponse, paymentResponse] =
         await Promise.all([
           api.get(`/memberships/${membershipId}`),
           api.get(`/payments/membership/${membershipId}`),
         ]);
 
-      console.log(
-        "MEMBERSHIP DETAILS:",
-        membershipResponse.data
-      );
-
-      console.log(
-        "MEMBERSHIP PAYMENTS:",
-        paymentsResponse.data
-      );
-
       const membershipData =
-        membershipResponse.data.membership ||
-        membershipResponse.data.data;
+        membershipResponse.data?.membership ||
+        membershipResponse.data;
 
-      const paymentData =
-        paymentsResponse.data.payments ||
-        paymentsResponse.data.data ||
+      const paymentData = paymentResponse.data || {};
+
+      const paymentList =
+        paymentData.payments ||
+        paymentData.data ||
         [];
 
       setMembership(membershipData);
       setPayments(
-        Array.isArray(paymentData)
-          ? paymentData
+        Array.isArray(paymentList)
+          ? paymentList
           : []
       );
-    } catch (error) {
+    } catch (err) {
       console.log(
         "Membership details error:",
-        error.response?.data || error.message
+        err.response?.data || err.message
       );
 
       setError(
-        error.response?.data?.message ||
-          "Failed to load membership details"
+        err.response?.data?.message ||
+          "Failed to load membership details."
       );
     } finally {
       setLoading(false);
@@ -80,118 +78,75 @@ const MembershipDetailsScreen = ({ route, navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      loadDetails();
+      if (membershipId) {
+        fetchMembershipDetails();
+      }
     }, [membershipId])
   );
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadDetails(false);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-
-    const value = new Date(date);
-
-    if (Number.isNaN(value.getTime())) {
-      return "N/A";
-    }
-
-    return value.toLocaleDateString();
-  };
-
-  const formatDateTime = (date) => {
-    if (!date) return "N/A";
-
-    const value = new Date(date);
-
-    if (Number.isNaN(value.getTime())) {
-      return "N/A";
-    }
-
-    return value.toLocaleString();
-  };
-
-  const memberName =
-    membership?.member?.user?.name ||
-    membership?.member?.name ||
-    "Unknown Member";
-
-  const memberEmail =
-    membership?.member?.user?.email ||
-    membership?.member?.email ||
-    "No email";
-
-  const packageName =
-    membership?.package?.name ||
-    "Unknown Package";
-
-  const totalPaid = payments.reduce(
-    (total, payment) =>
-      total + Number(payment.amount || 0),
-    0
-  );
-
-  const finalAmount = Number(
-    membership?.finalAmount || 0
-  );
-
-  const remainingAmount = Math.max(
-    finalAmount - totalPaid,
-    0
-  );
-
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "active":
-        return styles.activeBadge;
-
-      case "expired":
-        return styles.expiredBadge;
-
-      case "upcoming":
-        return styles.upcomingBadge;
-
-      case "cancelled":
-        return styles.cancelledBadge;
-
-      default:
-        return styles.defaultBadge;
-    }
-  };
-
-  const getPaymentStatusStyle = (status) => {
-    switch (status) {
-      case "paid":
-        return styles.paidBadge;
-
-      case "partial":
-        return styles.partialBadge;
-
-      case "pending":
-        return styles.pendingBadge;
-
-      default:
-        return styles.defaultBadge;
-    }
+  const handleRefresh = () => {
+    fetchMembershipDetails(true);
   };
 
   const handleRenew = () => {
     navigation.navigate("RenewMembership", {
-      membershipId: membership._id,
-      memberId: membership.member?._id,
-      memberName,
+      membershipId,
+      memberName:
+        membership?.member?.user?.name ||
+        membership?.member?.name ||
+        "Member",
     });
+  };
+
+  const handlePayPending = () => {
+    navigation.navigate("PayPendingPayment", {
+      membershipId,
+    });
+  };
+
+  const formatDate = (date) => {
+    if (!date) {
+      return "N/A";
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "N/A";
+    }
+
+    return parsedDate.toLocaleDateString();
+  };
+
+  const formatDateTime = (date) => {
+    if (!date) {
+      return "N/A";
+    }
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "N/A";
+    }
+
+    return parsedDate.toLocaleString();
+  };
+
+  const getStatusLabel = (status) => {
+    if (!status) {
+      return "Unknown";
+    }
+
+    return (
+      status.charAt(0).toUpperCase() +
+      status.slice(1)
+    );
   };
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator
-          size="large"
-          color="#111"
-        />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
 
         <Text style={styles.loadingText}>
           Loading membership details...
@@ -200,11 +155,11 @@ const MembershipDetailsScreen = ({ route, navigation }) => {
     );
   }
 
-  if (error) {
+  if (error && !membership) {
     return (
-      <View style={styles.center}>
+      <View style={styles.errorContainer}>
         <Text style={styles.errorTitle}>
-          Something went wrong
+          Unable to load
         </Text>
 
         <Text style={styles.errorText}>
@@ -213,9 +168,9 @@ const MembershipDetailsScreen = ({ route, navigation }) => {
 
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => loadDetails()}
+          onPress={() => fetchMembershipDetails()}
         >
-          <Text style={styles.retryText}>
+          <Text style={styles.retryButtonText}>
             Retry
           </Text>
         </TouchableOpacity>
@@ -225,271 +180,506 @@ const MembershipDetailsScreen = ({ route, navigation }) => {
 
   if (!membership) {
     return (
-      <View style={styles.center}>
+      <View style={styles.errorContainer}>
         <Text style={styles.errorTitle}>
           Membership not found
         </Text>
+
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>
+            Go Back
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
+  const memberName =
+    membership.member?.user?.name ||
+    membership.member?.name ||
+    "Unknown Member";
+
+  const memberEmail =
+    membership.member?.user?.email ||
+    membership.member?.email ||
+    "N/A";
+
+  const memberPhone =
+    membership.member?.phone ||
+    "N/A";
+
+  const packageName =
+    membership.package?.name ||
+    "Membership Package";
+
+  const duration =
+    membership.package?.duration || 0;
+
+  const durationUnit =
+    membership.package?.durationUnit || "months";
+
+  const originalAmount = Number(
+    membership.originalAmount || 0
+  );
+
+  const discountPercentage = Number(
+    membership.discountPercentage || 0
+  );
+
+  const discountAmount = Number(
+    membership.discountAmount || 0
+  );
+
+  const finalAmount = Number(
+    membership.finalAmount || 0
+  );
+
+  const totalPaid = payments.reduce(
+    (total, payment) =>
+      total + Number(payment.amount || 0),
+    0
+  );
+
+  const remainingAmount = Math.max(
+    finalAmount - totalPaid,
+    0
+  );
+
+  const membershipStatus =
+    membership.status || "unknown";
+
+  const paymentStatus =
+    remainingAmount <= 0
+      ? "paid"
+      : totalPaid > 0
+        ? "partial"
+        : "pending";
+
+  const isCancelled =
+    membershipStatus === "cancelled";
+
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={
+        styles.contentContainer
+      }
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={onRefresh}
+          onRefresh={handleRefresh}
         />
       }
-      showsVerticalScrollIndicator={false}
     >
-      {/* Member */}
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          Membership Details
+        </Text>
+
+        <Text style={styles.subtitle}>
+          View membership and payment information
+        </Text>
+      </View>
+
       <View style={styles.memberCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {memberName
-              .charAt(0)
-              .toUpperCase()}
+        <Text style={styles.sectionTitle}>
+          Member Information
+        </Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Name
+          </Text>
+
+          <Text style={styles.infoValue}>
+            {memberName}
           </Text>
         </View>
 
-        <View style={styles.memberInfo}>
-          <Text style={styles.memberName}>
-            {memberName}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Email
           </Text>
 
-          <Text style={styles.memberEmail}>
+          <Text style={styles.infoValue}>
             {memberEmail}
           </Text>
+        </View>
 
-          {membership.member?.phone ? (
-            <Text style={styles.memberPhone}>
-              {membership.member.phone}
-            </Text>
-          ) : null}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Phone
+          </Text>
+
+          <Text style={styles.infoValue}>
+            {memberPhone}
+          </Text>
         </View>
       </View>
 
-      {/* Status */}
       <View style={styles.statusCard}>
-        <View>
-          <Text style={styles.smallLabel}>
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>
             Membership Status
           </Text>
 
           <View
             style={[
-              styles.badge,
-              getStatusStyle(
-                membership.status
-              ),
+              styles.statusBadge,
+              membershipStatus === "active" &&
+                styles.activeBadge,
+              membershipStatus === "expired" &&
+                styles.expiredBadge,
+              membershipStatus === "upcoming" &&
+                styles.upcomingBadge,
+              membershipStatus === "cancelled" &&
+                styles.cancelledBadge,
             ]}
           >
-            <Text style={styles.badgeText}>
-              {membership.status}
+            <Text
+              style={[
+                styles.statusBadgeText,
+                membershipStatus === "active" &&
+                  styles.activeBadgeText,
+                membershipStatus === "expired" &&
+                  styles.expiredBadgeText,
+                membershipStatus === "upcoming" &&
+                  styles.upcomingBadgeText,
+                membershipStatus === "cancelled" &&
+                  styles.cancelledBadgeText,
+              ]}
+            >
+              {getStatusLabel(
+                membershipStatus
+              )}
             </Text>
           </View>
         </View>
 
-        <View>
-          <Text style={styles.smallLabel}>
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>
             Payment Status
           </Text>
 
           <View
             style={[
-              styles.badge,
-              getPaymentStatusStyle(
-                membership.paymentStatus
-              ),
+              styles.statusBadge,
+              paymentStatus === "paid" &&
+                styles.paidBadge,
+              paymentStatus === "partial" &&
+                styles.partialBadge,
+              paymentStatus === "pending" &&
+                styles.pendingBadge,
             ]}
           >
-            <Text style={styles.badgeText}>
-              {membership.paymentStatus}
+            <Text
+              style={[
+                styles.statusBadgeText,
+                paymentStatus === "paid" &&
+                  styles.paidBadgeText,
+                paymentStatus === "partial" &&
+                  styles.partialBadgeText,
+                paymentStatus === "pending" &&
+                  styles.pendingBadgeText,
+              ]}
+            >
+              {getStatusLabel(paymentStatus)}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Package */}
-      <View style={styles.card}>
+      <View style={styles.packageCard}>
         <Text style={styles.sectionTitle}>
           Package Information
         </Text>
 
-        <InfoRow
-          label="Package"
-          value={packageName}
-        />
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Package
+          </Text>
 
-        <InfoRow
-          label="Duration"
-          value={
-            membership.package
-              ? `${membership.package.duration || ""} ${
-                  membership.package.durationUnit || ""
-                }`
-              : "N/A"
-          }
-        />
+          <Text style={styles.infoValue}>
+            {packageName}
+          </Text>
+        </View>
 
-        <InfoRow
-          label="Start Date"
-          value={formatDate(
-            membership.startDate
-          )}
-        />
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Duration
+          </Text>
 
-        <InfoRow
-          label="End Date"
-          value={formatDate(
-            membership.endDate
-          )}
-        />
+          <Text style={styles.infoValue}>
+            {duration} {durationUnit}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Start Date
+          </Text>
+
+          <Text style={styles.infoValue}>
+            {formatDate(
+              membership.startDate
+            )}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            End Date
+          </Text>
+
+          <Text style={styles.infoValue}>
+            {formatDate(
+              membership.endDate
+            )}
+          </Text>
+        </View>
       </View>
 
-      {/* Financial */}
-      <View style={styles.card}>
+      <View style={styles.paymentSummaryCard}>
         <Text style={styles.sectionTitle}>
           Payment Summary
         </Text>
 
-        <InfoRow
-          label="Original Amount"
-          value={`Rs. ${Number(
-            membership.originalAmount || 0
-          ).toLocaleString()}`}
-        />
-
-        <InfoRow
-          label="Discount"
-          value={`Rs. ${Number(
-            membership.discountAmount || 0
-          ).toLocaleString()}`}
-        />
-
-        <View style={styles.divider} />
-
-        <InfoRow
-          label="Final Amount"
-          value={`Rs. ${finalAmount.toLocaleString()}`}
-          bold
-        />
-
-        <InfoRow
-          label="Total Paid"
-          value={`Rs. ${totalPaid.toLocaleString()}`}
-          paid
-        />
-
-        <InfoRow
-          label="Remaining"
-          value={`Rs. ${remainingAmount.toLocaleString()}`}
-          remaining={remainingAmount > 0}
-        />
-      </View>
-
-      {/* Payment History */}
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Payment History
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Original Amount
           </Text>
 
-          <Text style={styles.paymentCount}>
-            {payments.length} payment
-            {payments.length !== 1
-              ? "s"
-              : ""}
+          <Text style={styles.infoValue}>
+            Rs.{" "}
+            {originalAmount.toLocaleString()}
           </Text>
         </View>
 
+        {discountPercentage > 0 && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>
+              Discount ({discountPercentage}%)
+            </Text>
+
+            <Text style={styles.discountValue}>
+              - Rs.{" "}
+              {discountAmount.toLocaleString()}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Final Amount
+          </Text>
+
+          <Text style={styles.finalAmount}>
+            Rs.{" "}
+            {finalAmount.toLocaleString()}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Total Paid
+          </Text>
+
+          <Text style={styles.paidAmount}>
+            Rs.{" "}
+            {totalPaid.toLocaleString()}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>
+            Remaining Amount
+          </Text>
+
+          <Text
+            style={[
+              styles.remainingAmount,
+              remainingAmount <= 0 &&
+                styles.remainingPaid,
+            ]}
+          >
+            Rs.{" "}
+            {remainingAmount.toLocaleString()}
+          </Text>
+        </View>
+      </View>
+
+      {remainingAmount > 0 &&
+        !isCancelled && (
+          <TouchableOpacity
+            style={
+              styles.pendingPaymentButton
+            }
+            onPress={handlePayPending}
+          >
+            <Text
+              style={
+                styles.pendingPaymentButtonText
+              }
+            >
+              Pay Pending Amount
+            </Text>
+          </TouchableOpacity>
+        )}
+
+      <View style={styles.historyCard}>
+        <Text style={styles.sectionTitle}>
+          Payment History
+        </Text>
+
         {payments.length === 0 ? (
-          <View style={styles.emptyPayment}>
-            <Text style={styles.emptyPaymentText}>
-              No payments recorded yet.
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No payment records found.
             </Text>
           </View>
         ) : (
           payments.map((payment, index) => (
             <View
               key={
-                payment._id ||
-                `${payment.receiptNumber}-${index}`
+                payment._id || index
               }
               style={styles.paymentItem}
             >
-              <View style={styles.paymentTop}>
-                <Text style={styles.receiptNumber}>
-                  {payment.receiptNumber ||
-                    "No Receipt"}
-                </Text>
-
-                <Text style={styles.paymentAmount}>
+              <View
+                style={styles.paymentHeader}
+              >
+                <Text
+                  style={
+                    styles.paymentAmount
+                  }
+                >
                   Rs.{" "}
                   {Number(
                     payment.amount || 0
                   ).toLocaleString()}
                 </Text>
-              </View>
 
-              <View style={styles.paymentInfoRow}>
-                <Text style={styles.paymentLabel}>
-                  Method
-                </Text>
-
-                <Text style={styles.paymentValue}>
-                  {payment.paymentMethod ||
-                    "N/A"}
-                </Text>
-              </View>
-
-              <View style={styles.paymentInfoRow}>
-                <Text style={styles.paymentLabel}>
-                  Date
-                </Text>
-
-                <Text style={styles.paymentValue}>
-                  {formatDateTime(
-                    payment.paidAt ||
-                      payment.createdAt
+                <Text
+                  style={
+                    styles.paymentMethod
+                  }
+                >
+                  {getStatusLabel(
+                    payment.paymentMethod
                   )}
                 </Text>
               </View>
 
+              <View
+                style={
+                  styles.paymentInfoRow
+                }
+              >
+                <Text
+                  style={
+                    styles.paymentLabel
+                  }
+                >
+                  Receipt
+                </Text>
+
+                <Text
+                  style={
+                    styles.paymentValue
+                  }
+                >
+                  {payment.receiptNumber ||
+                    "N/A"}
+                </Text>
+              </View>
+
               {payment.transactionId ? (
-                <View style={styles.paymentInfoRow}>
-                  <Text style={styles.paymentLabel}>
+                <View
+                  style={
+                    styles.paymentInfoRow
+                  }
+                >
+                  <Text
+                    style={
+                      styles.paymentLabel
+                    }
+                  >
                     Transaction ID
                   </Text>
 
                   <Text
-                    style={styles.paymentValue}
+                    style={
+                      styles.paymentValue
+                    }
                   >
                     {payment.transactionId}
                   </Text>
                 </View>
               ) : null}
 
-              {payment.notes ? (
-                <Text style={styles.notes}>
-                  Note: {payment.notes}
+              <View
+                style={
+                  styles.paymentInfoRow
+                }
+              >
+                <Text
+                  style={
+                    styles.paymentLabel
+                  }
+                >
+                  Paid At
                 </Text>
+
+                <Text
+                  style={
+                    styles.paymentValue
+                  }
+                >
+                  {formatDateTime(
+                    payment.paidAt
+                  )}
+                </Text>
+              </View>
+
+              {payment.notes ? (
+                <View
+                  style={
+                    styles.notesContainer
+                  }
+                >
+                  <Text
+                    style={
+                      styles.paymentLabel
+                    }
+                  >
+                    Notes
+                  </Text>
+
+                  <Text
+                    style={styles.notesText}
+                  >
+                    {payment.notes}
+                  </Text>
+                </View>
               ) : null}
             </View>
           ))
         )}
       </View>
 
-      {/* Actions */}
-      {membership.status !== "cancelled" && (
+      {!isCancelled && (
         <TouchableOpacity
           style={styles.renewButton}
           onPress={handleRenew}
         >
-          <Text style={styles.renewButtonText}>
+          <Text
+            style={styles.renewButtonText}
+          >
             Renew Membership
           </Text>
         </TouchableOpacity>
@@ -498,326 +688,365 @@ const MembershipDetailsScreen = ({ route, navigation }) => {
   );
 };
 
-const InfoRow = ({
-  label,
-  value,
-  bold,
-  paid,
-  remaining,
-}) => {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>
-        {label}
-      </Text>
-
-      <Text
-        style={[
-          styles.infoValue,
-          bold && styles.boldValue,
-          paid && styles.paidValue,
-          remaining && styles.remainingValue,
-        ]}
-      >
-        {value}
-      </Text>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
   },
 
-  content: {
-    padding: 16,
+  contentContainer: {
+    padding: 20,
     paddingBottom: 40,
   },
 
-  center: {
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 25,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
   },
 
   loadingText: {
     marginTop: 10,
+    fontSize: 14,
     color: "#666",
+  },
+
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 25,
+    backgroundColor: "#fff",
   },
 
   errorTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#111",
+    marginBottom: 8,
   },
 
   errorText: {
+    fontSize: 14,
     color: "#777",
     textAlign: "center",
-    marginTop: 8,
-    marginBottom: 15,
+    marginBottom: 20,
   },
 
   retryButton: {
     backgroundColor: "#111",
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 9,
+    paddingHorizontal: 25,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
 
-  retryText: {
+  retryButtonText: {
     color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  header: {
+    marginBottom: 20,
+  },
+
+  title: {
+    fontSize: 24,
     fontWeight: "700",
+    color: "#111",
+  },
+
+  subtitle: {
+    marginTop: 5,
+    fontSize: 14,
+    color: "#777",
   },
 
   memberCard: {
-    backgroundColor: "#111",
-    borderRadius: 14,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-
-  avatarText: {
-    color: "#111",
-    fontSize: 24,
-    fontWeight: "700",
-  },
-
-  memberInfo: {
-    flex: 1,
-  },
-
-  memberName: {
-    color: "#fff",
-    fontSize: 21,
-    fontWeight: "700",
-  },
-
-  memberEmail: {
-    color: "#ccc",
-    marginTop: 4,
-  },
-
-  memberPhone: {
-    color: "#aaa",
-    marginTop: 3,
+    backgroundColor: "#f7f7f7",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 15,
   },
 
   statusCard: {
-    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
     borderRadius: 12,
     padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 15,
   },
 
-  smallLabel: {
-    color: "#777",
-    fontSize: 12,
-    marginBottom: 7,
-  },
-
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "capitalize",
-    color: "#222",
-  },
-
-  activeBadge: {
-    backgroundColor: "#dcfce7",
-  },
-
-  expiredBadge: {
-    backgroundColor: "#fee2e2",
-  },
-
-  upcomingBadge: {
-    backgroundColor: "#fef3c7",
-  },
-
-  cancelledBadge: {
-    backgroundColor: "#e5e7eb",
-  },
-
-  paidBadge: {
-    backgroundColor: "#dcfce7",
-  },
-
-  partialBadge: {
-    backgroundColor: "#fef3c7",
-  },
-
-  pendingBadge: {
-    backgroundColor: "#fee2e2",
-  },
-
-  defaultBadge: {
-    backgroundColor: "#eee",
-  },
-
-  card: {
-    backgroundColor: "#fff",
+  packageCard: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 14,
+    marginBottom: 15,
   },
 
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  paymentSummaryCard: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 15,
+  },
+
+  historyCard: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 15,
   },
 
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     color: "#111",
-    marginBottom: 12,
-  },
-
-  paymentCount: {
-    color: "#777",
-    fontSize: 13,
+    marginBottom: 14,
   },
 
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 11,
+    paddingVertical: 8,
   },
 
   infoLabel: {
-    color: "#777",
+    flex: 1,
     fontSize: 14,
+    color: "#777",
   },
 
   infoValue: {
-    color: "#222",
+    flex: 1.4,
     fontSize: 14,
+    color: "#111",
     fontWeight: "600",
-    maxWidth: "60%",
     textAlign: "right",
   },
 
-  boldValue: {
+  discountValue: {
+    flex: 1.4,
+    fontSize: 14,
+    color: "#555",
+    fontWeight: "600",
+    textAlign: "right",
+  },
+
+  finalAmount: {
+    flex: 1.4,
     fontSize: 16,
-    fontWeight: "700",
     color: "#111",
+    fontWeight: "700",
+    textAlign: "right",
   },
 
-  paidValue: {
-    color: "#16a34a",
+  paidAmount: {
+    flex: 1.4,
+    fontSize: 15,
+    color: "#333",
     fontWeight: "700",
+    textAlign: "right",
   },
 
-  remainingValue: {
-    color: "#dc2626",
+  remainingAmount: {
+    flex: 1.4,
+    fontSize: 16,
+    color: "#d97706",
     fontWeight: "700",
+    textAlign: "right",
+  },
+
+  remainingPaid: {
+    color: "#15803d",
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#eee",
-    marginVertical: 7,
+    backgroundColor: "#e5e5e5",
+    marginVertical: 8,
   },
 
-  paymentItem: {
-    borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 10,
-    padding: 13,
-    marginBottom: 10,
-  },
-
-  paymentTop: {
+  statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
   },
 
-  receiptNumber: {
+  statusLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "#eee",
+  },
+
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#555",
+  },
+
+  activeBadge: {
+    backgroundColor: "#dcfce7",
+  },
+
+  activeBadgeText: {
+    color: "#15803d",
+  },
+
+  expiredBadge: {
+    backgroundColor: "#fee2e2",
+  },
+
+  expiredBadgeText: {
+    color: "#b91c1c",
+  },
+
+  upcomingBadge: {
+    backgroundColor: "#fef3c7",
+  },
+
+  upcomingBadgeText: {
+    color: "#a16207",
+  },
+
+  cancelledBadge: {
+    backgroundColor: "#e5e7eb",
+  },
+
+  cancelledBadgeText: {
+    color: "#374151",
+  },
+
+  paidBadge: {
+    backgroundColor: "#dcfce7",
+  },
+
+  paidBadgeText: {
+    color: "#15803d",
+  },
+
+  partialBadge: {
+    backgroundColor: "#fef3c7",
+  },
+
+  partialBadgeText: {
+    color: "#a16207",
+  },
+
+  pendingBadge: {
+    backgroundColor: "#fee2e2",
+  },
+
+  pendingBadgeText: {
+    color: "#b91c1c",
+  },
+
+  pendingPaymentButton: {
+    backgroundColor: "#111",
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+
+  pendingPaymentButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  paymentItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingVertical: 14,
+  },
+
+  paymentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  paymentAmount: {
+    fontSize: 17,
     fontWeight: "700",
     color: "#111",
   },
 
-  paymentAmount: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#16a34a",
+  paymentMethod: {
+    fontSize: 12,
+    color: "#666",
+    backgroundColor: "#f2f2f2",
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
 
   paymentInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginTop: 5,
   },
 
   paymentLabel: {
+    fontSize: 12,
     color: "#888",
-    fontSize: 13,
   },
 
   paymentValue: {
+    flex: 1,
+    fontSize: 12,
     color: "#333",
-    fontSize: 13,
-    maxWidth: "65%",
     textAlign: "right",
+    marginLeft: 10,
   },
 
-  notes: {
-    marginTop: 5,
-    color: "#666",
+  notesContainer: {
+    marginTop: 8,
+  },
+
+  notesText: {
     fontSize: 13,
-    fontStyle: "italic",
+    color: "#555",
+    marginTop: 4,
+    lineHeight: 18,
   },
 
-  emptyPayment: {
-    paddingVertical: 15,
+  emptyContainer: {
+    paddingVertical: 20,
     alignItems: "center",
   },
 
-  emptyPaymentText: {
-    color: "#777",
+  emptyText: {
+    fontSize: 14,
+    color: "#888",
   },
 
   renewButton: {
-    backgroundColor: "#111",
-    paddingVertical: 15,
+    marginTop: 15,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#111",
     borderRadius: 10,
+    paddingVertical: 14,
     alignItems: "center",
-    marginTop: 3,
   },
 
   renewButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: "#111",
+    fontSize: 15,
     fontWeight: "700",
   },
 });

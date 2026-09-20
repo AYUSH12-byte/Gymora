@@ -23,6 +23,7 @@ import MemberQRScreen from "../screens/admin/member/MemberQRScreen";
 import MembershipsScreen from "../screens/admin/membership/MembershipsScreen";
 import MembershipDetailsScreen from "../screens/admin/membership/MembershipDetailsScreen";
 import RenewMembershipScreen from "../screens/admin/membership/RenewMembershipScreen";
+import PayPendingPaymentScreen from "../screens/admin/membership/PayPendingPaymentScreen";
 
 // Package Screens
 import PackagesScreen from "../screens/admin/package/PackagesScreen";
@@ -142,6 +143,14 @@ const MembershipsStack = () => {
       />
 
       <MembershipStack.Screen
+        name="MembershipDetails"
+        component={MembershipDetailsScreen}
+        options={{
+          title: "Membership Details",
+        }}
+      />
+
+      <MembershipStack.Screen
         name="RenewMembership"
         component={RenewMembershipScreen}
         options={{
@@ -150,10 +159,10 @@ const MembershipsStack = () => {
       />
 
       <MembershipStack.Screen
-        name="MembershipDetails"
-        component={MembershipDetailsScreen}
+        name="PayPendingPayment"
+        component={PayPendingPaymentScreen}
         options={{
-          title: "Membership Details",
+          title: "Pay Pending Amount",
         }}
       />
     </MembershipStack.Navigator>
@@ -313,9 +322,13 @@ const CustomDrawerContent = (props) => {
           <Text style={styles.logoText}>G</Text>
         </View>
 
-        <Text style={styles.appName}>GYM MANAGEMENT</Text>
+        <Text style={styles.appName}>
+          GYM MANAGEMENT
+        </Text>
 
-        <Text style={styles.adminText}>Admin Panel</Text>
+        <Text style={styles.adminText}>
+          Admin Panel
+        </Text>
       </View>
 
       <View style={styles.menuContainer}>
@@ -323,11 +336,17 @@ const CustomDrawerContent = (props) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Gym Management System</Text>
+        <Text style={styles.footerText}>
+          Gym Management System
+        </Text>
 
-        <Text style={styles.authorText}>Developed by Ayush Chaudhari</Text>
+        <Text style={styles.authorText}>
+          Developed by Ayush Chaudhari
+        </Text>
 
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.versionText}>
+          Version 1.0.0
+        </Text>
       </View>
     </DrawerContentScrollView>
   );
@@ -337,7 +356,9 @@ const AdminTabNavigator = () => {
   return (
     <Drawer.Navigator
       initialRouteName="Dashboard"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={{
         headerShown: true,
 
@@ -539,12 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#555",
-  },
-
-  versionText: {
-    fontSize: 11,
-    color: "#999",
-    marginTop: 4,
   },
 
   authorText: {
