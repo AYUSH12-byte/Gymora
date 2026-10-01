@@ -24,6 +24,9 @@ const superAdminGymRoutes = require("./routes/superAdminGymRoutes");
 const superAdminUserRoutes = require("./routes/superAdminUserRoutes");
 const subscriptionPlanRoutes = require("./routes/subscriptionPlanRoutes");
 const gymSubscriptionRoutes = require("./routes/gymSubscriptionRoutes");
+
+const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
+
 const app = express();
 
 // Middleware
@@ -54,7 +57,7 @@ app.use("/api/super-admin/gyms", superAdminGymRoutes);
 app.use("/api/super-admin/users", superAdminUserRoutes);
 app.use("/api/super-admin/subscription-plans", subscriptionPlanRoutes);
 app.use("/api/super-admin/gym-subscriptions", gymSubscriptionRoutes);
-
+app.use("/api/super-admin/dashboard", superAdminDashboardRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({
