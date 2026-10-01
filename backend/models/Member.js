@@ -8,7 +8,13 @@ const memberSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-
+    gym: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Gym",
+      required: true,
+      index: true,
+    },
+    
     phone: {
       type: String,
       required: true,
@@ -61,7 +67,7 @@ const memberSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
-    
+
     status: {
       type: String,
       enum: ["active", "inactive"],

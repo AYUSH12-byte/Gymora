@@ -31,6 +31,13 @@ const createMember = async (req, res) => {
       });
     }
 
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -46,6 +53,7 @@ const createMember = async (req, res) => {
       email,
       password,
       role: "member",
+      gym: req.user.gym,
     });
 
     // Generate QR token
@@ -54,6 +62,7 @@ const createMember = async (req, res) => {
     // Create member profile
     const member = await Member.create({
       user: user._id,
+      gym: req.user.gym,
       phone,
       address,
       gender,
@@ -91,8 +100,18 @@ const createMember = async (req, res) => {
 // Get all members
 const getMembers = async (req, res) => {
   try {
-    const members = await Member.find()
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const members = await Member.find({
+      gym: req.user.gym,
+    })
       .populate("user", "name email role isActive")
+      .populate("gym", "name email status")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -124,10 +143,19 @@ const getMemberById = async (req, res) => {
       });
     }
 
-    const member = await Member.findById(id).populate(
-      "user",
-      "name email role isActive",
-    );
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const member = await Member.findOne({
+      _id: id,
+      gym: req.user.gym,
+    })
+      .populate("user", "name email role isActive")
+      .populate("gym", "name email status");
 
     if (!member) {
       return res.status(404).json({
@@ -162,10 +190,17 @@ const getMemberQR = async (req, res) => {
       });
     }
 
-    const member = await Member.findById(id).populate(
-      "user",
-      "name email role isActive",
-    );
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const member = await Member.findOne({
+      _id: id,
+      gym: req.user.gym,
+    }).populate("user", "name email role isActive");
 
     if (!member) {
       return res.status(404).json({
@@ -233,8 +268,18 @@ const deleteMember = async (req, res) => {
       });
     }
 
-    // Find member
-    const member = await Member.findById(id);
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    // Find member only inside logged-in admin's gym
+    const member = await Member.findOne({
+      _id: id,
+      gym: req.user.gym,
+    });
 
     if (!member) {
       return res.status(404).json({
@@ -251,9 +296,7 @@ const deleteMember = async (req, res) => {
       member: id,
     }).select("_id");
 
-    const membershipIds = memberships.map(
-      (membership) => membership._id
-    );
+    const membershipIds = memberships.map((membership) => membership._id);
 
     // Delete payments
     await Payment.deleteMany({
@@ -307,8 +350,7 @@ const deleteMember = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message:
-        "Member and all related records deleted successfully",
+      message: "Member and all related records deleted successfully",
     });
   } catch (error) {
     console.error("Delete member error:", error);
