@@ -9,6 +9,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import ComingSoon from "./pages/common/ComingSoon";
 import Gyms from "./pages/gyms/Gyms";
 import GymAdmins from "./pages/gym-admins/GymAdmins";
+import SubscriptionPlans from "./pages/subscription-plans/SubscriptionPlans";
 
 const App = () => {
   return (
@@ -48,7 +49,7 @@ const App = () => {
             path="/subscription-plans"
             element={
               <ProtectedRoute>
-                <ComingSoon title="Subscription Plans" />
+                <SubscriptionPlans />
               </ProtectedRoute>
             }
           />
