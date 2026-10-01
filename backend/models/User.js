@@ -28,6 +28,12 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "trainer", "member"],
       default: "member",
     },
+    
+    gym: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Gym",
+      default: null,
+    },
 
     isActive: {
       type: Boolean,
@@ -36,7 +42,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Hash password before saving

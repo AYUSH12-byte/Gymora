@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const GymSubscription = require("../models/GymSubscription");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT
@@ -7,6 +8,7 @@ const generateToken = (user, rememberMe = false) => {
     {
       id: user._id,
       role: user.role,
+      gym: user.gym?._id || user.gym || null,
     },
     process.env.JWT_SECRET,
     {
@@ -43,11 +45,11 @@ const register = async (req, res) => {
       role: "member",
     });
 
-    // Registration token remains valid for 7 days
     const token = jwt.sign(
       {
         id: user._id,
         role: user.role,
+        gym: user.gym || null,
       },
       process.env.JWT_SECRET,
       {
@@ -64,6 +66,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        gym: user.gym || null,
       },
     });
   } catch (error) {
@@ -86,7 +89,10 @@ const login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).populate(
+      "gym",
+      "name email phone address ownerName ownerEmail status",
+    );
 
     if (!user) {
       return res.status(401).json({
@@ -111,6 +117,60 @@ const login = async (req, res) => {
       });
     }
 
+    let subscription = null;
+
+    // Gym Admin subscription access check
+    if (user.role === "admin") {
+      if (!user.gym) {
+        return res.status(403).json({
+          success: false,
+          message: "No gym is assigned to this admin account",
+        });
+      }
+
+      if (user.gym.status !== "active") {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Your gym has been deactivated by the main administrator",
+          gymInactive: true,
+        });
+      }
+
+      subscription = await GymSubscription.findOne({
+        gym: user.gym._id,
+        status: "active",
+      })
+        .populate(
+          "plan",
+          "name description duration durationUnit price features maxMembers maxTrainers",
+        )
+        .sort({ endDate: -1 });
+
+      if (!subscription) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Your gym does not have an active Gymora subscription",
+          subscriptionRequired: true,
+        });
+      }
+
+      const now = new Date();
+
+      if (subscription.endDate <= now) {
+        subscription.status = "expired";
+        await subscription.save();
+
+        return res.status(403).json({
+          success: false,
+          message: "Your Gymora subscription has expired",
+          subscriptionExpired: true,
+          endDate: subscription.endDate,
+        });
+      }
+    }
+
     // Remember Me controls JWT expiry
     const token = generateToken(user, rememberMe);
 
@@ -120,14 +180,40 @@ const login = async (req, res) => {
       token,
       rememberMe,
       expiresIn: rememberMe ? "30d" : "1d",
+
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        gym: user.gym
+          ? {
+              id: user.gym._id,
+              name: user.gym.name,
+              email: user.gym.email,
+              phone: user.gym.phone,
+              address: user.gym.address,
+              status: user.gym.status,
+            }
+          : null,
       },
+
+      subscription: subscription
+        ? {
+            id: subscription._id,
+            plan: subscription.plan,
+            startDate: subscription.startDate,
+            endDate: subscription.endDate,
+            amount: subscription.amount,
+            paymentStatus: subscription.paymentStatus,
+            status: subscription.status,
+            transactionId: subscription.transactionId,
+          }
+        : null,
     });
   } catch (error) {
+    console.error("Login error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,

@@ -9,16 +9,30 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 const router = express.Router();
 
-router.post("/", protect, authorizeRoles("admin"), createPayment);
+router.post(
+  "/",
+  protect,
+  checkGymSubscription,
+  authorizeRoles("admin"),
+  createPayment,
+);
 
-router.get("/", protect, authorizeRoles("admin", "trainer"), getPayments);
+router.get(
+  "/",
+  protect,
+  checkGymSubscription,
+  authorizeRoles("admin", "trainer"),
+  getPayments,
+);
 
 router.get(
   "/membership/:membershipId",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin", "trainer", "member"),
   getMembershipPayments,
 );
@@ -26,6 +40,7 @@ router.get(
 router.get(
   "/:id",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin", "trainer", "member"),
   getPaymentById,
 );

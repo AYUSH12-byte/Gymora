@@ -12,22 +12,42 @@ const {
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
 const checkMemberOwnership = require("../middleware/memberOwnership");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 const router = express.Router();
 
 // Create membership
-router.post("/", protect, authorizeRoles("admin"), createMembership);
+router.post(
+  "/",
+  protect,
+  checkGymSubscription,
+  authorizeRoles("admin"),
+  createMembership,
+);
 
 // Renew membership
-router.post("/renew", protect, authorizeRoles("admin"), renewMembership);
+router.post(
+  "/renew",
+  protect,
+  checkGymSubscription,
+  authorizeRoles("admin"),
+  renewMembership,
+);
 
 // Get all memberships
-router.get("/", protect, authorizeRoles("admin", "trainer"), getMemberships);
+router.get(
+  "/",
+  protect,
+  checkGymSubscription,
+  authorizeRoles("admin", "trainer"),
+  getMemberships,
+);
 
 // Get expiring memberships
 router.get(
   "/expiring",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin", "trainer"),
   getExpiringMemberships,
 );
@@ -36,6 +56,7 @@ router.get(
 router.get(
   "/member/:memberId",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin", "trainer"),
   checkMemberOwnership,
   getMemberMemberships,
@@ -45,6 +66,7 @@ router.get(
 router.get(
   "/:id",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin", "trainer", "member"),
   getMembershipById,
 );

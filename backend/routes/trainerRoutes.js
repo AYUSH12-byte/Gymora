@@ -16,6 +16,7 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.get(
   "/dashboard",
   protect,
   authorizeRoles("trainer"),
+  checkGymSubscription,
   getTrainerDashboard,
 );
 
@@ -32,7 +34,8 @@ router.get(
   "/my-members",
   protect,
   authorizeRoles("trainer"),
-  getTrainerMembers
+  checkGymSubscription,
+  getTrainerMembers,
 );
 
 // Get workout plans assigned to logged-in trainer
@@ -40,7 +43,8 @@ router.get(
   "/my-workout-plans",
   protect,
   authorizeRoles("trainer"),
-  getTrainerWorkoutPlans
+  checkGymSubscription,
+  getTrainerWorkoutPlans,
 );
 
 // Get attendance records for members assigned to logged-in trainer
@@ -48,7 +52,8 @@ router.get(
   "/my-attendance",
   protect,
   authorizeRoles("trainer"),
-  getTrainerAttendance
+  checkGymSubscription,
+  getTrainerAttendance,
 );
 
 // Get trainer profile
@@ -56,7 +61,8 @@ router.get(
   "/profile",
   protect,
   authorizeRoles("trainer"),
-  getTrainerProfile
+  checkGymSubscription,
+  getTrainerProfile,
 );
 
 // Update trainer profile
@@ -64,22 +70,53 @@ router.put(
   "/profile",
   protect,
   authorizeRoles("trainer"),
-  updateTrainerProfile
+  checkGymSubscription,
+  updateTrainerProfile,
 );
 
 // Admin creates trainer
-router.post("/", protect, authorizeRoles("admin"), createTrainer);
+router.post(
+  "/",
+  protect,
+  authorizeRoles("admin"),
+  checkGymSubscription,
+  createTrainer,
+);
 
 // Admin and trainer can view trainers
-router.get("/", protect, authorizeRoles("admin", "trainer"), getTrainers);
+router.get(
+  "/",
+  protect,
+  authorizeRoles("admin", "trainer"),
+  checkGymSubscription,
+  getTrainers,
+);
 
 // Admin and trainer can view single trainer
-router.get("/:id", protect, authorizeRoles("admin", "trainer"), getTrainerById);
+router.get(
+  "/:id",
+  protect,
+  authorizeRoles("admin", "trainer"),
+  checkGymSubscription,
+  getTrainerById,
+);
 
 // Admin updates trainer
-router.put("/:id", protect, authorizeRoles("admin"), updateTrainer);
+router.put(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  checkGymSubscription,
+  updateTrainer,
+);
 
 // Admin deletes trainer
-router.delete("/:id", protect, authorizeRoles("admin"), deleteTrainer);
+router.delete(
+  "/:id",
+  protect,
+  authorizeRoles("admin"),
+  checkGymSubscription,
+  deleteTrainer,
+);
 
 module.exports = router;

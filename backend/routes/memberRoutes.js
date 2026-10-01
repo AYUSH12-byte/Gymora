@@ -12,11 +12,13 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 // Create member
 router.post(
   "/",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin"),
   createMember,
 );
@@ -25,6 +27,7 @@ router.post(
 router.get(
   "/",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin"),
   getMembers,
 );
@@ -33,6 +36,7 @@ router.get(
 router.get(
   "/:id/qr",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin"),
   getMemberQR,
 );
@@ -41,6 +45,7 @@ router.get(
 router.get(
   "/:id",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin"),
   getMemberById,
 );
@@ -49,8 +54,9 @@ router.get(
 router.delete(
   "/:id",
   protect,
+  checkGymSubscription,
   authorizeRoles("admin"),
-  deleteMember
+  deleteMember,
 );
 
 module.exports = router;
