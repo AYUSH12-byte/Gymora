@@ -9,22 +9,26 @@ const {
 } = require("../controllers/notificationController");
 
 const protect = require("../middleware/authMiddleware");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 const router = express.Router();
 
+router.use(protect);
+router.use(checkGymSubscription);
+
 // Get all notifications
-router.get("/", protect, getNotifications);
+router.get("/", getNotifications);
 
 // Get unread notifications
-router.get("/unread", protect, getUnreadNotifications);
+router.get("/unread", getUnreadNotifications);
 
 // Mark all notifications as read
-router.put("/read-all", protect, markAllAsRead);
+router.put("/read-all", markAllAsRead);
 
 // Mark notification as read
-router.put("/:id/read", protect, markAsRead);
+router.put("/:id/read", markAsRead);
 
 // Delete notification
-router.delete("/:id", protect, deleteNotification);
+router.delete("/:id", deleteNotification);
 
 module.exports = router;

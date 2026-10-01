@@ -4,6 +4,7 @@ const Notification = require("../models/Notification");
 const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({
+      gym: req.user.gym,
       user: req.user._id,
     }).sort({
       createdAt: -1,
@@ -26,6 +27,7 @@ const getNotifications = async (req, res) => {
 const getUnreadNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({
+      gym: req.user.gym,
       user: req.user._id,
       isRead: false,
     }).sort({
@@ -51,6 +53,7 @@ const markAsRead = async (req, res) => {
     const notification = await Notification.findOneAndUpdate(
       {
         _id: req.params.id,
+        gym: req.user.gym,
         user: req.user._id,
       },
       {
@@ -58,7 +61,7 @@ const markAsRead = async (req, res) => {
       },
       {
         new: true,
-      }
+      },
     );
 
     if (!notification) {
@@ -86,6 +89,7 @@ const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
       {
+        gym: req.user.gym,
         user: req.user._id,
         isRead: false,
       },
@@ -93,7 +97,7 @@ const markAllAsRead = async (req, res) => {
         $set: {
           isRead: true,
         },
-      }
+      },
     );
 
     res.status(200).json({
@@ -113,6 +117,7 @@ const deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findOneAndDelete({
       _id: req.params.id,
+      gym: req.user.gym,
       user: req.user._id,
     });
 
