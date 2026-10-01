@@ -6,7 +6,6 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 
 import Login from "./pages/auth/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
-import ComingSoon from "./pages/common/ComingSoon";
 import Gyms from "./pages/gyms/Gyms";
 import GymAdmins from "./pages/gym-admins/GymAdmins";
 import SubscriptionPlans from "./pages/subscription-plans/SubscriptionPlans";
