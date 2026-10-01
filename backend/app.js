@@ -21,7 +21,9 @@ const memberPurchaseRoutes = require("./routes/memberPurchaseRoutes");
 const memberPaymentRoutes = require("./routes/memberPaymentRoutes");
 const superAdminAuthRoutes = require("./routes/superAdminAuthRoutes");
 const superAdminGymRoutes = require("./routes/superAdminGymRoutes");
-
+const superAdminUserRoutes = require("./routes/superAdminUserRoutes");
+const subscriptionPlanRoutes = require("./routes/subscriptionPlanRoutes");
+const gymSubscriptionRoutes = require("./routes/gymSubscriptionRoutes");
 const app = express();
 
 // Middleware
@@ -49,6 +51,9 @@ app.use("/api/member-purchase", memberPurchaseRoutes);
 app.use("/api/member-payments", memberPaymentRoutes);
 app.use("/api/super-admin/auth", superAdminAuthRoutes);
 app.use("/api/super-admin/gyms", superAdminGymRoutes);
+app.use("/api/super-admin/users", superAdminUserRoutes);
+app.use("/api/super-admin/subscription-plans", subscriptionPlanRoutes);
+app.use("/api/super-admin/gym-subscriptions", gymSubscriptionRoutes);
 
 // Test route
 app.get("/", (req, res) => {

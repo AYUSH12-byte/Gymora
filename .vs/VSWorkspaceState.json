@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\backend",
+    "\\backend\\config",
+    "\\backend\\controllers"
+  ],
+  "SelectedNode": "\\backend\\controllers\\authController.js",
+  "PreviewInSolutionExplorer": false
+}
