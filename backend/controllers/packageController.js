@@ -3,8 +3,21 @@ const MembershipPackage = require("../models/MembershipPackage");
 // Create package
 const createPackage = async (req, res) => {
   try {
-    const { name, duration, durationUnit, price, discount, description } =
-      req.body;
+    const {
+      name,
+      duration,
+      durationUnit,
+      price,
+      discount,
+      description,
+    } = req.body;
+
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
 
     if (!name || !duration || price === undefined) {
       return res.status(400).json({
@@ -14,17 +27,19 @@ const createPackage = async (req, res) => {
     }
 
     const existingPackage = await MembershipPackage.findOne({
+      gym: req.user.gym,
       name,
     });
 
     if (existingPackage) {
       return res.status(400).json({
         success: false,
-        message: "Package already exists",
+        message: "Package already exists in your gym",
       });
     }
 
     const membershipPackage = await MembershipPackage.create({
+      gym: req.user.gym,
       name,
       duration,
       durationUnit,
@@ -49,7 +64,16 @@ const createPackage = async (req, res) => {
 // Get all packages
 const getPackages = async (req, res) => {
   try {
-    const packages = await MembershipPackage.find().sort({
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const packages = await MembershipPackage.find({
+      gym: req.user.gym,
+    }).sort({
       createdAt: -1,
     });
 
@@ -69,7 +93,15 @@ const getPackages = async (req, res) => {
 // Get active packages
 const getActivePackages = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const packages = await MembershipPackage.find({
+      gym: req.user.gym,
       isActive: true,
     }).sort({
       price: 1,
@@ -91,7 +123,17 @@ const getActivePackages = async (req, res) => {
 // Get single package
 const getPackageById = async (req, res) => {
   try {
-    const membershipPackage = await MembershipPackage.findById(req.params.id);
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const membershipPackage = await MembershipPackage.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    });
 
     if (!membershipPackage) {
       return res.status(404).json({
@@ -115,14 +157,30 @@ const getPackageById = async (req, res) => {
 // Update package
 const updatePackage = async (req, res) => {
   try {
-    const membershipPackage = await MembershipPackage.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const membershipPackage =
+      await MembershipPackage.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          gym: req.user.gym,
+        },
+        {
+          $set: {
+            ...req.body,
+            gym: req.user.gym,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      );
 
     if (!membershipPackage) {
       return res.status(404).json({
@@ -147,9 +205,18 @@ const updatePackage = async (req, res) => {
 // Delete package
 const deletePackage = async (req, res) => {
   try {
-    const membershipPackage = await MembershipPackage.findByIdAndDelete(
-      req.params.id,
-    );
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const membershipPackage =
+      await MembershipPackage.findOneAndDelete({
+        _id: req.params.id,
+        gym: req.user.gym,
+      });
 
     if (!membershipPackage) {
       return res.status(404).json({

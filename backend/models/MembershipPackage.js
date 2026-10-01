@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const membershipPackageSchema = new mongoose.Schema(
   {
+    gym: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Gym",
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
