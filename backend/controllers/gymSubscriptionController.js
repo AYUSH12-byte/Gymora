@@ -416,6 +416,97 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
+const getGymSubscriptionSummary = async (req, res) => {
+  try {
+    const { gymId } = req.params;
+
+    const gym = await Gym.findOne({
+      _id: gymId,
+      isDeleted: false,
+    }).select("name email phone address status");
+
+    if (!gym) {
+      return res.status(404).json({
+        success: false,
+        message: "Gym not found",
+      });
+    }
+
+    const subscription = await GymSubscription.findOne({
+      gym: gym._id,
+    })
+      .populate(
+        "plan",
+        "name description duration durationUnit price features maxMembers maxTrainers",
+      )
+      .populate(
+        "createdBy",
+        "name email",
+      )
+      .sort({
+        endDate: -1,
+      });
+
+    if (!subscription) {
+      return res.status(200).json({
+        success: true,
+        gym,
+        subscription: null,
+        summary: {
+          hasSubscription: false,
+          status: "none",
+          daysRemaining: 0,
+          expired: false,
+        },
+      });
+    }
+
+    const now = new Date();
+
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+    const daysRemaining = Math.max(
+      Math.ceil(
+        (new Date(subscription.endDate) - now) /
+          millisecondsPerDay,
+      ),
+      0,
+    );
+
+    const expired =
+      new Date(subscription.endDate) <= now;
+
+    return res.status(200).json({
+      success: true,
+
+      gym,
+
+      subscription,
+
+      summary: {
+        hasSubscription: true,
+        status: subscription.status,
+        paymentStatus: subscription.paymentStatus,
+        daysRemaining,
+        expired,
+        startDate: subscription.startDate,
+        endDate: subscription.endDate,
+        amount: subscription.amount,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Get gym subscription summary error:",
+      error,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   assignSubscription,
   getSubscriptions,
@@ -424,4 +515,5 @@ module.exports = {
   renewSubscription,
   updateSubscriptionStatus,
   updatePaymentStatus,
+  getGymSubscriptionSummary,
 };

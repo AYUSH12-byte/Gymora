@@ -8,6 +8,7 @@ const {
   renewSubscription,
   updateSubscriptionStatus,
   updatePaymentStatus,
+  getGymSubscriptionSummary,
 } = require("../controllers/gymSubscriptionController");
 
 const protectSuperAdmin = require("../middleware/superAdminAuthMiddleware");
@@ -21,6 +22,8 @@ router.post("/", assignSubscription);
 router.get("/", getSubscriptions);
 
 router.get("/gym/:gymId/current", getGymCurrentSubscription);
+
+router.get("/gym/:gymId/summary", protectSuperAdmin, getGymSubscriptionSummary);
 
 router.get("/:id", getSubscriptionById);
 
