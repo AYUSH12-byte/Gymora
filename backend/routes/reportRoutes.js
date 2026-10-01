@@ -9,25 +9,35 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
+const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 
 const router = express.Router();
 
-router.get("/revenue", protect, authorizeRoles("admin"), getRevenueReport);
+router.use(protect);
+router.use(checkGymSubscription);
+
+router.get(
+  "/revenue",
+  authorizeRoles("admin"),
+  getRevenueReport,
+);
 
 router.get(
   "/memberships",
-  protect,
   authorizeRoles("admin"),
   getMembershipReport,
 );
 
 router.get(
   "/attendance",
-  protect,
   authorizeRoles("admin", "trainer"),
   getAttendanceReport,
 );
 
-router.get("/members", protect, authorizeRoles("admin"), getMemberReport);
+router.get(
+  "/members",
+  authorizeRoles("admin"),
+  getMemberReport,
+);
 
 module.exports = router;

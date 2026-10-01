@@ -7,6 +7,15 @@ const Attendance = require("../models/Attendance");
 
 const getDashboardOverview = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const gymId = req.user.gym;
+
     const now = new Date();
 
     // Start of today
@@ -22,7 +31,6 @@ const getDashboardOverview = async (req, res) => {
     next7Days.setDate(next7Days.getDate() + 7);
     next7Days.setHours(23, 59, 59, 999);
 
-    // Run queries together
     const [
       totalMembers,
       activeMembers,
@@ -49,42 +57,58 @@ const getDashboardOverview = async (req, res) => {
       recentMembers,
     ] = await Promise.all([
       // Members
-      Member.countDocuments(),
+      Member.countDocuments({
+        gym: gymId,
+      }),
 
       Member.countDocuments({
+        gym: gymId,
         status: "active",
       }),
 
       Member.countDocuments({
+        gym: gymId,
         status: "inactive",
       }),
 
       // Trainers
-      Trainer.countDocuments(),
+      Trainer.countDocuments({
+        gym: gymId,
+      }),
 
       Trainer.countDocuments({
+        gym: gymId,
         status: "active",
       }),
 
       Trainer.countDocuments({
+        gym: gymId,
         status: "inactive",
       }),
 
       // Memberships
       Membership.countDocuments({
+        gym: gymId,
         status: "active",
       }),
 
       Membership.countDocuments({
+        gym: gymId,
         status: "upcoming",
       }),
 
       Membership.countDocuments({
+        gym: gymId,
         status: "expired",
       }),
 
       // Total revenue
       Payment.aggregate([
+        {
+          $match: {
+            gym: gymId,
+          },
+        },
         {
           $group: {
             _id: null,
@@ -99,6 +123,7 @@ const getDashboardOverview = async (req, res) => {
       Membership.aggregate([
         {
           $match: {
+            gym: gymId,
             status: {
               $ne: "cancelled",
             },
@@ -116,6 +141,7 @@ const getDashboardOverview = async (req, res) => {
 
       // Today's attendance
       Attendance.countDocuments({
+        gym: gymId,
         checkIn: {
           $gte: startOfToday,
           $lte: endOfToday,
@@ -124,6 +150,7 @@ const getDashboardOverview = async (req, res) => {
 
       // Currently checked in
       Attendance.countDocuments({
+        gym: gymId,
         checkIn: {
           $gte: startOfToday,
           $lte: endOfToday,
@@ -133,6 +160,7 @@ const getDashboardOverview = async (req, res) => {
 
       // Expiring within 7 days
       Membership.find({
+        gym: gymId,
         status: "active",
         endDate: {
           $gte: now,
@@ -152,7 +180,9 @@ const getDashboardOverview = async (req, res) => {
         }),
 
       // Recent payments
-      Payment.find()
+      Payment.find({
+        gym: gymId,
+      })
         .populate({
           path: "member",
           populate: {
@@ -172,7 +202,9 @@ const getDashboardOverview = async (req, res) => {
         .limit(5),
 
       // Recent members
-      Member.find()
+      Member.find({
+        gym: gymId,
+      })
         .populate("user", "name email role isActive")
         .sort({
           createdAt: -1,
@@ -234,6 +266,8 @@ const getDashboardOverview = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Dashboard overview error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
