@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const attendanceSchema = new mongoose.Schema(
   {
+    gym: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Gym",
+      required: true,
+      index: true,
+    },
+    
     member: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Member",

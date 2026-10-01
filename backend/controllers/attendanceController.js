@@ -7,6 +7,13 @@ const checkIn = async (req, res) => {
   try {
     const { memberId, method, notes } = req.body;
 
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     if (!memberId) {
       return res.status(400).json({
         success: false,
@@ -14,15 +21,15 @@ const checkIn = async (req, res) => {
       });
     }
 
-    const member = await Member.findById(memberId).populate(
-      "user",
-      "name email",
-    );
+    const member = await Member.findOne({
+      _id: memberId,
+      gym: req.user.gym,
+    }).populate("user", "name email");
 
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "Member not found",
+        message: "Member not found in your gym",
       });
     }
 
@@ -35,6 +42,7 @@ const checkIn = async (req, res) => {
 
     const activeMembership = await Membership.findOne({
       member: member._id,
+      gym: req.user.gym,
       status: "active",
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() },
@@ -54,6 +62,7 @@ const checkIn = async (req, res) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     const existingAttendance = await Attendance.findOne({
+      gym: req.user.gym,
       member: member._id,
       checkIn: {
         $gte: startOfDay,
@@ -72,6 +81,7 @@ const checkIn = async (req, res) => {
     }
 
     const attendance = await Attendance.create({
+      gym: req.user.gym,
       member: member._id,
       date: new Date(),
       checkIn: new Date(),
@@ -80,9 +90,10 @@ const checkIn = async (req, res) => {
       notes: notes || "",
     });
 
-    const populatedAttendance = await Attendance.findById(
-      attendance._id,
-    ).populate({
+    const populatedAttendance = await Attendance.findOne({
+      _id: attendance._id,
+      gym: req.user.gym,
+    }).populate({
       path: "member",
       populate: {
         path: "user",
@@ -117,6 +128,13 @@ const checkOut = async (req, res) => {
   try {
     const { attendanceId } = req.body;
 
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     if (!attendanceId) {
       return res.status(400).json({
         success: false,
@@ -124,7 +142,10 @@ const checkOut = async (req, res) => {
       });
     }
 
-    const attendance = await Attendance.findById(attendanceId);
+    const attendance = await Attendance.findOne({
+      _id: attendanceId,
+      gym: req.user.gym,
+    });
 
     if (!attendance) {
       return res.status(404).json({
@@ -146,16 +167,14 @@ const checkOut = async (req, res) => {
     await attendance.save();
 
     const durationMs =
-      attendance.checkOut.getTime() -
-      attendance.checkIn.getTime();
+      attendance.checkOut.getTime() - attendance.checkIn.getTime();
 
-    const durationMinutes = Math.floor(
-      durationMs / (1000 * 60),
-    );
+    const durationMinutes = Math.floor(durationMs / (1000 * 60));
 
-    const populatedAttendance = await Attendance.findById(
-      attendance._id,
-    ).populate({
+    const populatedAttendance = await Attendance.findOne({
+      _id: attendance._id,
+      gym: req.user.gym,
+    }).populate({
       path: "member",
       populate: {
         path: "user",
@@ -183,7 +202,16 @@ const checkOut = async (req, res) => {
 // Get all attendance
 const getAttendance = async (req, res) => {
   try {
-    const attendance = await Attendance.find()
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const attendance = await Attendance.find({
+      gym: req.user.gym,
+    })
       .populate({
         path: "member",
         populate: {
@@ -211,6 +239,13 @@ const getAttendance = async (req, res) => {
 // Get today's attendance
 const getTodayAttendance = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const now = new Date();
 
     const startOfDay = new Date(now);
@@ -220,6 +255,7 @@ const getTodayAttendance = async (req, res) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     const attendance = await Attendance.find({
+      gym: req.user.gym,
       date: {
         $gte: startOfDay,
         $lte: endOfDay,
@@ -242,10 +278,7 @@ const getTodayAttendance = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error(
-      "Get Today's Attendance Error:",
-      error,
-    );
+    console.error("Get Today's Attendance Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -257,21 +290,29 @@ const getTodayAttendance = async (req, res) => {
 // Get member attendance history
 const getMemberAttendance = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const { memberId } = req.params;
 
-    const member = await Member.findById(memberId).populate(
-      "user",
-      "name email",
-    );
+    const member = await Member.findOne({
+      _id: memberId,
+      gym: req.user.gym,
+    }).populate("user", "name email");
 
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "Member not found",
+        message: "Member not found in your gym",
       });
     }
 
     const attendance = await Attendance.find({
+      gym: req.user.gym,
       member: member._id,
     }).sort({
       checkIn: -1,
@@ -288,10 +329,7 @@ const getMemberAttendance = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error(
-      "Get Member Attendance Error:",
-      error,
-    );
+    console.error("Get Member Attendance Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -303,9 +341,17 @@ const getMemberAttendance = async (req, res) => {
 // Get attendance by ID
 const getAttendanceById = async (req, res) => {
   try {
-    const attendance = await Attendance.findById(
-      req.params.id,
-    ).populate({
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const attendance = await Attendance.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    }).populate({
       path: "member",
       populate: {
         path: "user",
@@ -325,10 +371,7 @@ const getAttendanceById = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error(
-      "Get Attendance By ID Error:",
-      error,
-    );
+    console.error("Get Attendance By ID Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -343,6 +386,13 @@ const checkInByQR = async (req, res) => {
   try {
     const { memberId, token } = req.body;
 
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     if (!memberId || !token) {
       return res.status(400).json({
         success: false,
@@ -350,7 +400,6 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // Find logged-in member
     const loggedInUserId = req.user?._id || req.user?.id;
 
     if (!loggedInUserId) {
@@ -362,52 +411,42 @@ const checkInByQR = async (req, res) => {
 
     const loggedInMember = await Member.findOne({
       user: loggedInUserId,
+      gym: req.user.gym,
     });
 
     if (!loggedInMember) {
       return res.status(404).json({
         success: false,
-        message: "Member profile not found",
+        message: "Member profile not found in your gym",
       });
     }
 
-    // Member can only scan QR belonging to themselves
-    if (
-      loggedInMember._id.toString() !==
-      memberId.toString()
-    ) {
+    if (loggedInMember._id.toString() !== memberId.toString()) {
       return res.status(403).json({
         success: false,
-        message:
-          "You can only scan your own member QR code",
+        message: "You can only scan your own member QR code",
       });
     }
 
-    // Find member
-    const member = await Member.findById(memberId).populate(
-      "user",
-      "name email",
-    );
+    const member = await Member.findOne({
+      _id: memberId,
+      gym: req.user.gym,
+    }).populate("user", "name email");
 
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "Member not found",
+        message: "Member not found in your gym",
       });
     }
 
-    // Validate QR token
-    if (
-      !member.qrToken ||
-      member.qrToken !== token
-    ) {
+    if (!member.qrToken || member.qrToken !== token) {
       return res.status(401).json({
         success: false,
         message: "Invalid or expired QR code",
       });
     }
 
-    // Check member status
     if (member.status !== "active") {
       return res.status(400).json({
         success: false,
@@ -415,60 +454,52 @@ const checkInByQR = async (req, res) => {
       });
     }
 
-    // Check active membership
     const now = new Date();
 
-    const activeMembership =
-      await Membership.findOne({
-        member: member._id,
-        status: "active",
-        startDate: { $lte: now },
-        endDate: { $gt: now },
-      }).populate(
-        "package",
-        "name duration durationUnit",
-      );
+    const activeMembership = await Membership.findOne({
+      member: member._id,
+      gym: req.user.gym,
+      status: "active",
+      startDate: { $lte: now },
+      endDate: { $gt: now },
+    }).populate("package", "name duration durationUnit");
 
     if (!activeMembership) {
       return res.status(400).json({
         success: false,
-        message:
-          "You do not have an active membership",
+        message: "You do not have an active membership",
       });
     }
 
-    // Today date range
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Check existing active attendance
-    const existingAttendance =
-      await Attendance.findOne({
-        member: member._id,
-        checkIn: {
-          $gte: startOfDay,
-          $lte: endOfDay,
-        },
-        status: "present",
-        checkOut: null,
-      }).sort({
-        checkIn: -1,
-      });
+    const existingAttendance = await Attendance.findOne({
+      gym: req.user.gym,
+      member: member._id,
+      checkIn: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      status: "present",
+      checkOut: null,
+    }).sort({
+      checkIn: -1,
+    });
 
     if (existingAttendance) {
       return res.status(400).json({
         success: false,
-        message:
-          "You are already checked in today",
+        message: "You are already checked in today",
         attendance: existingAttendance,
       });
     }
 
-    // Create attendance
     const attendance = await Attendance.create({
+      gym: req.user.gym,
       member: member._id,
       date: new Date(),
       checkIn: new Date(),
@@ -477,17 +508,16 @@ const checkInByQR = async (req, res) => {
       notes: "",
     });
 
-    // Populate attendance
-    const populatedAttendance =
-      await Attendance.findById(
-        attendance._id,
-      ).populate({
-        path: "member",
-        populate: {
-          path: "user",
-          select: "name email",
-        },
-      });
+    const populatedAttendance = await Attendance.findOne({
+      _id: attendance._id,
+      gym: req.user.gym,
+    }).populate({
+      path: "member",
+      populate: {
+        path: "user",
+        select: "name email",
+      },
+    });
 
     return res.status(201).json({
       success: true,
@@ -525,6 +555,13 @@ const checkOutByQR = async (req, res) => {
   try {
     const { memberId, token } = req.body;
 
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     if (!memberId || !token) {
       return res.status(400).json({
         success: false,
@@ -532,7 +569,6 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // Find logged-in member
     const loggedInUserId = req.user?._id || req.user?.id;
 
     if (!loggedInUserId) {
@@ -544,52 +580,42 @@ const checkOutByQR = async (req, res) => {
 
     const loggedInMember = await Member.findOne({
       user: loggedInUserId,
+      gym: req.user.gym,
     });
 
     if (!loggedInMember) {
       return res.status(404).json({
         success: false,
-        message: "Member profile not found",
+        message: "Member profile not found in your gym",
       });
     }
 
-    // Security check
-    if (
-      loggedInMember._id.toString() !==
-      memberId.toString()
-    ) {
+    if (loggedInMember._id.toString() !== memberId.toString()) {
       return res.status(403).json({
         success: false,
-        message:
-          "You can only scan your own member QR code",
+        message: "You can only scan your own member QR code",
       });
     }
 
-    // Find member
-    const member = await Member.findById(memberId).populate(
-      "user",
-      "name email",
-    );
+    const member = await Member.findOne({
+      _id: memberId,
+      gym: req.user.gym,
+    }).populate("user", "name email");
 
     if (!member) {
       return res.status(404).json({
         success: false,
-        message: "Member not found",
+        message: "Member not found in your gym",
       });
     }
 
-    // Validate QR token
-    if (
-      !member.qrToken ||
-      member.qrToken !== token
-    ) {
+    if (!member.qrToken || member.qrToken !== token) {
       return res.status(401).json({
         success: false,
         message: "Invalid or expired QR code",
       });
     }
 
-    // Check member status
     if (member.status !== "active") {
       return res.status(400).json({
         success: false,
@@ -597,35 +623,32 @@ const checkOutByQR = async (req, res) => {
       });
     }
 
-    // Find today's active attendance
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const attendance =
-      await Attendance.findOne({
-        member: member._id,
-        checkIn: {
-          $gte: startOfDay,
-          $lte: endOfDay,
-        },
-        status: "present",
-        checkOut: null,
-      }).sort({
-        checkIn: -1,
-      });
+    const attendance = await Attendance.findOne({
+      gym: req.user.gym,
+      member: member._id,
+      checkIn: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      status: "present",
+      checkOut: null,
+    }).sort({
+      checkIn: -1,
+    });
 
     if (!attendance) {
       return res.status(404).json({
         success: false,
-        message:
-          "No active check-in found for today",
+        message: "No active check-in found for today",
       });
     }
 
-    // Check out
     const checkOutTime = new Date();
 
     attendance.checkOut = checkOutTime;
@@ -633,27 +656,21 @@ const checkOutByQR = async (req, res) => {
 
     await attendance.save();
 
-    // Calculate duration
     const durationMs =
-      attendance.checkOut.getTime() -
-      attendance.checkIn.getTime();
+      attendance.checkOut.getTime() - attendance.checkIn.getTime();
 
-    const durationMinutes = Math.max(
-      0,
-      Math.floor(durationMs / (1000 * 60)),
-    );
+    const durationMinutes = Math.max(0, Math.floor(durationMs / (1000 * 60)));
 
-    // Populate updated attendance
-    const populatedAttendance =
-      await Attendance.findById(
-        attendance._id,
-      ).populate({
-        path: "member",
-        populate: {
-          path: "user",
-          select: "name email",
-        },
-      });
+    const populatedAttendance = await Attendance.findOne({
+      _id: attendance._id,
+      gym: req.user.gym,
+    }).populate({
+      path: "member",
+      populate: {
+        path: "user",
+        select: "name email",
+      },
+    });
 
     return res.status(200).json({
       success: true,

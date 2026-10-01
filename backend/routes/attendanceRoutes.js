@@ -21,8 +21,8 @@ const checkGymSubscription = require("../middleware/gymSubscriptionMiddleware");
 router.get(
   "/today",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   getTodayAttendance,
 );
 
@@ -30,8 +30,8 @@ router.get(
 router.get(
   "/member/:memberId",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   getMemberAttendance,
 );
 
@@ -39,8 +39,8 @@ router.get(
 router.post(
   "/check-in",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   checkIn,
 );
 
@@ -48,8 +48,8 @@ router.post(
 router.post(
   "/check-out",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   checkOut,
 );
 
@@ -57,8 +57,8 @@ router.post(
 router.post(
   "/qr-check-in",
   protect,
-  authorizeRoles("member"),
   checkGymSubscription,
+  authorizeRoles("member"),
   checkInByQR,
 );
 
@@ -66,8 +66,8 @@ router.post(
 router.post(
   "/qr-check-out",
   protect,
-  authorizeRoles("member"),
   checkGymSubscription,
+  authorizeRoles("member"),
   checkOutByQR,
 );
 
@@ -75,8 +75,8 @@ router.post(
 router.get(
   "/",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   getAttendance,
 );
 
@@ -84,8 +84,8 @@ router.get(
 router.get(
   "/:id",
   protect,
-  authorizeRoles("admin"),
   checkGymSubscription,
+  authorizeRoles("admin"),
   getAttendanceById,
 );
 
