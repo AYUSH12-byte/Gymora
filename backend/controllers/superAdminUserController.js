@@ -1,3 +1,5 @@
+const bcrypt = require("bcryptjs");
+
 const User = require("../models/User");
 const Gym = require("../models/Gym");
 
@@ -124,8 +126,101 @@ const removeAdminFromGym = async (req, res) => {
   }
 };
 
+const createGymAdmin = async (req, res) => {
+  try {
+    const {
+      gymId,
+      name,
+      email,
+      password,
+    } = req.body;
+
+    if (!gymId || !name || !email || !password) {
+      return res.status(400).json({
+        message: "Gym, name, email and password are required",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    const gym = await Gym.findOne({
+      _id: gymId,
+      isDeleted: false,
+    });
+
+    if (!gym) {
+      return res.status(404).json({
+        message: "Gym not found",
+      });
+    }
+
+    if (gym.status !== "active") {
+      return res.status(400).json({
+        message: "Cannot create admin for an inactive gym",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "A user with this email already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      role: "admin",
+      gym: gym._id,
+    });
+
+    gym.ownerName = admin.name;
+    gym.ownerEmail = admin.email;
+
+    await gym.save();
+
+    return res.status(201).json({
+      message: "Gym admin created successfully",
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        gym: admin.gym,
+      },
+      gym: {
+        id: gym._id,
+        name: gym.name,
+      },
+    });
+  } catch (error) {
+    console.error("Create gym admin error:", error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "A user with this email already exists",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   assignAdminToGym,
   getAdminUsers,
   removeAdminFromGym,
+  createGymAdmin,
 };
