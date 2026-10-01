@@ -9,6 +9,13 @@ const trainerSchema = new mongoose.Schema(
       unique: true,
     },
 
+    gym: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Gym",
+      required: true,
+      index: true,
+    },
+    
     phone: {
       type: String,
       required: true,

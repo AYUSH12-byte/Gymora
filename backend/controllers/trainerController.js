@@ -26,7 +26,16 @@ const createTrainer = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      email: email.toLowerCase(),
+    });
 
     if (existingUser) {
       return res.status(400).json({
@@ -37,13 +46,15 @@ const createTrainer = async (req, res) => {
 
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
       password,
       role: "trainer",
+      gym: req.user.gym,
     });
 
     const trainer = await Trainer.create({
       user: user._id,
+      gym: req.user.gym,
       phone,
       specialization,
       experience,
@@ -52,10 +63,17 @@ const createTrainer = async (req, res) => {
       bio,
     });
 
-    const populatedTrainer = await Trainer.findById(trainer._id).populate(
-      "user",
-      "name email role isActive"
-    );
+    const populatedTrainer = await Trainer.findById(
+      trainer._id
+    )
+      .populate(
+        "user",
+        "name email role isActive gym"
+      )
+      .populate(
+        "gym",
+        "name email phone address status"
+      );
 
     res.status(201).json({
       success: true,
@@ -63,6 +81,8 @@ const createTrainer = async (req, res) => {
       trainer: populatedTrainer,
     });
   } catch (error) {
+    console.error("Create trainer error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -70,11 +90,27 @@ const createTrainer = async (req, res) => {
   }
 };
 
-// Get all trainers
+// Get all trainers for logged-in user's gym
 const getTrainers = async (req, res) => {
   try {
-    const trainers = await Trainer.find()
-      .populate("user", "name email role isActive")
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const trainers = await Trainer.find({
+      gym: req.user.gym,
+    })
+      .populate(
+        "user",
+        "name email role isActive gym"
+      )
+      .populate(
+        "gym",
+        "name email phone address status"
+      )
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -83,6 +119,8 @@ const getTrainers = async (req, res) => {
       trainers,
     });
   } catch (error) {
+    console.error("Get trainers error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -93,10 +131,25 @@ const getTrainers = async (req, res) => {
 // Get single trainer
 const getTrainerById = async (req, res) => {
   try {
-    const trainer = await Trainer.findById(req.params.id).populate(
-      "user",
-      "name email role isActive"
-    );
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const trainer = await Trainer.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    })
+      .populate(
+        "user",
+        "name email role isActive gym"
+      )
+      .populate(
+        "gym",
+        "name email phone address status"
+      );
 
     if (!trainer) {
       return res.status(404).json({
@@ -110,6 +163,8 @@ const getTrainerById = async (req, res) => {
       trainer,
     });
   } catch (error) {
+    console.error("Get trainer by ID error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -120,14 +175,17 @@ const getTrainerById = async (req, res) => {
 // Update trainer
 const updateTrainer = async (req, res) => {
   try {
-    const trainer = await Trainer.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate("user", "name email role isActive");
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const trainer = await Trainer.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    });
 
     if (!trainer) {
       return res.status(404).json({
@@ -136,12 +194,105 @@ const updateTrainer = async (req, res) => {
       });
     }
 
+    const {
+      name,
+      email,
+      phone,
+      specialization,
+      experience,
+      salary,
+      joiningDate,
+      bio,
+      status,
+    } = req.body;
+
+    const user = await User.findById(trainer.user);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer user account not found",
+      });
+    }
+
+    if (
+      email !== undefined &&
+      email.toLowerCase() !== user.email
+    ) {
+      const existingUser = await User.findOne({
+        email: email.toLowerCase(),
+        _id: { $ne: user._id },
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists",
+        });
+      }
+
+      user.email = email.toLowerCase();
+    }
+
+    if (name !== undefined) {
+      user.name = name;
+    }
+
+    await user.save();
+
+    if (phone !== undefined) {
+      trainer.phone = phone;
+    }
+
+    if (specialization !== undefined) {
+      trainer.specialization = specialization;
+    }
+
+    if (experience !== undefined) {
+      trainer.experience = Number(experience);
+    }
+
+    if (salary !== undefined) {
+      trainer.salary = Number(salary);
+    }
+
+    if (joiningDate !== undefined) {
+      trainer.joiningDate = joiningDate;
+    }
+
+    if (bio !== undefined) {
+      trainer.bio = bio;
+    }
+
+    if (status !== undefined) {
+      trainer.status = status;
+    }
+
+    // Never allow gym to be changed from request body
+    trainer.gym = req.user.gym;
+
+    await trainer.save();
+
+    const updatedTrainer = await Trainer.findById(
+      trainer._id
+    )
+      .populate(
+        "user",
+        "name email role isActive gym"
+      )
+      .populate(
+        "gym",
+        "name email phone address status"
+      );
+
     res.status(200).json({
       success: true,
       message: "Trainer updated successfully",
-      trainer,
+      trainer: updatedTrainer,
     });
   } catch (error) {
+    console.error("Update trainer error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -152,7 +303,17 @@ const updateTrainer = async (req, res) => {
 // Delete trainer
 const deleteTrainer = async (req, res) => {
   try {
-    const trainer = await Trainer.findById(req.params.id);
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const trainer = await Trainer.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    });
 
     if (!trainer) {
       return res.status(404).json({
@@ -163,13 +324,15 @@ const deleteTrainer = async (req, res) => {
 
     await User.findByIdAndDelete(trainer.user);
 
-    await Trainer.findByIdAndDelete(req.params.id);
+    await Trainer.findByIdAndDelete(trainer._id);
 
     res.status(200).json({
       success: true,
       message: "Trainer deleted successfully",
     });
   } catch (error) {
+    console.error("Delete trainer error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,
@@ -180,10 +343,20 @@ const deleteTrainer = async (req, res) => {
 // Get trainer dashboard
 const getTrainerDashboard = async (req, res) => {
   try {
-    // Find trainer profile connected to logged-in user
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
-    }).populate("user", "name email role isActive");
+      gym: req.user.gym,
+    }).populate(
+      "user",
+      "name email role isActive gym"
+    );
 
     if (!trainer) {
       return res.status(404).json({
@@ -192,12 +365,14 @@ const getTrainerDashboard = async (req, res) => {
       });
     }
 
-    // Find all workout plans assigned to this trainer
     const workoutPlans = await WorkoutPlan.find({
       trainer: trainer._id,
     })
       .populate({
         path: "member",
+        match: {
+          gym: req.user.gym,
+        },
         populate: {
           path: "user",
           select: "name email isActive",
@@ -205,32 +380,37 @@ const getTrainerDashboard = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    // Get unique assigned member IDs
+    const validWorkoutPlans = workoutPlans.filter(
+      (plan) => plan.member
+    );
+
     const memberIds = [
       ...new Set(
-        workoutPlans
+        validWorkoutPlans
           .map((plan) => plan.member?._id?.toString())
           .filter(Boolean)
       ),
     ];
 
-    // Get assigned members
     const members = await Member.find({
       _id: { $in: memberIds },
+      gym: req.user.gym,
     })
-      .populate("user", "name email isActive")
+      .populate(
+        "user",
+        "name email isActive"
+      )
       .sort({ createdAt: -1 });
 
-    // Today's date range
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    // Attendance of trainer's assigned members today
     const todayAttendance = await Attendance.find({
       member: { $in: memberIds },
+      gym: req.user.gym,
       date: {
         $gte: startOfToday,
         $lte: endOfToday,
@@ -245,23 +425,20 @@ const getTrainerDashboard = async (req, res) => {
       })
       .sort({ checkIn: -1 });
 
-    // Count active workout plans
-    const activeWorkoutPlans = workoutPlans.filter(
+    const activeWorkoutPlans = validWorkoutPlans.filter(
       (plan) => plan.isActive
     ).length;
 
-    // Count inactive workout plans
-    const inactiveWorkoutPlans = workoutPlans.length - activeWorkoutPlans;
+    const inactiveWorkoutPlans =
+      validWorkoutPlans.length - activeWorkoutPlans;
 
-    // Count active members
     const activeMembers = members.filter(
       (member) => member.status === "active"
     ).length;
 
-    // Count inactive members
-    const inactiveMembers = members.length - activeMembers;
+    const inactiveMembers =
+      members.length - activeMembers;
 
-    // Today's present/completed attendance
     const todayPresent = todayAttendance.filter(
       (attendance) =>
         attendance.status === "present" ||
@@ -277,7 +454,8 @@ const getTrainerDashboard = async (req, res) => {
           name: trainer.user?.name || "Trainer",
           email: trainer.user?.email || "",
           phone: trainer.phone,
-          specialization: trainer.specialization || "",
+          specialization:
+            trainer.specialization || "",
           experience: trainer.experience || 0,
           joiningDate: trainer.joiningDate,
           status: trainer.status,
@@ -291,7 +469,7 @@ const getTrainerDashboard = async (req, res) => {
         },
 
         workoutPlans: {
-          total: workoutPlans.length,
+          total: validWorkoutPlans.length,
           active: activeWorkoutPlans,
           inactive: inactiveWorkoutPlans,
         },
@@ -303,7 +481,7 @@ const getTrainerDashboard = async (req, res) => {
 
         assignedMembers: members,
 
-        workoutPlansList: workoutPlans,
+        workoutPlansList: validWorkoutPlans,
 
         todayAttendance,
       },
@@ -318,13 +496,19 @@ const getTrainerDashboard = async (req, res) => {
   }
 };
 
-// Get trainer members
-
 // Get members assigned to logged-in trainer
 const getTrainerMembers = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
+      gym: req.user.gym,
     });
 
     if (!trainer) {
@@ -334,12 +518,10 @@ const getTrainerMembers = async (req, res) => {
       });
     }
 
-    // Find workout plans assigned to this trainer
     const workoutPlans = await WorkoutPlan.find({
       trainer: trainer._id,
     }).select("member");
 
-    // Get unique member IDs
     const memberIds = [
       ...new Set(
         workoutPlans
@@ -356,29 +538,32 @@ const getTrainerMembers = async (req, res) => {
       });
     }
 
-    // Get assigned members
     const members = await Member.find({
       _id: { $in: memberIds },
+      gym: req.user.gym,
     })
-      .populate("user", "name email role isActive")
+      .populate(
+        "user",
+        "name email role isActive"
+      )
       .sort({ createdAt: -1 });
 
-    // Get workout plan information for each member
-    const membersWithPlans = await Promise.all(
-      members.map(async (member) => {
-        const plans = await WorkoutPlan.find({
-          trainer: trainer._id,
-          member: member._id,
-        }).select(
-          "name description difficulty goal startDate endDate isActive exercises"
-        );
+    const membersWithPlans =
+      await Promise.all(
+        members.map(async (member) => {
+          const plans = await WorkoutPlan.find({
+            trainer: trainer._id,
+            member: member._id,
+          }).select(
+            "name description difficulty goal startDate endDate isActive exercises"
+          );
 
-        return {
-          ...member.toObject(),
-          workoutPlans: plans,
-        };
-      })
-    );
+          return {
+            ...member.toObject(),
+            workoutPlans: plans,
+          };
+        })
+      );
 
     res.status(200).json({
       success: true,
@@ -386,7 +571,10 @@ const getTrainerMembers = async (req, res) => {
       members: membersWithPlans,
     });
   } catch (error) {
-    console.error("Get trainer members error:", error);
+    console.error(
+      "Get trainer members error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -396,10 +584,21 @@ const getTrainerMembers = async (req, res) => {
 };
 
 // Get trainer's assigned workout plans
-const getTrainerWorkoutPlans = async (req, res) => {
+const getTrainerWorkoutPlans = async (
+  req,
+  res
+) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
+      gym: req.user.gym,
     });
 
     if (!trainer) {
@@ -414,6 +613,9 @@ const getTrainerWorkoutPlans = async (req, res) => {
     })
       .populate({
         path: "member",
+        match: {
+          gym: req.user.gym,
+        },
         populate: {
           path: "user",
           select: "name email isActive",
@@ -421,13 +623,21 @@ const getTrainerWorkoutPlans = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
+    const filteredWorkoutPlans =
+      workoutPlans.filter(
+        (plan) => plan.member
+      );
+
     res.status(200).json({
       success: true,
-      count: workoutPlans.length,
-      workoutPlans,
+      count: filteredWorkoutPlans.length,
+      workoutPlans: filteredWorkoutPlans,
     });
   } catch (error) {
-    console.error("Get trainer workout plans error:", error);
+    console.error(
+      "Get trainer workout plans error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -437,10 +647,21 @@ const getTrainerWorkoutPlans = async (req, res) => {
 };
 
 // Get trainer's assigned members attendance
-const getTrainerAttendance = async (req, res) => {
+const getTrainerAttendance = async (
+  req,
+  res
+) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
+      gym: req.user.gym,
     });
 
     if (!trainer) {
@@ -450,7 +671,6 @@ const getTrainerAttendance = async (req, res) => {
       });
     }
 
-    // Find members assigned to this trainer through workout plans
     const workoutPlans = await WorkoutPlan.find({
       trainer: trainer._id,
     }).select("member");
@@ -475,6 +695,7 @@ const getTrainerAttendance = async (req, res) => {
       member: {
         $in: memberIds,
       },
+      gym: req.user.gym,
     })
       .populate({
         path: "member",
@@ -494,7 +715,10 @@ const getTrainerAttendance = async (req, res) => {
       attendance,
     });
   } catch (error) {
-    console.error("Get trainer attendance error:", error);
+    console.error(
+      "Get trainer attendance error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -504,14 +728,30 @@ const getTrainerAttendance = async (req, res) => {
 };
 
 // Get logged-in trainer profile
-const getTrainerProfile = async (req, res) => {
+const getTrainerProfile = async (
+  req,
+  res
+) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
-    }).populate(
-      "user",
-      "name email role isActive"
-    );
+      gym: req.user.gym,
+    })
+      .populate(
+        "user",
+        "name email role isActive gym"
+      )
+      .populate(
+        "gym",
+        "name email phone address status"
+      );
 
     if (!trainer) {
       return res.status(404).json({
@@ -525,7 +765,10 @@ const getTrainerProfile = async (req, res) => {
       trainer,
     });
   } catch (error) {
-    console.error("Get trainer profile error:", error);
+    console.error(
+      "Get trainer profile error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
@@ -535,10 +778,21 @@ const getTrainerProfile = async (req, res) => {
 };
 
 // Update logged-in trainer profile
-const updateTrainerProfile = async (req, res) => {
+const updateTrainerProfile = async (
+  req,
+  res
+) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
     const trainer = await Trainer.findOne({
       user: req.user._id,
+      gym: req.user.gym,
     });
 
     if (!trainer) {
@@ -556,8 +810,9 @@ const updateTrainerProfile = async (req, res) => {
       bio,
     } = req.body;
 
-    // Update User information
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -572,7 +827,6 @@ const updateTrainerProfile = async (req, res) => {
 
     await user.save();
 
-    // Update Trainer information
     if (phone !== undefined) {
       trainer.phone = phone;
     }
@@ -589,18 +843,26 @@ const updateTrainerProfile = async (req, res) => {
       trainer.bio = bio;
     }
 
+    // Prevent changing gym from profile update
+    trainer.gym = req.user.gym;
+
     await trainer.save();
 
-    const updatedTrainer = await Trainer.findById(
-      trainer._id
-    ).populate(
-      "user",
-      "name email role isActive"
-    );
+    const updatedTrainer =
+      await Trainer.findById(trainer._id)
+        .populate(
+          "user",
+          "name email role isActive gym"
+        )
+        .populate(
+          "gym",
+          "name email phone address status"
+        );
 
     res.status(200).json({
       success: true,
-      message: "Trainer profile updated successfully",
+      message:
+        "Trainer profile updated successfully",
       trainer: updatedTrainer,
     });
   } catch (error) {
