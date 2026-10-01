@@ -1,24 +1,26 @@
 const express = require("express");
 
 const {
-  assignAdminToGym,
-  getAdminUsers,
-  removeAdminFromGym,
   createGymAdmin,
+  getAdminUsers,
+  assignAdminToGym,
+  removeAdminFromGym,
 } = require("../controllers/superAdminUserController");
 
 const protectSuperAdmin = require("../middleware/superAdminAuthMiddleware");
 
 const router = express.Router();
 
-router.use(protectSuperAdmin);
+router.get("/admins", protectSuperAdmin, getAdminUsers);
 
-router.get("/admins", getAdminUsers);
+router.post("/admins/create", protectSuperAdmin, createGymAdmin);
 
-router.post("/admins/create", createGymAdmin);
+router.patch("/gyms/:gymId/assign-admin", protectSuperAdmin, assignAdminToGym);
 
-router.patch("/admins/:userId/remove-gym", removeAdminFromGym);
-
-router.patch("/gyms/:gymId/assign-admin", assignAdminToGym);
+router.patch(
+  "/admins/:userId/remove-gym",
+  protectSuperAdmin,
+  removeAdminFromGym,
+);
 
 module.exports = router;
