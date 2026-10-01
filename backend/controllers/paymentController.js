@@ -1,5 +1,6 @@
 const Payment = require("../models/Payment");
 const Membership = require("../models/Membership");
+const Member = require("../models/Member");
 const Notification = require("../models/Notification");
 
 // Generate receipt number
@@ -20,8 +21,21 @@ const generateReceiptNumber = async () => {
 // Create payment
 const createPayment = async (req, res) => {
   try {
-    const { membershipId, amount, paymentMethod, transactionId, notes } =
-      req.body;
+    const {
+      membershipId,
+      amount,
+      paymentMethod,
+      transactionId,
+      notes,
+    } = req.body;
+
+    // Validate gym assignment
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
 
     // Basic validation
     if (!membershipId || amount === undefined || !paymentMethod) {
@@ -63,13 +77,29 @@ const createPayment = async (req, res) => {
       });
     }
 
-    // Find membership
-    const membership = await Membership.findById(membershipId);
+    // Find membership only inside current gym
+    const membership = await Membership.findOne({
+      _id: membershipId,
+      gym: req.user.gym,
+    });
 
     if (!membership) {
       return res.status(404).json({
         success: false,
-        message: "Membership not found",
+        message: "Membership not found in your gym",
+      });
+    }
+
+    // Validate member belongs to current gym
+    const member = await Member.findOne({
+      _id: membership.member,
+      gym: req.user.gym,
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found in your gym",
       });
     }
 
@@ -92,11 +122,12 @@ const createPayment = async (req, res) => {
       });
     }
 
-    // Calculate total already paid
+    // Calculate total already paid for this gym
     const paymentSummary = await Payment.aggregate([
       {
         $match: {
           membership: membership._id,
+          gym: req.user.gym,
         },
       },
       {
@@ -110,7 +141,9 @@ const createPayment = async (req, res) => {
     ]);
 
     const totalPaid =
-      paymentSummary.length > 0 ? paymentSummary[0].totalPaid : 0;
+      paymentSummary.length > 0
+        ? paymentSummary[0].totalPaid
+        : 0;
 
     // Calculate remaining amount
     const remainingAmount = membership.finalAmount - totalPaid;
@@ -139,8 +172,9 @@ const createPayment = async (req, res) => {
     // Generate receipt number
     const receiptNumber = await generateReceiptNumber();
 
-    // Create payment
+    // Create payment with current gym
     const payment = await Payment.create({
+      gym: req.user.gym,
       membership: membership._id,
       member: membership.member,
       amount: paymentAmount,
@@ -154,7 +188,8 @@ const createPayment = async (req, res) => {
     const newTotalPaid = totalPaid + paymentAmount;
 
     // Calculate remaining balance
-    const newRemainingAmount = membership.finalAmount - newTotalPaid;
+    const newRemainingAmount =
+      membership.finalAmount - newTotalPaid;
 
     // Determine payment status
     let paymentStatus = "pending";
@@ -165,7 +200,7 @@ const createPayment = async (req, res) => {
       paymentStatus = "partial";
     }
 
-    // Update membership
+    // Update membership payment status
     membership.paymentStatus = paymentStatus;
 
     await membership.save();
@@ -183,7 +218,8 @@ const createPayment = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
-          select: "name duration durationUnit price discount description",
+          select:
+            "name duration durationUnit price discount description",
         },
       });
 
@@ -227,7 +263,18 @@ const createPayment = async (req, res) => {
 // Get all payments
 const getPayments = async (req, res) => {
   try {
-    const payments = await Payment.find()
+    // Validate gym assignment
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    // Get payments only from current gym
+    const payments = await Payment.find({
+      gym: req.user.gym,
+    })
       .populate({
         path: "member",
         populate: {
@@ -239,7 +286,8 @@ const getPayments = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
-          select: "name duration durationUnit price discount description",
+          select:
+            "name duration durationUnit price discount description",
         },
       })
       .sort({ paidAt: -1 });
@@ -269,19 +317,34 @@ const getPayments = async (req, res) => {
 // Get payments for a membership
 const getMembershipPayments = async (req, res) => {
   try {
-    const membership = await Membership.findById(
-      req.params.membershipId,
-    ).populate("package", "name duration durationUnit price discount");
+    // Validate gym assignment
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    // Find membership only inside current gym
+    const membership = await Membership.findOne({
+      _id: req.params.membershipId,
+      gym: req.user.gym,
+    }).populate(
+      "package",
+      "name duration durationUnit price discount",
+    );
 
     if (!membership) {
       return res.status(404).json({
         success: false,
-        message: "Membership not found",
+        message: "Membership not found in your gym",
       });
     }
 
+    // Get payments only from current gym
     const payments = await Payment.find({
       membership: membership._id,
+      gym: req.user.gym,
     })
       .populate({
         path: "member",
@@ -313,7 +376,7 @@ const getMembershipPayments = async (req, res) => {
       paymentStatus = "partial";
     }
 
-    // Sync membership status if required
+    // Sync membership payment status if required
     if (membership.paymentStatus !== paymentStatus) {
       membership.paymentStatus = paymentStatus;
       await membership.save();
@@ -355,7 +418,19 @@ const getMembershipPayments = async (req, res) => {
 // Get single payment
 const getPaymentById = async (req, res) => {
   try {
-    const payment = await Payment.findById(req.params.id)
+    // Validate gym assignment
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    // Get payment only from current gym
+    const payment = await Payment.findOne({
+      _id: req.params.id,
+      gym: req.user.gym,
+    })
       .populate({
         path: "member",
         populate: {
@@ -367,7 +442,8 @@ const getPaymentById = async (req, res) => {
         path: "membership",
         populate: {
           path: "package",
-          select: "name duration durationUnit price discount description",
+          select:
+            "name duration durationUnit price discount description",
         },
       });
 
