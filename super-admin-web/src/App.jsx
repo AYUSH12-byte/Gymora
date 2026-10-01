@@ -1,9 +1,4 @@
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 
@@ -13,16 +8,14 @@ import Login from "./pages/auth/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
 import ComingSoon from "./pages/common/ComingSoon";
 import Gyms from "./pages/gyms/Gyms";
+import GymAdmins from "./pages/gym-admins/GymAdmins";
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route
-            path="/login"
-            element={<Login />}
-          />
+          <Route path="/login" element={<Login />} />
 
           <Route
             path="/dashboard"
@@ -46,7 +39,7 @@ const App = () => {
             path="/gym-admins"
             element={
               <ProtectedRoute>
-                <ComingSoon title="Gym Admins" />
+                <GymAdmins />
               </ProtectedRoute>
             }
           />
@@ -69,25 +62,9 @@ const App = () => {
             }
           />
 
-          <Route
-            path="/"
-            element={
-              <Navigate
-                to="/dashboard"
-                replace
-              />
-            }
-          />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to="/dashboard"
-                replace
-              />
-            }
-          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
