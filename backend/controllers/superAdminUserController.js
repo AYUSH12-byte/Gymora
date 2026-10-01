@@ -1,5 +1,3 @@
-const bcrypt = require("bcryptjs");
-
 const User = require("../models/User");
 const Gym = require("../models/Gym");
 
@@ -125,7 +123,6 @@ const removeAdminFromGym = async (req, res) => {
     });
   }
 };
-
 const createGymAdmin = async (req, res) => {
   try {
     const {
@@ -174,12 +171,21 @@ const createGymAdmin = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const existingGymAdmin = await User.findOne({
+      gym: gym._id,
+      role: "admin",
+    });
+
+    if (existingGymAdmin) {
+      return res.status(409).json({
+        message: "This gym already has an admin",
+      });
+    }
 
     const admin = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: hashedPassword,
+      password,
       role: "admin",
       gym: gym._id,
     });
@@ -190,6 +196,7 @@ const createGymAdmin = async (req, res) => {
     await gym.save();
 
     return res.status(201).json({
+      success: true,
       message: "Gym admin created successfully",
       admin: {
         id: admin._id,
