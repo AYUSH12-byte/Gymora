@@ -7,6 +7,15 @@ const Attendance = require("../models/Attendance");
 
 const getAdminDashboard = async (req, res) => {
   try {
+    if (!req.user?.gym) {
+      return res.status(403).json({
+        success: false,
+        message: "No gym is assigned to this account",
+      });
+    }
+
+    const gymId = req.user.gym;
+
     const [
       totalMembers,
       activeMembers,
@@ -19,38 +28,50 @@ const getAdminDashboard = async (req, res) => {
       recentPayments,
       recentMembers,
     ] = await Promise.all([
-      Member.countDocuments(),
+      Member.countDocuments({
+        gym: gymId,
+      }),
 
       Member.countDocuments({
+        gym: gymId,
         status: "active",
       }),
-
-      Trainer.countDocuments(),
 
       Trainer.countDocuments({
+        gym: gymId,
+      }),
+
+      Trainer.countDocuments({
+        gym: gymId,
         status: "active",
       }),
 
       Membership.countDocuments({
+        gym: gymId,
         status: "active",
       }),
 
       Membership.countDocuments({
+        gym: gymId,
         status: "expired",
       }),
 
       Membership.countDocuments({
+        gym: gymId,
         status: "upcoming",
       }),
 
       Attendance.countDocuments({
+        gym: gymId,
         date: {
           $gte: new Date(new Date().setHours(0, 0, 0, 0)),
           $lte: new Date(new Date().setHours(23, 59, 59, 999)),
         },
       }),
 
-      Payment.find()
+      Payment.find({
+        gym: gymId,
+      })
         .sort({ createdAt: -1 })
         .limit(10)
         .populate({
@@ -61,13 +82,20 @@ const getAdminDashboard = async (req, res) => {
           },
         }),
 
-      Member.find()
+      Member.find({
+        gym: gymId,
+      })
         .sort({ createdAt: -1 })
         .limit(10)
         .populate("user", "name email role"),
     ]);
 
     const revenueResult = await Payment.aggregate([
+      {
+        $match: {
+          gym: gymId,
+        },
+      },
       {
         $group: {
           _id: null,
