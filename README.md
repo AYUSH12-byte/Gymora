@@ -1,6 +1,6 @@
 # Gymora
 
-Gymora is a full-stack gym management platform built for managing gym operations, memberships, trainers, attendance, payments, and member insights across a backend API, a React Native mobile app, and a super-admin web dashboard.
+Gymora is a multi-tenant  gym management platform built for managing gym operations, memberships, trainers, attendance, payments, and member insights across a backend API, a React Native mobile app, and a super-admin web dashboard.
 
 ## Features
 
