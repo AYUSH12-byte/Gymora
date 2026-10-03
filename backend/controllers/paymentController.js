@@ -229,6 +229,7 @@ const createPayment = async (req, res) => {
         populatedPayment?.member?.user?.name || "Member";
 
       await Notification.create({
+        gym: req.user.gym,
         user: req.user._id,
         type: "payment_received",
         title: "Payment Received",

@@ -29,6 +29,7 @@ const getMemberDashboard = async (req, res) => {
 
     const membership = await Membership.findOne({
       member: member._id,
+      gym: member.gym,
       status: {
         $in: ["active", "upcoming"],
       },
@@ -123,6 +124,7 @@ const getMyMembership = async (req, res) => {
 
     const memberships = await Membership.find({
       member: member._id,
+      gym: member.gym,
     })
       .populate("package")
       .sort({ startDate: -1 });
@@ -142,7 +144,17 @@ const getMyMembership = async (req, res) => {
 // Available packages
 const getAvailablePackages = async (req, res) => {
   try {
+    const member = await Member.findOne({ user: req.user._id });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Member profile not found",
+      });
+    }
+
     const packages = await MembershipPackage.find({
+      gym: member.gym,
       isActive: true,
     }).sort({ price: 1 });
 

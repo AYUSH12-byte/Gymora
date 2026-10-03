@@ -74,6 +74,7 @@ const createMember = async (req, res) => {
     // Create admin notification
     if (req.user?._id) {
       await Notification.create({
+        gym: req.user.gym,
         user: req.user._id,
         type: "new_member",
         title: "New Member Added",

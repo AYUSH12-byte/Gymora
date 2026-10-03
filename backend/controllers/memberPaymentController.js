@@ -30,6 +30,7 @@ const getMyPaymentSummary = async (req, res) => {
 
     const memberships = await Membership.find({
       member: member._id,
+      gym: member.gym,
       status: { $ne: "cancelled" },
     })
       .populate("package", "name duration durationUnit price discount")
@@ -142,6 +143,7 @@ const payMembershipBalance = async (req, res) => {
     const membership = await Membership.findOne({
       _id: membershipId,
       member: member._id,
+      gym: member.gym,
     }).populate("package", "name duration durationUnit price discount");
 
     if (!membership) {
@@ -209,6 +211,7 @@ const payMembershipBalance = async (req, res) => {
 
     // Create payment
     const payment = await Payment.create({
+      gym: member.gym,
       membership: membership._id,
       member: member._id,
       amount: paymentAmount,

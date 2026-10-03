@@ -21,6 +21,7 @@ import MemberQRScreen from "../screens/admin/member/MemberQRScreen";
 
 // Membership Screens
 import MembershipsScreen from "../screens/admin/membership/MembershipsScreen";
+import AddMembershipScreen from "../screens/admin/membership/AddMembershipScreen";
 import MembershipDetailsScreen from "../screens/admin/membership/MembershipDetailsScreen";
 import RenewMembershipScreen from "../screens/admin/membership/RenewMembershipScreen";
 import PayPendingPaymentScreen from "../screens/admin/membership/PayPendingPaymentScreen";
@@ -139,6 +140,14 @@ const MembershipsStack = () => {
         component={MembershipsScreen}
         options={{
           title: "Memberships",
+        }}
+      />
+
+      <MembershipStack.Screen
+        name="AddMembership"
+        component={AddMembershipScreen}
+        options={{
+          title: "Assign Membership",
         }}
       />
 

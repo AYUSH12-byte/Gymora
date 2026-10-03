@@ -82,6 +82,7 @@ const createExpiryReminders = async () => {
       );
 
       await Notification.create({
+        gym: membership.gym,
         user: memberUser._id,
         type: "membership_expiring",
         title: "Membership Expiring Soon",

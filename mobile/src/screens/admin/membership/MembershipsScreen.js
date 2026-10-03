@@ -35,7 +35,28 @@ const MembershipsScreen = ({ navigation }) => {
 
       const data = response.data.memberships || response.data.data || [];
 
-      setMemberships(Array.isArray(data) ? data : []);
+      const latestMembershipByMember = new Map();
+
+      if (Array.isArray(data)) {
+        for (const membership of data) {
+          const memberId =
+            membership.member?._id || membership.member || membership._id;
+          const key = String(memberId);
+          const existingMembership = latestMembershipByMember.get(key);
+
+          if (
+            !existingMembership ||
+            new Date(membership.createdAt || membership.startDate) >
+              new Date(
+                existingMembership.createdAt || existingMembership.startDate,
+              )
+          ) {
+            latestMembershipByMember.set(key, membership);
+          }
+        }
+      }
+
+      setMemberships(Array.from(latestMembershipByMember.values()));
     } catch (error) {
       console.log(
         "Memberships API error:",
@@ -259,8 +280,17 @@ const MembershipsScreen = ({ navigation }) => {
           <Text style={styles.subtitle}>Manage member subscriptions</Text>
         </View>
 
-        <View style={styles.countBadge}>
-          <Text style={styles.countText}>{memberships.length}</Text>
+        <View style={styles.headerActions}>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{memberships.length}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate("AddMembership")}
+          >
+            <Text style={styles.addButtonText}>Assign</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -363,9 +393,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+
   countText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "700",
+  },
+
+  addButton: {
+    backgroundColor: "#111",
+    borderRadius: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+
+  addButtonText: {
+    color: "#fff",
+    fontSize: 14,
     fontWeight: "700",
   },
 

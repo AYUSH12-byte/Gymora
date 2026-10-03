@@ -43,12 +43,16 @@ const purchaseMembership = async (req, res) => {
     }
 
     // Get package
-    const packageData = await MembershipPackage.findById(packageId);
+    const packageData = await MembershipPackage.findOne({
+      _id: packageId,
+      gym: member.gym,
+      isActive: true,
+    });
 
     if (!packageData) {
       return res.status(404).json({
         success: false,
-        message: "Membership package not found",
+        message: "Membership package not found in your gym",
       });
     }
 
@@ -62,6 +66,7 @@ const purchaseMembership = async (req, res) => {
     // Check existing active membership
     const activeMembership = await Membership.findOne({
       member: member._id,
+      gym: member.gym,
       status: "active",
     });
 
@@ -125,6 +130,7 @@ const purchaseMembership = async (req, res) => {
 
     // Create membership
     const membership = await Membership.create({
+      gym: member.gym,
       member: member._id,
       package: packageData._id,
       startDate,
@@ -153,6 +159,7 @@ const purchaseMembership = async (req, res) => {
 
     // Create payment
     const payment = await Payment.create({
+      gym: member.gym,
       membership: membership._id,
       member: member._id,
       amount: amountToPay,
